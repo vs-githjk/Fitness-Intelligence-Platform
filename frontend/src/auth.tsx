@@ -53,6 +53,6 @@ export function useAuth() {
 export function RequireRole({ role, children }: { role: Role; children: ReactNode }) {
   const { user } = useAuth(); const location = useLocation()
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />
-  if (user.role !== role) return <Navigate to={user.role === 'coach' ? '/coach/dashboard' : '/trainee/dashboard'} replace />
+  if (user.role !== role) return <Navigate to={user.role === 'coach' ? '/coach/dashboard' : '/trainee/today'} replace />
   return children
 }

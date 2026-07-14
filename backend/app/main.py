@@ -3,13 +3,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import assessments, auth, coach, health, trainee
+from app.api import assessments, auth, check_ins, coach, daily_scores, health, trainee
 from app.config import settings
 
 app = FastAPI(
     title=settings.app_name,
-    version="0.1.0",
-    description="Deterministic baseline fitness intelligence. Not medical diagnosis or treatment.",
+    version="0.2.0",
+    description="Deterministic baseline and longitudinal fitness intelligence. Not medical diagnosis or treatment.",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -42,5 +42,13 @@ def healthcheck() -> dict[str, str]:
     return {"status": "healthy"}
 
 
-for router in (auth.router, trainee.router, assessments.router, health.router, coach.router):
+for router in (
+    auth.router,
+    trainee.router,
+    assessments.router,
+    health.router,
+    check_ins.router,
+    daily_scores.router,
+    coach.router,
+):
     app.include_router(router, prefix="/api/v1")

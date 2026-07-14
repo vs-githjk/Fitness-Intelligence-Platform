@@ -1,8 +1,9 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 from app.models import Role
 
@@ -46,6 +47,15 @@ class ProfileUpdate(BaseModel):
     selected_goal: Goal | None = None
     target_weight_kg: float | None = Field(default=None, ge=30, le=350)
     timezone: str = Field(default="UTC", max_length=80)
+
+    @field_validator("timezone")
+    @classmethod
+    def valid_timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except ZoneInfoNotFoundError as exc:
+            raise ValueError("Use a valid IANA timezone, such as Asia/Kolkata") from exc
+        return value
 
 
 class ProfileOut(ProfileUpdate):
@@ -183,6 +193,12 @@ class CoachTraineeSummary(BaseModel):
     band: str | None
     baseline_calculated_at: datetime | None
     open_alerts: int
+    latest_check_in_date: date | None = None
+    latest_check_in_at: datetime | None = None
+    latest_readiness_score: float | None = None
+    latest_readiness_state: str | None = None
+    checked_in_today: bool = False
+    open_daily_alerts: int = 0
 
 
 class CoachTraineeDetail(BaseModel):
@@ -198,6 +214,120 @@ class TraineeCoachOut(BaseModel):
     coach_id: uuid.UUID | None = None
     coach_name: str | None = None
     coach_email: EmailStr | None = None
+
+
+OverallFeeling = Literal["very_poor", "poor", "okay", "good", "excellent"]
+
+
+class DailyCheckInData(BaseModel):
+    sleep_hours: float = Field(ge=0, le=16)
+    sleep_quality: int = Field(ge=1, le=5)
+    wake_refreshed: bool
+    soreness: int = Field(ge=0, le=10)
+    fatigue: int = Field(ge=0, le=10)
+    stress: int = Field(ge=0, le=10)
+    steps: int = Field(ge=0, le=100000)
+    exercised: bool
+    exercise_minutes: int | None = Field(default=None, ge=1, le=600)
+    session_rpe: float | None = Field(default=None, ge=0, le=10)
+    activity_types: list[str] = Field(default_factory=list, max_length=12)
+    water_liters: float = Field(ge=0, le=12)
+    calories_consumed: float | None = Field(default=None, ge=0, le=10000)
+    protein_grams: float | None = Field(default=None, ge=0, le=500)
+    nutrition_adherence: int | None = Field(default=None, ge=0, le=100)
+    overall_feeling: OverallFeeling
+    note: str | None = Field(default=None, max_length=500)
+
+    @field_validator("activity_types")
+    @classmethod
+    def clean_activity_types(cls, value: list[str]) -> list[str]:
+        cleaned = [item.strip().lower() for item in value if item.strip()]
+        if any(len(item) > 50 for item in cleaned):
+            raise ValueError("Activity labels must be 50 characters or fewer")
+        return list(dict.fromkeys(cleaned))
+
+    @field_validator("note")
+    @classmethod
+    def clean_note(cls, value: str | None) -> str | None:
+        cleaned = value.strip() if value else None
+        return cleaned or None
+
+    @model_validator(mode="after")
+    def exercise_fields_match(self) -> "DailyCheckInData":
+        if self.exercised and (self.exercise_minutes is None or self.session_rpe is None):
+            raise ValueError("Exercise duration and session RPE are required when exercise is reported")
+        if not self.exercised:
+            self.exercise_minutes = None
+            self.session_rpe = None
+            self.activity_types = []
+        return self
+
+
+class DailyCheckInOut(DailyCheckInData):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    trainee_id: uuid.UUID
+    local_date: date
+    timezone: str
+    submitted_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+
+class DailyScoreComponentOut(BaseModel):
+    key: str
+    group: str
+    raw_inputs: dict[str, Any]
+    normalized_score: float
+    weight: float
+    contribution: float
+    status: str
+    explanation: str
+    missing: bool = False
+
+
+class DailyScoreSummaryOut(BaseModel):
+    id: uuid.UUID
+    trainee_id: uuid.UUID
+    daily_check_in_id: uuid.UUID
+    local_date: date
+    recovery_score: float
+    activity_score: float
+    nutrition_score: float | None
+    readiness_score: float
+    readiness_state: str
+    scoring_version: str
+    calculated_at: datetime
+
+
+class DailyScoreOut(DailyScoreSummaryOut):
+    components: list[DailyScoreComponentOut]
+    missing_fields: list[str]
+    recent_training_load: dict[str, Any]
+    risk_flags: list[RiskFlagOut]
+    recommendations: list[RecommendationOut]
+
+
+class TrendPoint(BaseModel):
+    date: date
+    value: float | None
+    missing: bool
+    rolling_average: float | None = None
+    difference_from_previous: float | None = None
+
+
+class TrendSeries(BaseModel):
+    key: str
+    label: str
+    unit: str
+    points: list[TrendPoint]
+
+
+class DailyTrendsOut(BaseModel):
+    start_date: date
+    end_date: date
+    timezone: str
+    series: list[TrendSeries]
 
 
 class ErrorDetail(BaseModel):

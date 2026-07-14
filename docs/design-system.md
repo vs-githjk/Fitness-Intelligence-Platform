@@ -120,9 +120,9 @@ Below 1024px, the sidebar becomes a sticky compact header. A fixed bottom naviga
 
 ### Trainee
 
-At 1024px and above, the trainee uses the same shell structure with a role-specific sidebar containing Overview and Assessment.
+At 1024px and above, the trainee uses the same shell structure with a role-specific sidebar containing Today, Progress, and Assessment.
 
-Below 1024px, a compact header and two-item fixed bottom navigation expose only Overview and Assessment. Main content receives additional bottom padding so it is not covered by the navigation. The navigation does not advertise plans, workouts, messages, or profile pages that are not implemented.
+Below 1024px, a compact header and three-item fixed bottom navigation expose Today, Progress, and Assessment. Main content receives additional bottom padding so it is not covered by the navigation. The navigation does not advertise plans, workouts, messages, or profile pages that are not implemented.
 
 Active desktop and mobile links use primary color and a visible active treatment. Navigation containers have role-specific accessible labels.
 
@@ -165,7 +165,7 @@ When extending the product, retain visible focus, explicit control names, linked
 
 ## Health Index and data-visualization conventions
 
-The current milestone has one submitted baseline rather than a time series. It therefore uses no trend lines, sparklines, donut charts, or fabricated changes.
+The baseline remains a single immutable snapshot. Daily Intelligence adds restrained historical lines and compact coach progress rows only when persisted daily data exists.
 
 - The overall Health Index is shown as a large numeric value out of 100, accompanied by an interpretation band, plain-language summary, calculation date, and source context.
 - Component scores use horizontal progress bars plus an exact score, text status, configured weight, weighted contribution, and explanation.
@@ -173,7 +173,9 @@ The current milestone has one submitted baseline rather than a time series. It t
 - Recommendations are sorted with high priority first and limited to four in the main panel. Each can disclose why it was recommended.
 - Risk notices remain visible near the score. On coach trainee-detail pages, important notices also appear before profile metrics and the full score view.
 - Exact values remain in text. Color and bar length are supporting cues, not the only way to understand a score.
-- Future historical charts must use real longitudinal data, include units and time range, and provide a readable empty state. A single baseline must never be presented as a trend.
+- Historical charts use real longitudinal data, include units and time range, and provide a readable empty state and table alternative. Missing dates create visible gaps and are never plotted as zero or connected across the gap. A single baseline is never presented as a trend.
+- Daily readiness uses the existing positive, informational, attention, and risk semantics. Ordinary low scores are not styled as critical emergencies.
+- Baseline Health Index and daily intelligence use separate headings and explanatory copy.
 
 ## Status and severity meanings
 
@@ -218,10 +220,10 @@ Avoid diagnostic, shame-based, or absolute language such as “unhealthy,” “
 ## Current-scope limits
 
 - The application is light-mode only. Dark-mode values and a theme switch are not implemented.
-- The product currently represents a baseline onboarding assessment. Longitudinal trends, score changes, daily check-ins, workouts, nutrition plans, wearables, messages, and notifications are not implemented or shown as working destinations.
-- Coach navigation contains only Overview; trainee navigation contains only Overview and Assessment.
+- The product supports baseline onboarding plus manual daily check-ins and bounded longitudinal trends. Workouts, nutrition plans, wearables, messages, and notifications remain unimplemented.
+- Coach navigation contains Overview; trainee navigation contains Today, Progress, and Assessment.
 - Submitted assessments are locked. Starting a new assessment version is explicitly deferred.
-- Data visualization is limited to numeric summaries, status badges, exact contribution text, and horizontal progress bars because historical data is unavailable.
+- Data visualization includes numeric summaries, status badges, exact contribution text, progress bars, restrained trend lines, and accessible data tables.
 - The shared system does not currently include a modal, drawer, toast, or confirmation-dialog component because current flows do not require them.
 - Inter is requested through the font stack but is not bundled by the frontend.
 - The CSS establishes a minimum document width of 320px; narrower viewports are outside the implemented target.
@@ -237,3 +239,5 @@ Avoid diagnostic, shame-based, or absolute language such as “unhealthy,” “
 - Authentication patterns: `frontend/src/pages/AuthPages.tsx`
 - Assessment patterns: `frontend/src/pages/OnboardingPage.tsx`
 - Coach and trainee dashboards: `frontend/src/pages/DashboardPages.tsx`
+- Daily trainee experience: `frontend/src/pages/DailyPages.tsx`
+- Daily coach experience: `frontend/src/components/DailyCoach.tsx`

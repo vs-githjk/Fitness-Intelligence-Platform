@@ -41,7 +41,7 @@ def update_profile(
     body: ProfileUpdate, user: User = Depends(require_trainee), db: Session = Depends(get_db)
 ) -> TraineeProfile:
     profile = db.scalar(select(TraineeProfile).where(TraineeProfile.user_id == user.id))
-    for key, value in body.model_dump().items():
+    for key, value in body.model_dump(exclude_unset=True).items():
         setattr(profile, key, value)
     db.commit()
     db.refresh(profile)

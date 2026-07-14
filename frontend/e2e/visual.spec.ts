@@ -101,7 +101,7 @@ test('onboarding renders at desktop and mobile widths', async ({ page }) => {
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Build your basic profile' })).toBeVisible()
   await page.goto('/trainee/dashboard')
-  await expect(page.getByRole('heading', { name: 'No baseline yet' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'No check-in yet today' })).toBeVisible()
 })
 
 test('trainee dashboard is responsive and contains real baseline', async ({ page }) => {
@@ -109,7 +109,7 @@ test('trainee dashboard is responsive and contains real baseline', async ({ page
   await setSession(page, auth)
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/trainee/dashboard')
-  await expect(page.getByText('out of 100')).toBeVisible()
+  await expect(page.getByText('Training readiness', { exact: true })).toBeVisible()
   await expectNoOverflow(page)
   await page.screenshot({ path: `${screenshots}/trainee-dashboard-mobile.png`, fullPage: true })
   await page.setViewportSize({ width: 1024, height: 900 })
@@ -152,7 +152,7 @@ test('auth and empty-state boundaries remain actionable', async ({ page }) => {
   const traineeAuth = await signIn('trainee@fitness.example.com')
   await setSession(page, traineeAuth)
   await page.goto('/coach/dashboard')
-  await expect(page).toHaveURL(/\/trainee\/dashboard/)
+  await expect(page).toHaveURL(/\/trainee\/today/)
 
   await page.addInitScript((user) => {
     localStorage.setItem('access_token', 'expired-token')
@@ -172,8 +172,8 @@ test('auth and empty-state boundaries remain actionable', async ({ page }) => {
 test('API outage shows retained-data guidance and retry', async ({ page }) => {
   const auth = await signIn('trainee@fitness.example.com')
   await setSession(page, auth)
-  await page.route('**/api/v1/health-index/current', route => route.abort())
-  await page.goto('/trainee/dashboard')
+  await page.route('**/api/v1/check-ins/today', route => route.abort())
+  await page.goto('/trainee/today')
   await expect(page.getByRole('heading', { name: 'We could not load this page' })).toBeVisible()
   await expect(page.getByText(/entries remain on this page/i)).toBeVisible()
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()

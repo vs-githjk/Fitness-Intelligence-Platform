@@ -11,6 +11,8 @@ from app.domain.scoring import calculate_health_index
 from app.models import (
     AssessmentStatus,
     CoachTraineeAssignment,
+    DailyCheckIn,
+    DailyScoreSnapshot,
     HealthIndexSnapshot,
     OnboardingAssessment,
     RiskAlert,
@@ -205,6 +207,8 @@ def health_out(db: Session, snapshot: HealthIndexSnapshot) -> dict:
 
 
 def coach_trainee_summaries(db: Session, coach_id: uuid.UUID) -> list[dict]:
+    from app.daily_services import local_today
+
     trainees = db.scalars(
         select(User)
         .join(CoachTraineeAssignment, CoachTraineeAssignment.trainee_id == User.id)
@@ -218,10 +222,35 @@ def coach_trainee_summaries(db: Session, coach_id: uuid.UUID) -> list[dict]:
         profile = db.scalar(select(TraineeProfile).where(TraineeProfile.user_id == trainee.id))
         assessment = current_assessment(db, trainee.id)
         snapshot = current_snapshot(db, trainee.id)
-        alerts = (
+        baseline_alerts = (
             db.scalar(
                 select(func.count(RiskAlert.id)).where(
-                    RiskAlert.trainee_id == trainee.id, RiskAlert.status == "open"
+                    RiskAlert.trainee_id == trainee.id,
+                    RiskAlert.health_index_snapshot_id.is_not(None),
+                    RiskAlert.status == "open",
+                )
+            )
+            or 0
+        )
+        today, _timezone = local_today(db, trainee.id)
+        latest_check_in = db.scalar(
+            select(DailyCheckIn)
+            .where(DailyCheckIn.trainee_id == trainee.id)
+            .order_by(DailyCheckIn.local_date.desc())
+            .limit(1)
+        )
+        latest_daily_score = db.scalar(
+            select(DailyScoreSnapshot)
+            .where(DailyScoreSnapshot.trainee_id == trainee.id)
+            .order_by(DailyScoreSnapshot.local_date.desc())
+            .limit(1)
+        )
+        daily_alerts = (
+            db.scalar(
+                select(func.count(RiskAlert.id)).where(
+                    RiskAlert.trainee_id == trainee.id,
+                    RiskAlert.daily_score_snapshot_id.is_not(None),
+                    RiskAlert.status == "open",
                 )
             )
             or 0
@@ -237,7 +266,19 @@ def coach_trainee_summaries(db: Session, coach_id: uuid.UUID) -> list[dict]:
                 "current_score": snapshot.overall_score if snapshot else None,
                 "band": snapshot.interpretation_band if snapshot else None,
                 "baseline_calculated_at": snapshot.calculated_at if snapshot else None,
-                "open_alerts": alerts,
+                "open_alerts": baseline_alerts,
+                "latest_check_in_date": latest_check_in.local_date if latest_check_in else None,
+                "latest_check_in_at": latest_check_in.updated_at if latest_check_in else None,
+                "latest_readiness_score": (
+                    latest_daily_score.readiness_score if latest_daily_score else None
+                ),
+                "latest_readiness_state": (
+                    latest_daily_score.readiness_state if latest_daily_score else None
+                ),
+                "checked_in_today": bool(
+                    latest_check_in and latest_check_in.local_date == today
+                ),
+                "open_daily_alerts": daily_alerts,
             }
         )
     return results

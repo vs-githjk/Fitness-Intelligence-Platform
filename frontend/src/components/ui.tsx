@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import {
   ButtonHTMLAttributes,
+  forwardRef,
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
@@ -135,13 +136,13 @@ export function Field({ label, help, error, optional, children, id: providedId }
   )
 }
 
-export function TextInput({ className = '', ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={`control mt-1.5 w-full ${props['aria-invalid'] ? 'border-critical' : ''} ${className}`} {...props} />
-}
+export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function TextInput({ className = '', ...props }, ref) {
+  return <input ref={ref} className={`control mt-1.5 w-full ${props['aria-invalid'] ? 'border-critical' : ''} ${className}`} {...props} />
+})
 
-export function SelectInput({ className = '', children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select className={`control mt-1.5 w-full ${props['aria-invalid'] ? 'border-critical' : ''} ${className}`} {...props}>{children}</select>
-}
+export const SelectInput = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(function SelectInput({ className = '', children, ...props }, ref) {
+  return <select ref={ref} className={`control mt-1.5 w-full ${props['aria-invalid'] ? 'border-critical' : ''} ${className}`} {...props}>{children}</select>
+})
 
 export function SearchField({ value, onChange, label = 'Search' }: { value: string; onChange: (value: string) => void; label?: string }) {
   const id = useId()

@@ -1,6 +1,6 @@
 # Fitness Intelligence Platform
 
-A role-aware coaching application that turns a trainee's onboarding assessment into an explainable, deterministic baseline Health Index. The first milestone supports registration, coach assignment, draft onboarding, transactional submission, auditable score snapshots, deterministic review flags, and trainee/coach dashboards.
+A role-aware coaching application that combines an explainable baseline Health Index with deterministic daily recovery, activity, nutrition-compliance, readiness, and longitudinal trend intelligence.
 
 The platform supports coaching decisions. It does not diagnose, treat, or replace qualified medical care. The architecture is designed with a **HIPAA-ready design goal**, but code alone does not establish HIPAA or any other legal compliance.
 
@@ -16,7 +16,7 @@ database   PostgreSQL 16 (SQLite is used only by local unit/integration tests)
 
 The backend is a modular monolith. Route handlers handle HTTP concerns, services own transactions and authorization helpers, and `app/domain` contains deterministic functions without database or framework dependencies. Assessment submissions store the overall snapshot, each component input/contribution, recommendations, and separate risk-alert records. A uniqueness constraint on `(assessment_id, scoring_version)` protects submission idempotency.
 
-Important entities are `User`, `CoachProfile`, `TraineeProfile`, `CoachTraineeAssignment`, `OnboardingAssessment`, `HealthIndexSnapshot`, `ScoreComponentSnapshot`, and `RiskAlert`. UUID primary keys, foreign keys, uniqueness constraints, and query indexes are defined in the schema.
+Important entities include `OnboardingAssessment`, `HealthIndexSnapshot`, `DailyCheckIn`, `DailyScoreSnapshot`, `DailyScoreComponent`, and the shared `RiskAlert`. Daily records use typed queryable columns and a unique trainee/local-date constraint.
 
 ## Product experience
 
@@ -24,8 +24,8 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 
 - [Design system and interaction rules](docs/design-system.md)
 - [Desktop and mobile visual verification](docs/screenshots)
-- Trainee routes: onboarding, dashboard, coach relationship, and submitted-baseline review
-- Coach routes: roster overview, filtering and sorting, attention queue, and trainee detail
+- Trainee routes: Today, atomic daily check-in, Progress, onboarding, and baseline review
+- Coach routes: roster overview, daily completion/readiness review, longitudinal trainee detail, and baseline context
 
 ## Start with Docker
 
@@ -46,18 +46,19 @@ The backend container applies Alembic migrations and runs the idempotent demo se
 |---|---|---|
 | Trainee | `trainee@fitness.example.com` | `DemoPass123!` |
 | Coach | `coach@fitness.example.com` | `DemoPass123!` |
+| Trainee with no check-ins | `no-checkins@fitness.example.com` | `DemoPass123!` |
 
-New trainee registration uses invite code `FIT-DEMO-2026` by default. Self-registration never creates a coach account. The demo invite associates a trainee with the first seeded active coach; production invite-token hashing and lifecycle management are intentionally deferred.
+New trainee registration uses invite code `FIT-DEMO-2026` by default. The main trainee has deterministic synthetic daily history with a missing date, positive recovery, low readiness, and longitudinal alerts. The no-check-ins account demonstrates empty states.
 
 ## Manual smoke test
 
 1. Start Compose and wait until `docker compose ps` shows all three services healthy.
-2. Sign in as the demo trainee (or register another trainee with the demo invite).
-3. Select **Start onboarding**, complete each metric-unit step, and use **Save and continue**. Refresh after a save and confirm the draft resumes.
-4. Review and submit. Confirm the dashboard shows a 0–100 Health Index, band, ten component contributions, recommendations, and any review notices.
-5. Sign out and sign in as the coach.
-6. Confirm only assigned trainees appear; open the submitted trainee and compare the score and baseline date.
-7. Refresh both views. Then run `docker compose restart`, wait for healthy services, and confirm the same snapshot remains.
+2. Sign in as the demo trainee and open **Today**. Confirm Recovery, Activity, Nutrition, and Training Readiness are distinct from the Baseline Health Index.
+3. Open **Edit today**, change a value, submit, refresh, and confirm the same local-date record and recalculated score remain.
+4. Open **Progress**, switch between 7 and 30 days, and confirm the seeded missing date is a gap rather than zero.
+5. Sign in as the coach. Confirm today-completion, low-readiness, and daily-alert summaries appear.
+6. Open Arjun's record and review latest check-in data, daily trends, alerts, and the separate onboarding baseline. Confirm the coach cannot edit check-ins.
+7. Sign in as the no-check-ins trainee to verify empty states. Then run `docker compose restart`, wait for health, and confirm Arjun's edited check-in persists.
 
 ## Local development
 
@@ -116,6 +117,7 @@ cd ../frontend
 npm run typecheck
 npm run build
 npm run lint
+npm run test
 npm run test:e2e
 
 cd ..
@@ -129,7 +131,9 @@ docker compose up --build --wait
 - Trainee profile: `GET|PUT /api/v1/trainee/profile`
 - Onboarding: `GET|PUT /api/v1/assessments/onboarding`, `POST /submit`
 - Health Index: `GET /api/v1/health-index/current|history|{snapshot_id}`
-- Coach: `GET /api/v1/coach/trainees`, trainee detail/Health Index, and open risk alerts
+- Daily check-ins: `GET|PUT /api/v1/check-ins/today`, bounded history, and date detail
+- Daily intelligence: current score, bounded score history, and gap-aware trends under `/api/v1/daily-scores`
+- Coach: roster summaries, assignment-protected check-ins/scores/trends, baseline alerts, and daily alerts
 
 FastAPI publishes the exact OpenAPI contract at `/docs`. Coach endpoints enforce both role and active assignment; possession of a trainee UUID is insufficient.
 
@@ -145,7 +149,8 @@ This remains an early product. Before production use it needs TLS termination, m
 - Missing optional cardiovascular data receives a documented neutral-limited score rather than being silently ignored.
 - Calorie targets are entered/assigned; this milestone does not medically prescribe or estimate them.
 - The assessment payload is a validated JSON structure for flexibility; profile fields needed for querying are also typed columns.
-- Manual onboarding is the only health data provider.
-- Daily check-ins/history trends, workout and meal planning, wearables, notifications, messaging, exports, clinical reporting, and external AI narration are later milestones.
+- Manual onboarding and daily check-ins are the only health-data providers.
+- Check-in drafts and past-date corrections are not implemented; submission is atomic and only today's local-date record is editable.
+- Workout and meal planning, wearables, notifications, messaging, exports, clinical reporting, and external AI narration remain later milestones.
 
-See [Health Index v1](docs/scoring/health-index-v1.md) for exact formulas and [security notes](docs/security.md) for the threat-boundary summary.
+See [Health Index v1](docs/scoring/health-index-v1.md), [Daily Intelligence v1](docs/scoring/daily-intelligence-v1.md), and [security notes](docs/security.md).

@@ -1,10 +1,12 @@
 import enum
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import (
     JSON,
+    Boolean,
+    Date,
     DateTime,
     Enum,
     Float,
@@ -159,8 +161,11 @@ class RiskAlert(Base):
     trainee_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
-    health_index_snapshot_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("health_index_snapshots.id", ondelete="CASCADE"), index=True
+    health_index_snapshot_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("health_index_snapshots.id", ondelete="CASCADE"), index=True, nullable=True
+    )
+    daily_score_snapshot_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("daily_score_snapshots.id", ondelete="CASCADE"), index=True, nullable=True
     )
     rule_key: Mapped[str] = mapped_column(String(80))
     severity: Mapped[str] = mapped_column(String(30))
@@ -172,3 +177,94 @@ class RiskAlert(Base):
     rule_version: Mapped[str] = mapped_column(String(50))
     triggered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class DailyCheckIn(Base):
+    __tablename__ = "daily_check_ins"
+    __table_args__ = (
+        UniqueConstraint("trainee_id", "local_date", name="uq_daily_check_in_trainee_date"),
+        Index("ix_daily_check_in_trainee_date", "trainee_id", "local_date"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    trainee_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    local_date: Mapped[date] = mapped_column(Date)
+    timezone: Mapped[str] = mapped_column(String(80))
+    sleep_hours: Mapped[float] = mapped_column(Float)
+    sleep_quality: Mapped[int] = mapped_column(Integer)
+    wake_refreshed: Mapped[bool] = mapped_column(Boolean)
+    soreness: Mapped[int] = mapped_column(Integer)
+    fatigue: Mapped[int] = mapped_column(Integer)
+    stress: Mapped[int] = mapped_column(Integer)
+    steps: Mapped[int] = mapped_column(Integer)
+    exercised: Mapped[bool] = mapped_column(Boolean)
+    exercise_minutes: Mapped[int | None] = mapped_column(Integer)
+    session_rpe: Mapped[float | None] = mapped_column(Float)
+    activity_types: Mapped[list[str]] = mapped_column(JSON, default=list)
+    water_liters: Mapped[float] = mapped_column(Float)
+    calories_consumed: Mapped[float | None] = mapped_column(Float)
+    protein_grams: Mapped[float | None] = mapped_column(Float)
+    nutrition_adherence: Mapped[int | None] = mapped_column(Integer)
+    overall_feeling: Mapped[str] = mapped_column(String(30))
+    note: Mapped[str | None] = mapped_column(String(500))
+    submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+    score_snapshots: Mapped[list["DailyScoreSnapshot"]] = relationship(
+        back_populates="check_in", cascade="all, delete-orphan"
+    )
+
+
+class DailyScoreSnapshot(Base):
+    __tablename__ = "daily_score_snapshots"
+    __table_args__ = (
+        UniqueConstraint(
+            "daily_check_in_id", "scoring_version", name="uq_daily_score_check_in_version"
+        ),
+        Index("ix_daily_score_trainee_date", "trainee_id", "local_date"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    trainee_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    daily_check_in_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("daily_check_ins.id", ondelete="CASCADE"), index=True
+    )
+    local_date: Mapped[date] = mapped_column(Date)
+    recovery_score: Mapped[float] = mapped_column(Float)
+    activity_score: Mapped[float] = mapped_column(Float)
+    nutrition_score: Mapped[float | None] = mapped_column(Float)
+    readiness_score: Mapped[float] = mapped_column(Float)
+    readiness_state: Mapped[str] = mapped_column(String(40))
+    scoring_version: Mapped[str] = mapped_column(String(50))
+    calculation_payload: Mapped[dict[str, Any]] = mapped_column(JSON)
+    calculated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, index=True
+    )
+    check_in: Mapped[DailyCheckIn] = relationship(back_populates="score_snapshots")
+    components: Mapped[list["DailyScoreComponent"]] = relationship(
+        cascade="all, delete-orphan"
+    )
+
+
+class DailyScoreComponent(Base):
+    __tablename__ = "daily_score_components"
+    __table_args__ = (
+        UniqueConstraint(
+            "daily_score_snapshot_id", "component_key", name="uq_daily_score_component_key"
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    daily_score_snapshot_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("daily_score_snapshots.id", ondelete="CASCADE"), index=True
+    )
+    component_key: Mapped[str] = mapped_column(String(80))
+    normalized_score: Mapped[float] = mapped_column(Float)
+    weight: Mapped[float] = mapped_column(Float)
+    contribution: Mapped[float] = mapped_column(Float)
+    status: Mapped[str] = mapped_column(String(40))
+    explanation: Mapped[str] = mapped_column(Text)
+    input_snapshot: Mapped[dict[str, Any]] = mapped_column(JSON)

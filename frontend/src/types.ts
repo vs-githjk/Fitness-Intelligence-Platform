@@ -43,6 +43,9 @@ export interface TraineeSummary {
   trainee_id: string; name: string; email: string; assessment_status: string; current_score: number | null
   band: string | null; open_alerts: number; selected_goal?: string | null
   assessment_updated_at?: string | null; baseline_calculated_at?: string | null
+  latest_check_in_date?: string | null; latest_check_in_at?: string | null
+  latest_readiness_score?: number | null; latest_readiness_state?: string | null
+  checked_in_today: boolean; open_daily_alerts: number
 }
 export interface TraineeDetail {
   trainee: User; profile: Profile | null; assessment_status: string; assessment?: Assessment | null
@@ -54,4 +57,41 @@ export interface CoachAlert {
 }
 export interface CoachRelationship {
   assignment_status: string; coach_id?: string | null; coach_name?: string | null; coach_email?: string | null
+}
+
+export interface DailyCheckInData {
+  sleep_hours: number; sleep_quality: number; wake_refreshed: boolean
+  soreness: number; fatigue: number; stress: number; steps: number; exercised: boolean
+  exercise_minutes?: number | null; session_rpe?: number | null; activity_types: string[]
+  water_liters: number; calories_consumed?: number | null; protein_grams?: number | null
+  nutrition_adherence?: number | null; overall_feeling: 'very_poor' | 'poor' | 'okay' | 'good' | 'excellent'
+  note?: string | null
+}
+export interface DailyCheckIn extends DailyCheckInData {
+  id: string; trainee_id: string; local_date: string; timezone: string
+  submitted_at: string; created_at: string; updated_at: string
+}
+export interface DailyScoreComponent {
+  key: string; group: string; raw_inputs: Record<string, unknown>; normalized_score: number
+  weight: number; contribution: number; status: string; explanation: string; missing: boolean
+}
+export interface DailyScoreSummary {
+  id: string; trainee_id: string; daily_check_in_id: string; local_date: string
+  recovery_score: number; activity_score: number; nutrition_score: number | null
+  readiness_score: number; readiness_state: string; scoring_version: string; calculated_at: string
+}
+export interface DailyScore extends DailyScoreSummary {
+  components: DailyScoreComponent[]; missing_fields: string[]
+  recent_training_load: { window_days: number; daily_loads: number[]; total: number; tolerance_score: number }
+  risk_flags: RiskFlag[]; recommendations: Recommendation[]
+}
+export interface TrendPoint {
+  date: string; value: number | null; missing: boolean
+  rolling_average?: number | null; difference_from_previous?: number | null
+}
+export interface TrendSeries { key: string; label: string; unit: string; points: TrendPoint[] }
+export interface DailyTrends { start_date: string; end_date: string; timezone: string; series: TrendSeries[] }
+export interface DailyAlert extends CoachAlert {
+  daily_score_snapshot_id: string; rule_version: string; status: string
+  triggering_inputs: Record<string, unknown>; resolved_at?: string | null
 }

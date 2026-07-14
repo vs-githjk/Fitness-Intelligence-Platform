@@ -1,12 +1,30 @@
 import uuid
+from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.daily_services import (
+    bounded_dates,
+    build_trends,
+    check_in_history,
+    daily_score_out,
+    daily_score_summary,
+    latest_daily_score,
+    score_history,
+)
 from app.database import get_db
 from app.models import RiskAlert, TraineeProfile, User
-from app.schemas import CoachTraineeDetail, CoachTraineeSummary, HealthIndexOut
+from app.schemas import (
+    CoachTraineeDetail,
+    CoachTraineeSummary,
+    DailyCheckInOut,
+    DailyScoreOut,
+    DailyScoreSummaryOut,
+    DailyTrendsOut,
+    HealthIndexOut,
+)
 from app.security import require_coach
 from app.services import (
     assert_assignment,
@@ -67,7 +85,11 @@ def risk_alerts(coach: User = Depends(require_coach), db: Session = Depends(get_
     if not trainee_ids:
         return []
     alerts = db.scalars(
-        select(RiskAlert).where(RiskAlert.trainee_id.in_(trainee_ids), RiskAlert.status == "open")
+        select(RiskAlert).where(
+            RiskAlert.trainee_id.in_(trainee_ids),
+            RiskAlert.health_index_snapshot_id.is_not(None),
+            RiskAlert.status == "open",
+        )
     ).all()
     return [
         {
@@ -81,4 +103,97 @@ def risk_alerts(coach: User = Depends(require_coach), db: Session = Depends(get_
             "triggered_at": a.triggered_at,
         }
         for a in alerts
+    ]
+
+
+@router.get(
+    "/trainees/{trainee_id}/check-ins", response_model=list[DailyCheckInOut]
+)
+def trainee_check_ins(
+    trainee_id: uuid.UUID,
+    days: int = Query(default=7),
+    end_date: date | None = Query(default=None),
+    coach: User = Depends(require_coach),
+    db: Session = Depends(get_db),
+) -> list:
+    assert_assignment(db, coach.id, trainee_id)
+    start, end = bounded_dates(db, trainee_id, days, end_date)
+    return check_in_history(db, trainee_id, start, end)
+
+
+@router.get(
+    "/trainees/{trainee_id}/daily-scores", response_model=list[DailyScoreSummaryOut]
+)
+def trainee_daily_scores(
+    trainee_id: uuid.UUID,
+    days: int = Query(default=7),
+    end_date: date | None = Query(default=None),
+    coach: User = Depends(require_coach),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    assert_assignment(db, coach.id, trainee_id)
+    start, end = bounded_dates(db, trainee_id, days, end_date)
+    return [daily_score_summary(item) for item in score_history(db, trainee_id, start, end)]
+
+
+@router.get("/trainees/{trainee_id}/daily-score-latest", response_model=DailyScoreOut)
+def trainee_latest_daily_score(
+    trainee_id: uuid.UUID,
+    coach: User = Depends(require_coach),
+    db: Session = Depends(get_db),
+) -> dict:
+    assert_assignment(db, coach.id, trainee_id)
+    snapshot = latest_daily_score(db, trainee_id)
+    if snapshot is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "daily_score_missing", "message": "The trainee has no daily score"},
+        )
+    return daily_score_out(snapshot)
+
+
+@router.get("/trainees/{trainee_id}/trends", response_model=DailyTrendsOut)
+def trainee_trends(
+    trainee_id: uuid.UUID,
+    days: int = Query(default=7),
+    end_date: date | None = Query(default=None),
+    coach: User = Depends(require_coach),
+    db: Session = Depends(get_db),
+) -> dict:
+    assert_assignment(db, coach.id, trainee_id)
+    start, end = bounded_dates(db, trainee_id, days, end_date)
+    return build_trends(db, trainee_id, start, end)
+
+
+@router.get("/daily-alerts")
+def daily_alerts(
+    coach: User = Depends(require_coach), db: Session = Depends(get_db)
+) -> list[dict]:
+    trainee_ids = [item["trainee_id"] for item in coach_trainee_summaries(db, coach.id)]
+    if not trainee_ids:
+        return []
+    alerts = db.scalars(
+        select(RiskAlert).where(
+            RiskAlert.trainee_id.in_(trainee_ids),
+            RiskAlert.daily_score_snapshot_id.is_not(None),
+            RiskAlert.status == "open",
+        )
+    ).all()
+    return [
+        {
+            "id": item.id,
+            "trainee_id": item.trainee_id,
+            "daily_score_snapshot_id": item.daily_score_snapshot_id,
+            "rule_key": item.rule_key,
+            "rule_version": item.rule_version,
+            "severity": item.severity,
+            "status": item.status,
+            "title": item.title,
+            "explanation": item.explanation,
+            "recommended_action": item.recommended_action,
+            "triggering_inputs": item.input_snapshot,
+            "triggered_at": item.triggered_at,
+            "resolved_at": item.resolved_at,
+        }
+        for item in alerts
     ]
