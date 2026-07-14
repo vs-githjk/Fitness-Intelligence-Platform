@@ -176,9 +176,12 @@ class CoachTraineeSummary(BaseModel):
     trainee_id: uuid.UUID
     name: str
     email: str
+    selected_goal: Goal | None
     assessment_status: str
+    assessment_updated_at: datetime | None
     current_score: float | None
     band: str | None
+    baseline_calculated_at: datetime | None
     open_alerts: int
 
 
@@ -186,7 +189,15 @@ class CoachTraineeDetail(BaseModel):
     trainee: UserOut
     profile: ProfileOut | None
     assessment_status: str
+    assessment: AssessmentOut | None
     health_index: HealthIndexOut | None
+
+
+class TraineeCoachOut(BaseModel):
+    assignment_status: str
+    coach_id: uuid.UUID | None = None
+    coach_name: str | None = None
+    coach_email: EmailStr | None = None
 
 
 class ErrorDetail(BaseModel):

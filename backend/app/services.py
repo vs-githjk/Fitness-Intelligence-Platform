@@ -215,6 +215,7 @@ def coach_trainee_summaries(db: Session, coach_id: uuid.UUID) -> list[dict]:
     ).all()
     results = []
     for trainee in trainees:
+        profile = db.scalar(select(TraineeProfile).where(TraineeProfile.user_id == trainee.id))
         assessment = current_assessment(db, trainee.id)
         snapshot = current_snapshot(db, trainee.id)
         alerts = (
@@ -230,9 +231,12 @@ def coach_trainee_summaries(db: Session, coach_id: uuid.UUID) -> list[dict]:
                 "trainee_id": trainee.id,
                 "name": f"{trainee.first_name} {trainee.last_name}",
                 "email": trainee.email,
+                "selected_goal": profile.selected_goal if profile else None,
                 "assessment_status": assessment.status.value if assessment else "not_started",
+                "assessment_updated_at": assessment.updated_at if assessment else None,
                 "current_score": snapshot.overall_score if snapshot else None,
                 "band": snapshot.interpretation_band if snapshot else None,
+                "baseline_calculated_at": snapshot.calculated_at if snapshot else None,
                 "open_alerts": alerts,
             }
         )

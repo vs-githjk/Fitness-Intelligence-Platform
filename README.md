@@ -18,6 +18,15 @@ The backend is a modular monolith. Route handlers handle HTTP concerns, services
 
 Important entities are `User`, `CoachProfile`, `TraineeProfile`, `CoachTraineeAssignment`, `OnboardingAssessment`, `HealthIndexSnapshot`, `ScoreComponentSnapshot`, and `RiskAlert`. UUID primary keys, foreign keys, uniqueness constraints, and query indexes are defined in the schema.
 
+## Product experience
+
+The responsive interface uses role-specific navigation, reusable semantic components, accessible form feedback, resumable onboarding, explainable Health Index contributions, and a coach attention queue that transforms from a table to cards on smaller screens. The UI intentionally avoids diagnosis or treatment claims.
+
+- [Design system and interaction rules](docs/design-system.md)
+- [Desktop and mobile visual verification](docs/screenshots)
+- Trainee routes: onboarding, dashboard, coach relationship, and submitted-baseline review
+- Coach routes: roster overview, filtering and sorting, attention queue, and trainee detail
+
 ## Start with Docker
 
 1. Copy the example environment and replace development secrets for any shared environment:
@@ -27,7 +36,7 @@ Important entities are `User`, `CoachProfile`, `TraineeProfile`, `CoachTraineeAs
    docker compose up --build
    ```
 
-2. Open the frontend at <http://localhost:5173>, API docs at <http://localhost:8000/docs>, or health endpoint at <http://localhost:8000/health>.
+2. Open the frontend at <http://localhost:5175>, API docs at <http://localhost:8000/docs>, or health endpoint at <http://localhost:8000/health>.
 
 The backend container applies Alembic migrations and runs the idempotent demo seed before starting. PostgreSQL data lives in the named `fitness_postgres` volume and survives ordinary container restarts. `docker compose down -v` intentionally deletes that data.
 
@@ -44,7 +53,7 @@ New trainee registration uses invite code `FIT-DEMO-2026` by default. Self-regis
 
 1. Start Compose and wait until `docker compose ps` shows all three services healthy.
 2. Sign in as the demo trainee (or register another trainee with the demo invite).
-3. Select **Start onboarding**, complete each metric-unit step, and use **Save & next**. Refresh after a save and confirm the draft resumes.
+3. Select **Start onboarding**, complete each metric-unit step, and use **Save and continue**. Refresh after a save and confirm the draft resumes.
 4. Review and submit. Confirm the dashboard shows a 0–100 Health Index, band, ten component contributions, recommendations, and any review notices.
 5. Sign out and sign in as the coach.
 6. Confirm only assigned trainees appear; open the submitted trainee and compare the score and baseline date.
@@ -107,6 +116,7 @@ cd ../frontend
 npm run typecheck
 npm run build
 npm run lint
+npm run test:e2e
 
 cd ..
 docker compose config

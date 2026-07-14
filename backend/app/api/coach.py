@@ -10,6 +10,7 @@ from app.schemas import CoachTraineeDetail, CoachTraineeSummary, HealthIndexOut
 from app.security import require_coach
 from app.services import (
     assert_assignment,
+    assessment_out,
     coach_trainee_summaries,
     current_assessment,
     current_snapshot,
@@ -41,6 +42,7 @@ def trainee_detail(
         "trainee": trainee,
         "profile": profile,
         "assessment_status": assessment.status.value if assessment else "not_started",
+        "assessment": assessment_out(assessment) if assessment else None,
         "health_index": health_out(db, snapshot) if snapshot else None,
     }
 

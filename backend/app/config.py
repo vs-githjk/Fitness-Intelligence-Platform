@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./fitness.db"
     jwt_secret: str = Field(default="local-development-secret-change-me-123456", min_length=32)
     access_token_minutes: int = 480
-    cors_origins: list[str] | str = ["http://localhost:5173"]
+    cors_origins: list[str] | str = ["http://localhost:5175"]
     demo_invite_code: str = "FIT-DEMO-2026"
 
     @field_validator("cors_origins", mode="before")

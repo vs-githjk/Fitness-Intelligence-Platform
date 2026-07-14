@@ -20,6 +20,15 @@ def test_full_registration_assessment_and_authorization_flow(client: TestClient,
     trainee_token = registered.json()["access_token"]
     trainee_id = registered.json()["user"]["id"]
 
+    coach_relationship = client.get("/api/v1/trainee/coach", headers=auth(trainee_token))
+    assert coach_relationship.status_code == 200
+    assert coach_relationship.json() == {
+        "assignment_status": "active",
+        "coach_id": coach_relationship.json()["coach_id"],
+        "coach_name": "Test Coach",
+        "coach_email": "coach@example.com",
+    }
+
     assert client.get("/api/v1/coach/trainees", headers=auth(trainee_token)).status_code == 403
     saved = client.put("/api/v1/assessments/onboarding", headers=auth(trainee_token), json={"responses": complete_assessment})
     assert saved.status_code == 200, saved.text
@@ -41,7 +50,17 @@ def test_full_registration_assessment_and_authorization_flow(client: TestClient,
     roster = client.get("/api/v1/coach/trainees", headers=auth(coach_token))
     assert roster.status_code == 200
     assert [item["trainee_id"] for item in roster.json()] == [trainee_id]
-    assert client.get(f"/api/v1/coach/trainees/{trainee_id}", headers=auth(coach_token)).status_code == 200
+    summary = roster.json()[0]
+    assert summary["selected_goal"] == "general_health"
+    assert summary["assessment_updated_at"] is not None
+    assert summary["baseline_calculated_at"] is not None
+    detail = client.get(f"/api/v1/coach/trainees/{trainee_id}", headers=auth(coach_token))
+    assert detail.status_code == 200
+    assert detail.json()["assessment"]["id"] == saved.json()["id"]
+    assert detail.json()["assessment"]["status"] == "submitted"
+    assert detail.json()["assessment"]["responses"]["selected_goal"] == "general_health"
+
+    assert client.get("/api/v1/trainee/coach", headers=auth(coach_token)).status_code == 403
 
     other_token = login(client, "other@example.com", "OtherPass123!")
     forbidden = client.get(f"/api/v1/coach/trainees/{trainee_id}", headers=auth(other_token))
