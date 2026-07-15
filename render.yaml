@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+services:
+  - type: web
+    name: fitness-intelligence-api-staging
+    runtime: docker
+    plan: starter
+    region: singapore
+    branch: main
+    autoDeployTrigger: checksPass
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    preDeployCommand: alembic upgrade head
+    healthCheckPath: /health/ready
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fitness-intelligence-db-staging
+          property: connectionString
+      - key: MIGRATION_DATABASE_URL
+        fromDatabase:
+          name: fitness-intelligence-db-staging
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ACCESS_TOKEN_MINUTES
+        value: 60
+      - key: CORS_ORIGINS
+        sync: false
+      - key: TRUSTED_HOSTS
+        sync: false
+      - key: DEMO_INVITE_CODE
+        generateValue: true
+      - key: SEED_DEMO_DATA
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: API_DOCS_ENABLED
+        value: false
+      - key: DATABASE_SSLMODE
+        value: require
+      - key: DATABASE_POOL_SIZE
+        value: 5
+      - key: DATABASE_MAX_OVERFLOW
+        value: 5
+      - key: DATABASE_POOL_TIMEOUT
+        value: 30
+      - key: DATABASE_POOL_RECYCLE
+        value: 1800
+      - key: DATABASE_CONNECT_TIMEOUT
+        value: 5
+      - key: PYTHONUNBUFFERED
+        value: 1
+
+databases:
+  - name: fitness-intelligence-db-staging
+    databaseName: fitness_staging
+    user: fitness_staging
+    plan: basic-256mb
+    region: singapore
+    postgresMajorVersion: "16"
+    ipAllowList: []

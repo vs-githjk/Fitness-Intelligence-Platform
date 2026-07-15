@@ -1,9 +1,20 @@
 FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 WORKDIR /app
+
 COPY pyproject.toml .
-RUN pip install --no-cache-dir .
-COPY alembic.ini .
-COPY alembic ./alembic
 COPY app ./app
-COPY scripts ./scripts
-CMD ["sh", "-c", "alembic upgrade head && python -m scripts.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+RUN pip install --no-cache-dir . \
+    && addgroup --system app \
+    && adduser --system --ingroup app --home /app app
+
+COPY --chown=app:app alembic.ini .
+COPY --chown=app:app alembic ./alembic
+COPY --chown=app:app scripts ./scripts
+
+USER app
+
+CMD ["python", "-m", "scripts.start"]

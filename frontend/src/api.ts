@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
+import { appConfig } from './env'
+
+const API_URL = appConfig.apiUrl
 
 export class ApiError extends Error {
   constructor(public status: number, public details: { code?: string; message?: string; fields?: Record<string, string> }) {
@@ -24,7 +26,8 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
     const details = body.error ?? body.detail ?? { message: 'The request could not be completed. Please try again.' }
-    if (response.status === 401 && token) {
+    const isPublicAuthRequest = path === '/auth/login' || path === '/auth/register'
+    if (response.status === 401 && !isPublicAuthRequest) {
       localStorage.removeItem('access_token')
       localStorage.removeItem('user')
       window.dispatchEvent(new CustomEvent('session-expired'))

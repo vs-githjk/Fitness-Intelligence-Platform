@@ -3,6 +3,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 
+from app.config import AppEnvironment, Settings, settings
 from app.daily_services import calculate_and_store_daily_score, get_check_in, local_today
 from app.database import SessionLocal
 from app.models import (
@@ -61,7 +62,7 @@ BASELINE = {
 }
 
 DAILY_VALUES = [
-    # oldest to newest; the four-day gap demonstrates a visibly missing date
+    # Oldest to newest; offset four is intentionally missing.
     (7, 8.0, 3, 2, 9000, True, 45, 6, 2.6, "good"),
     (6, 8.3, 2, 2, 11000, True, 55, 7, 2.8, "excellent"),
     (5, 7.6, 4, 3, 8000, False, None, None, 2.4, "good"),
@@ -72,7 +73,15 @@ DAILY_VALUES = [
 ]
 
 
+def ensure_seed_allowed(config: Settings = settings) -> None:
+    if not config.seed_demo_data:
+        raise RuntimeError("Demo seeding is disabled; set SEED_DEMO_DATA=true explicitly")
+    if config.app_env is AppEnvironment.PRODUCTION:
+        raise RuntimeError("Demo seeding is not allowed in production")
+
+
 def seed() -> None:
+    ensure_seed_allowed()
     with SessionLocal() as db:
         coach = db.scalar(select(User).where(User.email == COACH_EMAIL))
         if coach is None:

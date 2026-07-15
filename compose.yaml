@@ -1,3 +1,23 @@
+x-backend-environment: &backend-environment
+  APP_ENV: ${APP_ENV:-local}
+  DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://fitness:fitness_dev_password@db:5432/fitness}
+  MIGRATION_DATABASE_URL: ${MIGRATION_DATABASE_URL:-postgresql+psycopg://fitness:fitness_dev_password@db:5432/fitness}
+  JWT_SECRET: ${JWT_SECRET:-local-development-secret-change-me-123456}
+  ACCESS_TOKEN_MINUTES: ${ACCESS_TOKEN_MINUTES:-480}
+  CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5175}
+  TRUSTED_HOSTS: ${TRUSTED_HOSTS:-localhost,127.0.0.1,backend}
+  DEMO_INVITE_CODE: ${DEMO_INVITE_CODE:-FIT-DEMO-2026}
+  SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  API_DOCS_ENABLED: ${API_DOCS_ENABLED:-true}
+  PORT: 8000
+  DATABASE_SSLMODE: ${DATABASE_SSLMODE:-disable}
+  DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-5}
+  DATABASE_MAX_OVERFLOW: ${DATABASE_MAX_OVERFLOW:-5}
+  DATABASE_POOL_TIMEOUT: ${DATABASE_POOL_TIMEOUT:-30}
+  DATABASE_POOL_RECYCLE: ${DATABASE_POOL_RECYCLE:-1800}
+  DATABASE_CONNECT_TIMEOUT: ${DATABASE_CONNECT_TIMEOUT:-5}
+
 services:
   db:
     image: postgres:16-alpine
@@ -15,30 +35,45 @@ services:
 
   backend:
     build: ./backend
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://fitness:fitness_dev_password@db:5432/fitness}
-      JWT_SECRET: ${JWT_SECRET:-local-development-secret-change-me-123456}
-      ACCESS_TOKEN_MINUTES: ${ACCESS_TOKEN_MINUTES:-480}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5175}
-      DEMO_INVITE_CODE: ${DEMO_INVITE_CODE:-FIT-DEMO-2026}
+    environment: *backend-environment
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready')"]
       interval: 10s
       timeout: 5s
       retries: 10
+
+  migrate:
+    profiles: ["tools"]
+    build: ./backend
+    command: ["alembic", "upgrade", "head"]
+    environment: *backend-environment
+    depends_on:
+      db:
+        condition: service_healthy
+
+  seed:
+    profiles: ["tools"]
+    build: ./backend
+    command: ["python", "-m", "scripts.seed"]
+    environment: *backend-environment
+    depends_on:
+      db:
+        condition: service_healthy
 
   frontend:
     build:
       context: ./frontend
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api/v1}
+        VITE_APP_ENV: ${VITE_APP_ENV:-local}
+        VITE_APP_VERSION: ${VITE_APP_VERSION:-0.3.0}
     ports:
-      - "5175:80"
+      - "127.0.0.1:5175:80"
     depends_on:
       backend:
         condition: service_healthy

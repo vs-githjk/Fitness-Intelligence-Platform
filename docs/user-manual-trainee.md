@@ -507,7 +507,7 @@ The service also authorizes the assigned coach to retrieve the underlying date-b
 
 Coaches have read-only daily endpoints in the current implementation. They cannot edit your check-ins, change your submitted assessment, write a note into your record, resolve alerts through the interface, assign a workout, or send a message.
 
-Authentication currently stores an expiring access token in browser local storage. This is a local-development design and requires further security hardening for production use. The repository does not claim HIPAA, GDPR, or other legal compliance. See [Security and compliance notes](security.md) for the implemented controls and known production gaps.
+Authentication currently stores an expiring access token in browser local storage. This current-milestone design may be used only with synthetic data in staging and requires further security hardening for production use. The repository does not claim HIPAA, GDPR, or other legal compliance. See [Security and compliance notes](security.md) for the implemented controls and known production gaps.
 
 ## 13. Sign out and handle session expiry
 

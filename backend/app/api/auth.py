@@ -54,7 +54,11 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> dict:
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)) -> dict:
     user = db.scalar(select(User).where(User.email == body.email.lower()))
-    if user is None or not verify_password(body.password, user.password_hash):
+    if (
+        user is None
+        or not verify_password(body.password, user.password_hash)
+        or user.status != "active"
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": "invalid_credentials", "message": "Email or password is incorrect"},

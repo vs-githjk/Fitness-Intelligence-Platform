@@ -132,7 +132,7 @@ No. Coaches currently have read-only review access. Workout programming and nutr
 
 ### Can I close Docker?
 
-Yes. Stopping Compose or quitting Docker Desktop stops the running application but does not intentionally delete the named PostgreSQL volume. Start Docker again and run `docker compose up --build --wait` from the repository root. Never add `-v` if you want to retain the database.
+Yes. Stopping Compose or quitting Docker Desktop stops the running application but does not intentionally delete the named PostgreSQL volume. Start Docker again and run `docker compose up --wait` from the repository root. Never add `-v` if you want to retain the database.
 
 ### What deletes local Docker data?
 
@@ -141,12 +141,12 @@ Yes. Stopping Compose or quitting Docker Desktop stops the running application b
 ### What URLs should I use?
 
 - Docker frontend: <http://localhost:5175>
-- Local Vite frontend at its default port: <http://localhost:5173>
+- Local Vite frontend: <http://localhost:5175>
 - API: <http://localhost:8000>
 - OpenAPI: <http://localhost:8000/docs>
 - Health check: <http://localhost:8000/health>
 
-Docker and local Vite use different frontend ports. The backend defaults to allowing browser requests from port 5175; see the troubleshooting guide when using Vite on 5173.
+Docker and local Vite use the same frontend port, so run only one of them at a time. The backend defaults to allowing browser requests from port 5175.
 
 ### Is the repository HIPAA or GDPR compliant?
 

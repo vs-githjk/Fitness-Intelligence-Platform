@@ -1,7 +1,7 @@
 import { expect, Page, request, test } from '@playwright/test'
 import path from 'node:path'
+import { apiUrl } from './config'
 
-const apiUrl = 'http://localhost:8000/api/v1'
 const screenshots = path.resolve('../docs/screenshots')
 
 async function signIn(email: string, password = 'DemoPass123!') {

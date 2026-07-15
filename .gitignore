@@ -1,4 +1,8 @@
 .env
+.env.*
+!.env.example
+.vercel/
+.render/
 .venv/
 __pycache__/
 *.py[cod]

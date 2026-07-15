@@ -1,4 +1,8 @@
 from fastapi.testclient import TestClient
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.models import User
 
 
 def login(client: TestClient, email: str, password: str) -> str:
@@ -78,3 +82,16 @@ def test_incomplete_submission_returns_field_errors(client: TestClient) -> None:
     submitted = client.post("/api/v1/assessments/onboarding/submit", headers=headers)
     assert submitted.status_code == 422
     assert "weight_kg" in submitted.json()["detail"]["fields"]
+
+
+def test_inactive_account_cannot_login(client: TestClient, db: Session) -> None:
+    user = db.scalar(select(User).where(User.email == "coach@example.com"))
+    assert user is not None
+    user.status = "inactive"
+    db.commit()
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "coach@example.com", "password": "CoachPass123!"},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"]["code"] == "invalid_credentials"

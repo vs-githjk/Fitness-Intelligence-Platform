@@ -12,11 +12,43 @@ interface AuthContextValue {
 }
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+function clearStoredSession(storage: Storage): void {
+  storage.removeItem('access_token')
+  storage.removeItem('user')
+}
+
+function isUser(value: unknown): value is User {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<User>
+  return typeof candidate.id === 'string'
+    && typeof candidate.email === 'string'
+    && typeof candidate.first_name === 'string'
+    && typeof candidate.last_name === 'string'
+    && (candidate.role === 'coach' || candidate.role === 'trainee')
+}
+
+export function loadStoredUser(storage: Storage): User | null {
+  try {
+    const token = storage.getItem('access_token')
+    const rawUser = storage.getItem('user')
+    if (!token || !rawUser) {
+      clearStoredSession(storage)
+      return null
+    }
+    const parsed: unknown = JSON.parse(rawUser)
+    if (!isUser(parsed)) {
+      clearStoredSession(storage)
+      return null
+    }
+    return parsed
+  } catch {
+    clearStoredSession(storage)
+    return null
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    try { return JSON.parse(localStorage.getItem('user') ?? 'null') }
-    catch { return null }
-  })
+  const [user, setUser] = useState<User | null>(() => loadStoredUser(localStorage))
   const [sessionMessage, setSessionMessage] = useState('')
 
   useEffect(() => {
@@ -36,8 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     clearSessionMessage() { setSessionMessage('') },
     logout() {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('user')
+      clearStoredSession(localStorage)
       setUser(null)
     },
   }), [sessionMessage, user])

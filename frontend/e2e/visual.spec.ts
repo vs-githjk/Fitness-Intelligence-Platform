@@ -1,7 +1,7 @@
 import { expect, Page, request, test } from '@playwright/test'
 import path from 'node:path'
+import { apiUrl } from './config'
 
-const apiUrl = 'http://localhost:8000/api/v1'
 const screenshots = path.resolve('../docs/screenshots')
 const baseline = {
   age: 30, height_cm: 175, weight_kg: 75, selected_goal: 'general_health', target_weight_kg: 72,

@@ -1,8 +1,8 @@
 import { expect, Page, request, test } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
+import { apiUrl } from './config'
 
-const apiUrl = 'http://localhost:8000/api/v1'
 const screenshots = path.resolve('../docs/screenshots/manual')
 
 mkdirSync(screenshots, { recursive: true })

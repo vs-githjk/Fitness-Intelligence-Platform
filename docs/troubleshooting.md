@@ -78,10 +78,13 @@ Refresh the page at normal browser zoom and use a current browser. The supported
 
 ## Start and inspect the Docker application
 
-Build and wait for health checks:
+Build, migrate, explicitly seed the local demo, and wait for health checks:
 
 ```bash
-docker compose up --build --wait
+docker compose build
+docker compose --profile tools run --rm migrate
+docker compose --profile tools run --rm seed
+docker compose up --wait
 docker compose ps
 ```
 
@@ -91,7 +94,7 @@ The expected URLs are:
 - API documentation: <http://localhost:8000/docs>
 - Backend health: <http://localhost:8000/health>
 
-All three Compose services should become healthy. The backend applies Alembic migrations and runs the demo seed before it starts serving requests.
+All three long-running Compose services should become healthy. Migration and synthetic seeding are separate one-off commands and never run in a web replica's startup.
 
 Useful read-only diagnostics are:
 
@@ -106,7 +109,7 @@ Avoid pasting logs into public channels if they contain environment-specific or 
 
 ### Missing `.env`
 
-Compose has local fallback values, so the demo can start without `.env`. For a deliberate local configuration, copy `.env.example` to `.env` and replace development secrets as appropriate. Never commit `.env` or real credentials.
+Compose has local fallback values, so the demo can start without `.env`. If you maintain a personal `.env`, update it yourself using `.env.example` as the contract and use only development values. Never commit `.env` or real credentials.
 
 ### Missing or invalid `JWT_SECRET`
 
@@ -118,7 +121,7 @@ Run `docker compose ps` and inspect `docker compose logs db`. The backend waits 
 
 ### Migration failure
 
-Inspect `docker compose logs backend`. The backend runs `alembic upgrade head` before seeding or serving traffic. Preserve the database volume before attempting a destructive recovery. The active expected revision for this release is `20260714_0002`.
+Rerun `docker compose --profile tools run --rm migrate` and inspect that command's output. Preserve the database volume before attempting a destructive recovery. The active expected revision for this release is `20260714_0002`.
 
 ### Frontend cannot reach the backend
 
@@ -126,7 +129,7 @@ Confirm <http://localhost:8000/health> responds, then verify that the built fron
 
 ### Seed data is missing
 
-Inspect backend startup logs. The seed runs after migrations and before Uvicorn. It creates the three documented local accounts only when they do not already exist. On a persistent volume, existing user data is preserved rather than replaced.
+Run `docker compose --profile tools run --rm seed` after a successful migration and inspect that command's output. The command is gated to an explicitly enabled synthetic-data environment and is forbidden in production. It creates the three documented local accounts only when they do not already exist. On a persistent volume, existing user data is preserved rather than replaced.
 
 ## Docker is unavailable
 
@@ -159,45 +162,22 @@ docker compose up --build --wait
 
 ## Frontend ports and CORS
 
-Docker and local frontend development intentionally use different default ports:
+Docker and local frontend development both use port 5175:
 
 - Compose publishes nginx at `http://localhost:5175`.
-- `npm run dev` uses Vite's default `http://localhost:5173` because no custom development port is configured.
+- `npm run dev` starts Vite at `http://localhost:5175`.
 - The backend's current default CORS allowlist contains `http://localhost:5175`.
 
-Therefore, starting the backend with defaults and Vite on 5173 can load the page but cause browser API requests to fail with a CORS error.
-
-Use one of these local-development arrangements.
-
-### Option 1: run Vite on the allowed port
-
-Ensure Compose frontend is not already using port 5175, then run:
+Do not run the Compose frontend and local Vite simultaneously. Stop the Compose frontend before starting Vite:
 
 ```bash
+docker compose stop frontend
 cd frontend
-npm install
-npm run dev -- --port 5175
-```
-
-Open <http://localhost:5175>.
-
-### Option 2: allow the default Vite origin for that backend process
-
-From the repository's `backend` directory, start the backend with the local Vite origin explicitly allowed:
-
-```bash
-CORS_ORIGINS=http://localhost:5173 DATABASE_URL=sqlite:///./fitness.db ../.venv/bin/uvicorn app.main:app --reload
-```
-
-In another terminal:
-
-```bash
-cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-Open <http://localhost:5173>. The frontend already defaults its API base to `http://localhost:8000/api/v1`.
+Open <http://localhost:5175>.
 
 Do not solve a CORS error by disabling browser security or using an unrestricted production allowlist.
 
@@ -217,7 +197,7 @@ Confirm that the backend health endpoint responds and use the exact local creden
 - Trainee: `trainee@fitness.example.com` / `DemoPass123!`
 - No-check-ins trainee: `no-checkins@fitness.example.com` / `DemoPass123!`
 
-The seed runs at backend container startup. Check `docker compose logs backend` for migration or seed failure.
+The seed is explicit. Run `docker compose --profile tools run --rm seed` and inspect its output if these accounts are missing.
 
 ### “Session ended” appears
 
@@ -273,10 +253,13 @@ Use a reset only when losing all local Docker data is acceptable:
 
 ```bash
 docker compose down -v
-docker compose up --build --wait
+docker compose build
+docker compose --profile tools run --rm migrate
+docker compose --profile tools run --rm seed
+docker compose up --wait
 ```
 
-The first command permanently removes this Compose project's database volume. Startup recreates the schema and demo seed, but it cannot recover accounts or edits that existed only in the deleted volume.
+The first command permanently removes this Compose project's database volume. Re-run the explicit migrate and seed commands before startup; they cannot recover accounts or edits that existed only in the deleted volume.
 
 The seed is idempotent for records that already exist on a given date. As calendar dates advance, it can add newly shifted synthetic daily-history records; it is not a frozen backup.
 
@@ -305,7 +288,7 @@ npm run test
 End-to-end tests require the Docker frontend at 5175, the API at 8000, and an installed Chrome channel. The Playwright configuration does not start those services:
 
 ```bash
-docker compose up --build --wait
+docker compose up --wait
 cd frontend
 npm run test:e2e
 ```

@@ -40,19 +40,27 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 - [Security and compliance notes](docs/security.md)
 - [Design system](docs/design-system.md)
 - [User-manual screenshot index](docs/screenshots/manual/README.md)
+- [Staging deployment runbook](docs/deployment/staging.md)
+- [Production-readiness checklist](docs/deployment/production-readiness.md)
+- [Private-beta plan](docs/testing/private-beta-plan.md)
+- [Roadmap](docs/roadmap.md)
 
 ## Start with Docker
 
-1. Copy the example environment and replace development secrets for any shared environment:
+1. Build the images, apply migrations, and explicitly load the synthetic local demo:
 
    ```bash
-   cp .env.example .env
-   docker compose up --build
+   docker compose build
+   docker compose --profile tools run --rm migrate
+   docker compose --profile tools run --rm seed
+   docker compose up --wait
    ```
 
 2. Open the frontend at <http://localhost:5175>, API docs at <http://localhost:8000/docs>, or health endpoint at <http://localhost:8000/health>.
 
-The backend container applies Alembic migrations and runs the same-day idempotent demo seed before starting. Because daily history is relative to the current local date, starting on a later date can add the next set of dated demo records. PostgreSQL data lives in the named `fitness_postgres` volume and survives ordinary container restarts. `docker compose down -v` intentionally deletes that data.
+Migration, seed, and web startup are separate commands. The seed refuses to run unless a synthetic-data environment explicitly allows it; production always rejects it, and it is never part of a web replica's startup. Because daily history is relative to the current local date, seeding on a later date can add the next set of dated demo records. PostgreSQL data lives in the named `fitness_postgres` volume and survives ordinary container restarts. `docker compose down -v` intentionally deletes that data.
+
+Compose has safe local-development fallbacks. If you maintain a personal `.env`, update it yourself from `.env.example`; never commit it or reuse local values in staging.
 
 ## Demo identities
 
@@ -83,15 +91,15 @@ python3 -m venv .venv
 .venv/bin/pip install -e 'backend[dev]'
 cd backend
 DATABASE_URL=sqlite:///./fitness.db ../.venv/bin/alembic upgrade head
-DATABASE_URL=sqlite:///./fitness.db ../.venv/bin/python -m scripts.seed
+APP_ENV=local SEED_DEMO_DATA=true DATABASE_URL=sqlite:///./fitness.db ../.venv/bin/python -m scripts.seed
 DATABASE_URL=sqlite:///./fitness.db ../.venv/bin/uvicorn app.main:app --reload
 ```
 
-Frontend (Node 22+):
+Frontend (Node 22.12+):
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -100,11 +108,21 @@ npm run dev
 | Variable | Purpose |
 |---|---|
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Compose database initialization |
+| `APP_ENV` | Runtime policy: `local`, `staging`, or `production` |
 | `DATABASE_URL` | SQLAlchemy connection string |
+| `MIGRATION_DATABASE_URL` | Optional direct database URL used only by Alembic |
 | `JWT_SECRET` | HS256 signing secret, minimum 32 characters |
 | `ACCESS_TOKEN_MINUTES` | Access-token lifetime |
 | `CORS_ORIGINS` | Comma-separated allowed browser origins |
+| `TRUSTED_HOSTS` | Comma-separated API hostnames accepted by the backend |
+| `API_DOCS_ENABLED` | Enables `/docs`, `/redoc`, and `/openapi.json` when appropriate |
+| `SEED_DEMO_DATA` | Explicit one-off synthetic seed gate; production always rejects it |
+| `LOG_LEVEL` | Backend stdout log level |
+| `PORT` | Backend listener port; Render supplies this automatically |
+| `DATABASE_SSLMODE`, `DATABASE_POOL_SIZE`, `DATABASE_MAX_OVERFLOW`, `DATABASE_POOL_TIMEOUT`, `DATABASE_POOL_RECYCLE`, `DATABASE_CONNECT_TIMEOUT` | Database TLS and conservative SQLAlchemy connection controls |
 | `VITE_API_URL` | Browser-visible versioned API base URL |
+| `VITE_APP_ENV` | Browser-visible environment label (`local`, `staging`, or `production`) |
+| `VITE_APP_VERSION` | Browser-visible release metadata |
 | `DEMO_INVITE_CODE` | Local first-milestone coach invite |
 
 Never commit a real `.env` or production secret.
@@ -115,7 +133,7 @@ Never commit a real `.env` or production secret.
 cd backend
 ../.venv/bin/alembic upgrade head
 ../.venv/bin/alembic downgrade -1
-../.venv/bin/python -m scripts.seed
+APP_ENV=local SEED_DEMO_DATA=true ../.venv/bin/python -m scripts.seed
 ```
 
 The migration history can recreate a clean schema. Production deployments should use a managed PostgreSQL backup/restore policy and run migrations as a separate release step rather than in every web replica.
@@ -136,8 +154,11 @@ npm run test
 npm run test:e2e
 
 cd ..
-docker compose config
-docker compose up --build --wait
+docker compose --env-file .env.example config
+docker compose build
+docker compose --profile tools run --rm migrate
+docker compose --profile tools run --rm seed
+docker compose up --wait
 ```
 
 ## API overview
@@ -150,7 +171,7 @@ docker compose up --build --wait
 - Daily intelligence: current score, bounded score history, and gap-aware trends under `/api/v1/daily-scores`
 - Coach: roster summaries, assignment-protected check-ins/scores/trends, baseline alerts, and daily alerts
 
-FastAPI publishes the exact OpenAPI contract at `/docs`. Coach endpoints enforce both role and active assignment; possession of a trainee UUID is insufficient.
+When API documentation is enabled, FastAPI publishes the exact OpenAPI contract at `/docs`. Coach endpoints enforce both role and active assignment; possession of a trainee UUID is insufficient. Operational probes are available at `/health/live` and `/health/ready`, with `/health` retained for compatibility.
 
 ## Security, privacy, and compliance limits
 
