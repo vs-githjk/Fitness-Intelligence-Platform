@@ -6,7 +6,7 @@ All scores are clamped to 0–100. Components and aggregates are rounded to one 
 
 ## Data completeness
 
-Recovery and activity inputs are required. Calories, protein intake, and nutrition-plan adherence are optional. The form saves atomically; there are no drafts. Today's record can be edited and rescored idempotently. Past dates are read-only.
+Sleep, recovery, activity, water-intake, and overall-feeling inputs are required. Calories, protein intake, and nutrition-plan adherence are optional. Exercise duration and session RPE are required only when exercise is reported. The form saves atomically; there are no drafts. Today's record can be edited and rescored idempotently. Past dates are read-only.
 
 No baseline or synthetic value is substituted for a missing daily response. Optional nutrition components are excluded and remaining weights are normalized to 100%. If no valid nutrition component exists, Daily Nutrition is unavailable rather than zero.
 
@@ -70,7 +70,7 @@ States are exact:
 - Latest stress 9 or above
 - Sleep below 6 hours for three consecutive check-ins
 - Stress, fatigue, or soreness 8 or above for three consecutive check-ins
-- Session RPE 9 or above on five consecutive exercise dates
+- Session RPE 9 or above on five consecutive calendar dates, with exercise reported on each date
 - Seven-day load above 1,800 AU combined with Recovery below 50
 - Hydration below 50% of a valid target for three consecutive check-ins
 - Protein below 80% of a valid target for three consecutive check-ins

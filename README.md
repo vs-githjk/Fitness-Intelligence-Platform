@@ -2,7 +2,7 @@
 
 A role-aware coaching application that combines an explainable baseline Health Index with deterministic daily recovery, activity, nutrition-compliance, readiness, and longitudinal trend intelligence.
 
-The platform supports coaching decisions. It does not diagnose, treat, or replace qualified medical care. The architecture is designed with a **HIPAA-ready design goal**, but code alone does not establish HIPAA or any other legal compliance.
+The platform supports coaching decisions. It does not diagnose, treat, or replace qualified medical care. The architecture has privacy-conscious design goals, but this repository does not establish HIPAA, GDPR, or any other legal compliance.
 
 ## Architecture
 
@@ -20,12 +20,26 @@ Important entities include `OnboardingAssessment`, `HealthIndexSnapshot`, `Daily
 
 ## Product experience
 
-The responsive interface uses role-specific navigation, reusable semantic components, accessible form feedback, resumable onboarding, explainable Health Index contributions, and a coach attention queue that transforms from a table to cards on smaller screens. The UI intentionally avoids diagnosis or treatment claims.
+The responsive interface uses role-specific navigation, reusable semantic components, accessible form feedback, resumable onboarding, explainable Health Index contributions, and a coach roster that transforms from a table to cards on smaller screens. The UI intentionally avoids diagnosis or treatment claims.
 
 - [Design system and interaction rules](docs/design-system.md)
 - [Desktop and mobile visual verification](docs/screenshots)
-- Trainee routes: Today, atomic daily check-in, Progress, onboarding, and baseline review
+- Trainee routes: Today, atomic daily check-in, Progress, onboarding, and submitted-assessment review
 - Coach routes: roster overview, daily completion/readiness review, longitudinal trainee detail, and baseline context
+
+## Documentation
+
+- [Product guide](docs/product-guide.md)
+- [Getting started](docs/getting-started.md)
+- [Trainee user manual](docs/user-manual-trainee.md)
+- [Coach user manual](docs/user-manual-coach.md)
+- [FAQ](docs/faq.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Health Index v1 scoring](docs/scoring/health-index-v1.md)
+- [Daily Intelligence v1 scoring](docs/scoring/daily-intelligence-v1.md)
+- [Security and compliance notes](docs/security.md)
+- [Design system](docs/design-system.md)
+- [User-manual screenshot index](docs/screenshots/manual/README.md)
 
 ## Start with Docker
 
@@ -38,7 +52,7 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 
 2. Open the frontend at <http://localhost:5175>, API docs at <http://localhost:8000/docs>, or health endpoint at <http://localhost:8000/health>.
 
-The backend container applies Alembic migrations and runs the idempotent demo seed before starting. PostgreSQL data lives in the named `fitness_postgres` volume and survives ordinary container restarts. `docker compose down -v` intentionally deletes that data.
+The backend container applies Alembic migrations and runs the same-day idempotent demo seed before starting. Because daily history is relative to the current local date, starting on a later date can add the next set of dated demo records. PostgreSQL data lives in the named `fitness_postgres` volume and survives ordinary container restarts. `docker compose down -v` intentionally deletes that data.
 
 ## Demo identities
 
@@ -118,6 +132,7 @@ npm run typecheck
 npm run build
 npm run lint
 npm run test
+# Requires the Compose frontend/API to be running and a local Chrome installation.
 npm run test:e2e
 
 cd ..

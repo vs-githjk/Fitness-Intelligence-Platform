@@ -108,7 +108,7 @@ Required data prevents submission when absent. Optional resting heart rate and n
 | `calorie_below_50_percent` | intake/entered target `<0.5` | elevated |
 | `protein_below_0_8_g_kg` | intake `<0.8 g/kg` | informational |
 
-“Urgent” is reserved for reported chest discomfort or breathing difficulty and advises immediate professional medical help if severe, worsening, or current. Alerts say explicitly that they are not diagnoses. Longitudinal rules—no activity for seven days and RPE above threshold for five consecutive days—are deferred until daily data exists.
+“Urgent” is reserved for reported chest discomfort or breathing difficulty and advises immediate professional medical help if severe, worsening, or current. Alerts say explicitly that they are not diagnoses. Implemented repeated-observation rules are documented separately in [Daily Intelligence v1](daily-intelligence-v1.md).
 
 ## Recommendation templates
 

@@ -1,6 +1,6 @@
 # Fitness Intelligence design system
 
-This document describes the design system implemented in the current frontend. It is a reference for extending the existing baseline-assessment experience without introducing visual or interaction patterns that the application does not yet use.
+This document describes the design system implemented in the current frontend. It is a reference for extending the baseline, daily-intelligence, and coach-review experiences without introducing visual or interaction patterns that the application does not yet use.
 
 ## Visual principles
 
@@ -190,7 +190,7 @@ The application maps backend values to user-facing semantic tones.
 | `review` | Attention | Coach review suggested | The information should be reviewed with the coach. |
 | Other/informational | Information | For your information | Context is useful but is not styled as urgent. |
 
-Coach review queues sort these levels in the same order: urgent, elevated, review, informational.
+Use these severity meanings consistently wherever review notices appear. The current active coach overview does not provide a sortable or filterable alert queue.
 
 ### Component status
 
