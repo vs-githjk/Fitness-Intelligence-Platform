@@ -210,6 +210,15 @@ def test_public_demo_seed_is_idempotent_and_scenario_rich(db: Session) -> None:
         .join(User, RiskAlert.trainee_id == User.id)
         .where(User.is_demo.is_(True), RiskAlert.status == "open")
     )
+    primary_alert_count = db.scalar(
+        select(func.count(RiskAlert.id))
+        .join(User, RiskAlert.trainee_id == User.id)
+        .where(
+            User.email == config.demo_trainee_email,
+            User.is_demo.is_(True),
+            RiskAlert.status == "open",
+        )
+    )
 
     assert demo_user_count == len(DEMO_SCENARIOS) + 1
     assert assignment_count == len(DEMO_SCENARIOS)
@@ -217,6 +226,7 @@ def test_public_demo_seed_is_idempotent_and_scenario_rich(db: Session) -> None:
     assert check_in_count is not None and 100 <= check_in_count < 147
     assert score_count == check_in_count
     assert alert_count is not None and alert_count >= 1
+    assert primary_alert_count is not None and primary_alert_count >= 1
 
     first_counts = (demo_user_count, assignment_count, submitted_count, check_in_count)
     seed_public_demo_workspace(db, config, now)

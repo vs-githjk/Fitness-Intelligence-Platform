@@ -168,6 +168,8 @@ def _demo_check_in(pattern: str, offset: int) -> dict[str, Any]:
             stress=max(2, 6 - progress // 6),
             steps=6000 + progress * 280,
             water_liters=min(2.8, 1.8 + progress * 0.05),
+            protein_grams=80 if offset <= 2 else 105,
+            nutrition_adherence=72 if offset <= 2 else 86,
             overall_feeling="excellent" if progress >= 16 else "good",
         )
     elif pattern == "low_readiness" and offset <= 3:
