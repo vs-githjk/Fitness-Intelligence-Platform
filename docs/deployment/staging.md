@@ -41,7 +41,7 @@ Staging may contain only:
 - Additional clearly fictional test accounts created for an approved test case.
 - Test notes that contain no real medical, identity, contact, employment, or payment information.
 
-Staging must not contain real trainee assessments, real daily check-ins, real coach-client relationships, or copied production data. The seeded password and invite code are public demonstration values, not secrets.
+Staging must not contain real trainee assessments, real daily check-ins, real coach-client relationships, or copied production data. Seeded passwords are public demonstration values. Coach registration codes and generated trainee invitation tokens are secrets even when the resulting accounts contain only synthetic information.
 
 The current seed creates known synthetic identities and rolling local-date history. It is idempotent for existing records on a given date, but running it on later dates can add newly shifted synthetic records. It is not a backup or a production provisioning mechanism.
 
@@ -67,7 +67,7 @@ Values below are placeholders. Do not paste real values into source control, tic
 |---|---|---|---|
 | `VITE_API_URL` | `https://<staging-api-service>.onrender.com/api/v1` | Public, compiled into browser assets | Required at build time; changing it requires a frontend rebuild. |
 | `VITE_APP_ENV` | `staging` | Public, compiled into browser assets | Enables strict hosted URL validation and the visible staging warning. |
-| `VITE_APP_VERSION` | `0.3.0` | Public, compiled into browser assets | Release metadata shown in the staging warning. |
+| `VITE_APP_VERSION` | `0.4.1` | Public, compiled into browser assets | Release metadata shown in the staging warning. |
 
 Vercel must not receive `DATABASE_URL`, `JWT_SECRET`, PostgreSQL credentials, or the backend invite value.
 
@@ -82,7 +82,8 @@ Vercel must not receive `DATABASE_URL`, `JWT_SECRET`, PostgreSQL credentials, or
 | `ACCESS_TOKEN_MINUTES` | `<approved-staging-token-lifetime>` | No | Use an explicitly reviewed value rather than inheriting a local convenience default. |
 | `CORS_ORIGINS` | `https://<staging-frontend-project>.vercel.app` | No | Exact browser origin, with no path and normally no trailing slash. |
 | `TRUSTED_HOSTS` | `<staging-api-service>.onrender.com` | No | Exact API host names; never use `*` in staging. |
-| `DEMO_INVITE_CODE` | `<staging-synthetic-invite-value>` | Treat as restricted | The current single-code invitation model is suitable only for this synthetic evaluation. |
+| `COACH_REGISTRATION_CODE` | `<unique-staging-coach-bootstrap-secret>` | Yes | Backend-only invitation gate for coach registration. Set directly in Render; never expose to Vercel. Missing configuration disables coach registration. |
+| `DEMO_INVITE_CODE` | `<local-or-seed-compatibility-value>` | Treat as restricted | Deprecated for normal registration; retained only for explicit synthetic compatibility where needed. |
 | `SEED_DEMO_DATA` | `false` | No | Keep the web service false. Override to true only for an approved one-off staging seed command. |
 | `API_DOCS_ENABLED` | `false` | No | OpenAPI UI is disabled in deployed environments by current validation. |
 | `LOG_LEVEL` | `INFO` | No | Do not enable payload-oriented debug logging. |
@@ -107,6 +108,16 @@ These actions cannot be completed by repository code alone:
 5. A GitHub administrator configures required checks, deployment environments, and any provider integration permissions.
 6. A release owner manually approves the first migration and the controlled creation of synthetic beta accounts.
 7. A domain owner approves any custom-domain and DNS changes. A custom domain is optional for staging.
+
+### Clean-database bootstrap without seed data
+
+1. Set a unique `COACH_REGISTRATION_CODE` directly in Render and redeploy the backend after migrations succeed.
+2. Choose **Coach** on `/register` and create the first synthetic coach account with that code.
+3. Open **Invitations**, create a short-lived invitation, and copy the one-time link.
+4. Sign out and register a synthetic trainee through the link.
+5. Confirm the invite becomes used, cannot be reused, and the trainee appears only in the issuing coach's roster.
+
+Do not place the coach code in shell history, committed files, browser variables, screenshots, or test reports. The registration and invitation workflow still uses synthetic information only.
 
 Never place provider tokens or database credentials in GitHub-tracked files.
 
@@ -190,7 +201,7 @@ Do not automatically run `alembic downgrade`. The daily-intelligence downgrade d
 1. Connect the GitHub repository to the Vercel staging project.
 2. Select `frontend` as the project root.
 3. Use install command `npm ci`, build command `npm run build`, and output directory `dist`.
-4. Set `VITE_API_URL` to the verified Render HTTPS API base ending in `/api/v1`, `VITE_APP_ENV=staging`, and `VITE_APP_VERSION=0.3.0`.
+4. Set `VITE_API_URL` to the verified Render HTTPS API base ending in `/api/v1`, `VITE_APP_ENV=staging`, and `VITE_APP_VERSION=0.4.1`.
 5. Build and deploy the selected commit.
 6. Confirm the SPA fallback works for direct route requests.
 7. If the final Vercel origin differs from the planned origin, update backend `CORS_ORIGINS` exactly and redeploy the backend before testing.

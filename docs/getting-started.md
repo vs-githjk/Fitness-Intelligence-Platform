@@ -24,13 +24,7 @@ The application redirects signed-out visitors to the sign-in page.
 | Coach | `coach@fitness.example.com` | `DemoPass123!` | Explore the assigned roster and full trainee detail. |
 | Trainee with no check-ins | `no-checkins@fitness.example.com` | `DemoPass123!` | Explore daily empty states. |
 
-The local demonstration trainee invite code is:
-
-```text
-FIT-DEMO-2026
-```
-
-These credentials are defined by the repository’s demo seed. They are not private production credentials.
+These credentials are defined by the repository’s demo seed. They are not private production credentials. `FIT-DEMO-2026` is retained only as a deprecated local compatibility setting; normal registration uses coach-created single-use invitations.
 
 ## Sign in
 
@@ -44,26 +38,17 @@ If the email or password is incorrect, the page shows **Sign-in unsuccessful** a
 
 Sessions use an expiring bearer token stored in browser local storage for this local milestone. When an API request reports that the session has expired, the application clears the visible session and returns to sign-in with a **Session ended** message. There is no password-reset or account-recovery flow in the current application.
 
-## Register a trainee account
+## Register an account
 
-Coach self-registration is not available. The registration page creates trainee accounts only.
+Registration first asks whether you are creating a **Coach** or **Trainee** account. Login never asks for a role; the server-stored role controls routing and authorization.
 
-1. From sign-in, select **Create an account**, or open <http://localhost:5175/register>.
-2. Enter a first name and last name. Each must contain at least one character.
-3. Enter a valid email address.
-4. Create a password of 10–128 characters.
-5. Enter the local demo coach invite code `FIT-DEMO-2026`.
-6. Select **Create account**.
+For a clean database, register the first coach with the private `COACH_REGISTRATION_CODE` configured in the backend environment. After sign-in, open **Invitations**, optionally restrict the invite to one trainee email, choose an expiry, and create it. Copy the code or registration link immediately because the raw secret is returned only once.
 
-If registration succeeds, the application signs in the new trainee and opens onboarding. Email addresses are matched without regard to capitalization. A duplicate email, invalid invite code, invalid field, or unavailable coach produces an error and does not create the account.
+The trainee opens that link or chooses **Trainee** on registration, enters their name, email, password, and single-use invitation, then selects **Create trainee account**. Successful redemption creates the trainee profile, consumes the invitation, and connects the trainee to the issuing coach in one transaction. Used, expired, revoked, or email-mismatched invitations are rejected.
 
 ![The trainee registration screen](screenshots/manual/registration-desktop.png)
 
-### How demo assignment works
-
-The invite code does not select from a list of coaches. In the current implementation, registration assigns the new trainee to the oldest coach account in the database and marks the assignment active and accepted. In the standard local seed, that coach is Maya Coach (`coach@fitness.example.com`).
-
-The application does not currently offer coach invitations with expiry, assignment transfer, removing an assignment, or coach account registration. An assigned coach can read the trainee’s submitted baseline, daily check-ins, daily scores, trends, alerts, and recommendations. A coach without an active assignment is denied access.
+The application does not provide a public coach directory, email sending, assignment transfer, or removing assignments. Coach access is invitation-only and does not verify professional credentials. An assigned coach can read the trainee’s submitted baseline, daily check-ins, scores, trends, alerts, and recommendations; other coaches are denied access.
 
 ## What a trainee sees
 
@@ -115,7 +100,7 @@ After saving, use **Edit today** to update the same local-date record. Editing r
 
 ## What a coach sees
 
-The coach has one primary navigation destination, **Overview**. It contains:
+The coach navigation contains **Overview** and **Invitations**. Overview contains:
 
 - checked-in-today, missing-today, low-readiness, and open-daily-alert totals;
 - up to four current daily-alert cards when alerts exist; and

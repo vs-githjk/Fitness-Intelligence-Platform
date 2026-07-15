@@ -33,6 +33,8 @@ services:
         sync: false
       - key: DEMO_INVITE_CODE
         generateValue: true
+      - key: COACH_REGISTRATION_CODE
+        sync: false
       - key: SEED_DEMO_DATA
         value: false
       - key: LOG_LEVEL

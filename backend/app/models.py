@@ -99,6 +99,32 @@ class CoachTraineeAssignment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class CoachInvite(Base):
+    __tablename__ = "coach_invites"
+    __table_args__ = (
+        UniqueConstraint("token_hash", name="uq_coach_invites_token_hash"),
+        UniqueConstraint("used_by_user_id", name="uq_coach_invites_used_by_user_id"),
+        Index("ix_coach_invites_coach_id", "coach_id"),
+        Index("ix_coach_invites_coach_created", "coach_id", "created_at"),
+        Index("ix_coach_invites_expires_at", "expires_at"),
+        Index("ix_coach_invites_intended_email", "intended_email"),
+        Index("ix_coach_invites_token_hash", "token_hash"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    coach_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE")
+    )
+    token_hash: Mapped[str] = mapped_column(String(64))
+    intended_email: Mapped[str | None] = mapped_column(String(320))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    used_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class OnboardingAssessment(Base):
     __tablename__ = "onboarding_assessments"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

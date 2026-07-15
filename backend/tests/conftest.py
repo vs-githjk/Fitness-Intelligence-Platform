@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,8 +8,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
+from app.invitations import hash_invite_token
 from app.main import app
-from app.models import CoachProfile, Role, User
+from app.models import CoachInvite, CoachProfile, Role, User
 from app.security import hash_password
 
 
@@ -41,6 +43,13 @@ def db() -> Generator[Session, None, None]:
                 CoachProfile(user_id=coach.id, display_name="Test Coach"),
                 CoachProfile(user_id=other_coach.id, display_name="Other Coach"),
             ]
+        )
+        session.add(
+            CoachInvite(
+                coach_id=coach.id,
+                token_hash=hash_invite_token("FIT-DEMO-2026"),
+                expires_at=datetime.now(UTC) + timedelta(days=30),
+            )
         )
         session.commit()
         yield session

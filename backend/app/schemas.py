@@ -21,12 +21,23 @@ class UserOut(BaseModel):
     role: Role
 
 
-class RegisterRequest(BaseModel):
+class RegistrationBase(BaseModel):
     email: EmailStr
     password: str = Field(min_length=10, max_length=128)
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
+
+
+class TraineeRegisterRequest(RegistrationBase):
     invite_code: str = Field(min_length=1, max_length=100)
+
+
+class CoachRegisterRequest(RegistrationBase):
+    registration_code: str = Field(min_length=1, max_length=200)
+
+
+# Backward-compatible request shape for the former trainee registration endpoint.
+RegisterRequest = TraineeRegisterRequest
 
 
 class LoginRequest(BaseModel):
@@ -38,6 +49,26 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+
+
+class CoachInviteCreate(BaseModel):
+    intended_email: EmailStr | None = None
+    expires_in_days: Literal[1, 3, 7, 14, 30] = 7
+
+
+class CoachInviteOut(BaseModel):
+    id: uuid.UUID
+    intended_email: EmailStr | None
+    status: Literal["active", "used", "expired", "revoked"]
+    expires_at: datetime
+    used_at: datetime | None
+    used_by_user_id: uuid.UUID | None
+    revoked_at: datetime | None
+    created_at: datetime
+
+
+class CoachInviteCreatedOut(CoachInviteOut):
+    token: str
 
 
 class ProfileUpdate(BaseModel):

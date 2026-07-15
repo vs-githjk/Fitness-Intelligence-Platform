@@ -93,7 +93,9 @@ Safe-area padding is applied to the fixed mobile bottom navigation through `.saf
 - `Field` owns the visible label and optional/help/error copy, generates stable IDs, and supplies `aria-describedby` and invalid state to its control.
 - `TextInput` and `SelectInput` share the 44px control pattern.
 - `SearchField` includes a screen-reader label and native search input.
-- `ChoiceCard` is used for fitness goals and exposes selection with `aria-pressed`, a check mark, text, border, and background.
+- `ChoiceCard` is used for fitness goals and the Coach/Trainee registration choice. It exposes selection with `aria-pressed`, a check mark, text, border, and background.
+- Registration reveals only the fields for the selected role. Login never presents role choice because the authenticated backend identity owns that decision.
+- Invitation secrets appear in a positive one-time notice with separately copyable code and link controls; invitation history intentionally omits raw tokens.
 - `Chip` is used for multi-select activities and also exposes `aria-pressed` state.
 - `SegmentedControl` is used for short mutually exclusive choices such as waking refreshed and calorie approach.
 - Onboarding `NumericField` composes `Field` and `TextInput`, displays a visible unit, and uses decimal input mode.

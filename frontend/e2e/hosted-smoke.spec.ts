@@ -5,7 +5,7 @@ test('hosted staging exposes safe public health and SPA routes', async ({ page }
   const api = await request.newContext()
   const live = await api.get(`${systemApiUrl}/health/live`)
   expect(live.ok()).toBeTruthy()
-  expect(await live.json()).toMatchObject({ status: 'healthy', version: '0.3.0' })
+  expect(await live.json()).toMatchObject({ status: 'healthy', version: '0.4.1' })
   await api.dispose()
 
   await page.goto('/login')

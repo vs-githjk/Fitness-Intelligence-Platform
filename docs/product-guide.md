@@ -53,7 +53,7 @@ Demo invite and coach assignment
 → Structured next actions
 ```
 
-A new trainee registers with the current demo invite code and is automatically assigned to the oldest available coach account. The trainee completes and submits onboarding, then can record one check-in for the current date in their saved IANA timezone. That entry can be edited until the local date changes. Past dates are read-only and cannot be entered retroactively.
+A protected coach can register with the backend-only coach registration code, then create an expiring single-use invitation. A trainee redeems that invitation and is transactionally assigned to its issuing coach. The trainee completes and submits onboarding, then can record one check-in for the current date in their saved IANA timezone. That entry can be edited until the local date changes. Past dates are read-only and cannot be entered retroactively.
 
 The assigned coach can view the trainee’s baseline, daily scores, recent raw check-in summaries, trends, alerts, and recommendations. Other coaches are denied access unless they have an active assignment.
 
@@ -143,7 +143,7 @@ Recommendations are structured templates generated from score thresholds and tri
 
 ### Coach assignment
 
-An assignment is the server-enforced relationship that allows a coach to view a trainee. Knowing a trainee’s identifier is not enough. Current demo registration automatically links the new trainee to the oldest coach account. The application does not currently include assignment management, invitation expiry, or transfer controls.
+An assignment is the server-enforced relationship that allows a coach to view a trainee. Knowing a trainee’s identifier is not enough. Redeeming a coach-specific invitation creates the assignment; invites expire, can be revoked, and cannot be reused. The application does not currently include assignment transfer or removal controls.
 
 ## Health Index interpretation
 
@@ -175,7 +175,7 @@ Deterministic calculations are used so that score behavior is repeatable, testab
 
 ### Trainee capabilities
 
-- Register with the local demo invite code and sign in.
+- Register with a coach-created single-use invitation and sign in.
 - Complete, save, resume, review, acknowledge, and submit onboarding.
 - View submitted assessment responses through Assessment.
 - See the overall baseline Health Index and band as a reference on Today.

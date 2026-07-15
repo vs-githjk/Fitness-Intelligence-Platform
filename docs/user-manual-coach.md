@@ -17,9 +17,15 @@ The local demo coach is:
 
 Demo credentials are for local evaluation only. They are not suitable for a shared or production deployment.
 
+## Register and invite a trainee
+
+On a clean deployment, choose **Coach** on registration and enter the private coach registration code supplied by the platform owner. The code is checked only by the backend; it is never a Vercel variable. This invitation-only step creates the coach account and profile but does not verify professional credentials.
+
+After sign-in, open **Invitations**. You can optionally restrict an invitation to one email address, select a 1, 3, 7, 14, or 30-day expiry, and create it. Copy the raw code or registration link immediately: only its hash is stored and the raw value is not recoverable after refresh. The history shows active, used, expired, and revoked invitations. Only active invitations can be revoked, and no email is sent automatically.
+
 ## Navigation
 
-The only coach navigation destination in this milestone is **Overview**.
+Coach navigation contains **Overview** and **Invitations**.
 
 - On desktop, **Overview** is in the persistent left sidebar.
 - On smaller screens, **Overview** is in the bottom navigation.
@@ -62,7 +68,7 @@ On smaller screens the same roster becomes cards showing readiness, daily alerts
 
 ![Coach roster on mobile](screenshots/manual/coach-roster-mobile.png)
 
-There is currently no search, filter, sort, pagination, selectable row, or dedicated attention-queue control. The displayed order comes from the server. There is also no coach action to invite, assign, remove, message, or edit a trainee.
+There is currently no search, filter, sort, pagination, selectable row, or dedicated attention-queue control. The displayed order comes from the server. Invitation redemption creates the assignment; there is no action to transfer/remove an assignment, message a trainee, or edit trainee data.
 
 ## Review a trainee record
 

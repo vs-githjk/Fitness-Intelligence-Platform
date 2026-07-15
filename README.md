@@ -25,7 +25,7 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 - [Design system and interaction rules](docs/design-system.md)
 - [Desktop and mobile visual verification](docs/screenshots)
 - Trainee routes: Today, atomic daily check-in, Progress, onboarding, and submitted-assessment review
-- Coach routes: roster overview, daily completion/readiness review, longitudinal trainee detail, and baseline context
+- Coach routes: roster overview, private trainee invitations, daily completion/readiness review, longitudinal trainee detail, and baseline context
 
 ## Documentation
 
@@ -70,7 +70,7 @@ Compose has safe local-development fallbacks. If you maintain a personal `.env`,
 | Coach | `coach@fitness.example.com` | `DemoPass123!` |
 | Trainee with no check-ins | `no-checkins@fitness.example.com` | `DemoPass123!` |
 
-New trainee registration uses invite code `FIT-DEMO-2026` by default. The main trainee has deterministic synthetic daily history with a missing date, positive recovery, low readiness, and longitudinal alerts. The no-check-ins account demonstrates empty states.
+The seeded identities remain available for deterministic local testing. A clean database can instead bootstrap without seed data: register a coach with the backend-only coach registration code, create a single-use trainee invitation, then register the trainee with that invitation. The main seeded trainee has deterministic daily history with a missing date, positive recovery, low readiness, and longitudinal alerts.
 
 ## Manual smoke test
 
@@ -123,7 +123,8 @@ npm run dev
 | `VITE_API_URL` | Browser-visible versioned API base URL |
 | `VITE_APP_ENV` | Browser-visible environment label (`local`, `staging`, or `production`) |
 | `VITE_APP_VERSION` | Browser-visible release metadata |
-| `DEMO_INVITE_CODE` | Local first-milestone coach invite |
+| `DEMO_INVITE_CODE` | Deprecated local/synthetic compatibility value; normal registration uses coach-specific invitations |
+| `COACH_REGISTRATION_CODE` | Backend-only code that enables invitation-only coach registration; never expose it to Vercel |
 
 Never commit a real `.env` or production secret.
 
@@ -163,13 +164,13 @@ docker compose up --wait
 
 ## API overview
 
-- Auth: `POST /api/v1/auth/register`, `POST /login`, `GET /me`
+- Auth: `POST /api/v1/auth/register/coach`, `POST /register/trainee`, `POST /login`, `GET /me` (`POST /register` remains a deprecated trainee alias)
 - Trainee profile: `GET|PUT /api/v1/trainee/profile`
 - Onboarding: `GET|PUT /api/v1/assessments/onboarding`, `POST /submit`
 - Health Index: `GET /api/v1/health-index/current|history|{snapshot_id}`
 - Daily check-ins: `GET|PUT /api/v1/check-ins/today`, bounded history, and date detail
 - Daily intelligence: current score, bounded score history, and gap-aware trends under `/api/v1/daily-scores`
-- Coach: roster summaries, assignment-protected check-ins/scores/trends, baseline alerts, and daily alerts
+- Coach: private invitation creation/list/revocation, roster summaries, assignment-protected check-ins/scores/trends, baseline alerts, and daily alerts
 
 When API documentation is enabled, FastAPI publishes the exact OpenAPI contract at `/docs`. Coach endpoints enforce both role and active assignment; possession of a trainee UUID is insufficient. Operational probes are available at `/health/live` and `/health/ready`, with `/health` retained for compatibility.
 

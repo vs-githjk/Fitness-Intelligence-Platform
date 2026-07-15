@@ -30,7 +30,7 @@ Check the email and password exactly as entered. An unsuccessful attempt display
 
 ### Invite code is invalid
 
-The registration page creates trainee accounts only. Enter the current local demo code `FIT-DEMO-2026` exactly. An invalid code leaves the registration form open with **Account not created**. There is no expired-invite recovery or coach-registration flow in the UI.
+Choose the intended account type on registration. Coach registration requires the backend-only `COACH_REGISTRATION_CODE`; if it is absent, the route is intentionally disabled. Trainee registration requires an active, unused coach invitation. Ask the coach to create a new invitation if the code was used, expired, revoked, or restricted to another email. Registration errors are intentionally generic and never reveal stored invitation details.
 
 ### Onboarding will not save or continue
 

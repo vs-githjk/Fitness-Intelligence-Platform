@@ -2,6 +2,7 @@ import { expect, Page, request, test } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { apiUrl } from './config'
+import { createTraineeInvite } from './registration-helpers'
 
 const screenshots = path.resolve('../docs/screenshots/manual')
 
@@ -33,17 +34,19 @@ test('capture public access and complete trainee onboarding', async ({ page }) =
   await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
   await page.screenshot({ path: `${screenshots}/login-desktop.png`, fullPage: true })
 
+  const email = `manual-guide-${Date.now()}@example.com`
+  const inviteCode = await createTraineeInvite(email)
   await page.goto('/register')
-  await expect(page.getByRole('heading', { name: 'Create your trainee account' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
+  await page.getByRole('button', { name: /^Trainee/ }).click()
   await page.screenshot({ path: `${screenshots}/registration-desktop.png`, fullPage: true })
 
-  const email = `manual-guide-${Date.now()}@example.com`
   await page.getByLabel('First name').fill('Manual')
   await page.getByLabel('Last name').fill('Guide')
   await page.getByLabel('Email address').fill(email)
   await page.getByLabel('Create a password').fill('ManualGuide123!')
-  await page.getByLabel('Coach invite code').fill('FIT-DEMO-2026')
-  await page.getByRole('button', { name: 'Create account' }).click()
+  await page.getByLabel('Coach invitation code').fill(inviteCode)
+  await page.getByRole('button', { name: 'Create trainee account' }).click()
   await expect(page).toHaveURL(/\/onboarding/)
 
   await continueOnboarding(page)

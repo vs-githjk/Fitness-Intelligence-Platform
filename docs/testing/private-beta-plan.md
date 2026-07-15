@@ -38,7 +38,7 @@ Do not recruit real coach-client pairs for this round. Do not ask testers to cop
 - Do not publish the staging URL or invite value publicly.
 - Remove or disable participant access at cohort exit.
 
-The current single invite code and oldest-coach assignment are known limitations. They are acceptable only for this controlled synthetic cohort, not a real-data beta or production enrollment model.
+Coach-specific single-use invitations are available for the controlled synthetic cohort. Rate limiting, email verification, coach identity verification, invitation audit events, and assignment lifecycle controls remain blockers for a real-data beta or production enrollment model.
 
 ## Entry criteria
 

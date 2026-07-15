@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from app import __version__
-from app.api import assessments, auth, check_ins, coach, daily_scores, health, trainee
+from app.api import assessments, auth, check_ins, coach, daily_scores, health, invites, trainee
 from app.config import settings
 from app.database import engine
 
@@ -155,5 +155,6 @@ for router in (
     check_ins.router,
     daily_scores.router,
     coach.router,
+    invites.router,
 ):
     app.include_router(router, prefix="/api/v1")

@@ -1,6 +1,7 @@
 import { expect, Page, request, test } from '@playwright/test'
 import path from 'node:path'
 import { apiUrl } from './config'
+import { createTraineeInvite } from './registration-helpers'
 
 const screenshots = path.resolve('../docs/screenshots')
 
@@ -50,7 +51,8 @@ test('trainee can edit today, view scores, and inspect real trends', async ({ pa
 test('conditional exercise validation preserves form input after API failure', async ({ page }) => {
   const context = await request.newContext()
   const email = `daily-form-${Date.now()}@example.com`
-  const registered = await context.post(`${apiUrl}/auth/register`, { data: { email, password: 'VisualPass123!', first_name: 'Form', last_name: 'Tester', invite_code: 'FIT-DEMO-2026' } })
+  const inviteCode = await createTraineeInvite(email)
+  const registered = await context.post(`${apiUrl}/auth/register/trainee`, { data: { email, password: 'VisualPass123!', first_name: 'Form', last_name: 'Tester', invite_code: inviteCode } })
   expect(registered.ok()).toBeTruthy()
   const auth = await registered.json()
   await context.dispose()

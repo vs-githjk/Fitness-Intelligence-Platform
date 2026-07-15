@@ -1,6 +1,7 @@
 import { expect, Page, request, test } from '@playwright/test'
 import path from 'node:path'
 import { apiUrl } from './config'
+import { createTraineeInvite } from './registration-helpers'
 
 const screenshots = path.resolve('../docs/screenshots')
 const baseline = {
@@ -46,7 +47,8 @@ test.beforeAll(async () => {
   await context.dispose()
 
   const setup = await request.newContext()
-  let riskAuthResponse = await setup.post(`${apiUrl}/auth/register`, { data: { email: 'risk-visual@example.com', password: 'VisualPass123!', first_name: 'Riley', last_name: 'Risk Review', invite_code: 'FIT-DEMO-2026' } })
+  const riskInvite = await createTraineeInvite('risk-visual@example.com')
+  let riskAuthResponse = await setup.post(`${apiUrl}/auth/register/trainee`, { data: { email: 'risk-visual@example.com', password: 'VisualPass123!', first_name: 'Riley', last_name: 'Risk Review', invite_code: riskInvite } })
   if (riskAuthResponse.status() === 409) riskAuthResponse = await setup.post(`${apiUrl}/auth/login`, { data: { email: 'risk-visual@example.com', password: 'VisualPass123!' } })
   expect(riskAuthResponse.ok()).toBeTruthy()
   const riskAuth = await riskAuthResponse.json()
@@ -80,7 +82,9 @@ test('public authentication layouts are responsive', async ({ page }) => {
 
 test('onboarding renders at desktop and mobile widths', async ({ page }) => {
   const context = await request.newContext()
-  const registered = await context.post(`${apiUrl}/auth/register`, { data: { email: `visual-${Date.now()}@example.com`, password: 'VisualPass123!', first_name: 'Visual', last_name: 'Trainee', invite_code: 'FIT-DEMO-2026' } })
+  const email = `visual-${Date.now()}@example.com`
+  const inviteCode = await createTraineeInvite(email)
+  const registered = await context.post(`${apiUrl}/auth/register/trainee`, { data: { email, password: 'VisualPass123!', first_name: 'Visual', last_name: 'Trainee', invite_code: inviteCode } })
   expect(registered.ok()).toBeTruthy()
   const auth = await registered.json()
   await context.dispose()

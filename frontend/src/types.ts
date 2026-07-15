@@ -1,6 +1,12 @@
 export type Role = 'coach' | 'trainee'
 export interface User { id: string; email: string; first_name: string; last_name: string; role: Role }
 export interface AuthResponse { access_token: string; token_type: string; user: User }
+export interface CoachInvite {
+  id: string; intended_email: string | null; status: 'active' | 'used' | 'expired' | 'revoked'
+  expires_at: string; used_at: string | null; used_by_user_id: string | null
+  revoked_at: string | null; created_at: string
+}
+export interface CreatedCoachInvite extends CoachInvite { token: string }
 
 export interface AssessmentData {
   age?: number; height_cm?: number; weight_kg?: number; selected_goal?: string; target_weight_kg?: number

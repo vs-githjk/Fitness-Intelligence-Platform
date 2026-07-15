@@ -30,11 +30,19 @@ The onboarding form shows immediate safety guidance. Seek immediate professional
 | Trainee with baseline and synthetic history | `trainee@fitness.example.com` | `DemoPass123!` |
 | Trainee with no check-ins | `no-checkins@fitness.example.com` | `DemoPass123!` |
 
-New local demo trainee registration uses invite code `FIT-DEMO-2026`.
+Seeded local demo identities can still be used directly. New registration uses a coach-specific, single-use invitation created from the coach workspace.
 
 ### Can a coach register from the registration page?
 
-No. **Create your trainee account** creates a trainee and connects that account through the coach invite. Coach self-registration is not implemented.
+Yes, when the backend has a private `COACH_REGISTRATION_CODE`. Choose **Coach** during registration and enter that code. If the backend code is missing, coach registration is disabled. The platform does not verify professional credentials.
+
+### Do I choose my role when signing in?
+
+No. Login accepts only email and password. The backend-stored account role determines whether the coach workspace, trainee onboarding, or trainee dashboard opens.
+
+### How does a trainee invitation work?
+
+A signed-in coach creates an expiring, single-use invitation and shares its code or registration link through a trusted channel. Only a hash is stored, the raw secret is shown once, and redemption creates the coach assignment. Used, expired, revoked, and email-mismatched invitations cannot be redeemed. The application does not send invitation emails.
 
 ### Why was I redirected after opening a page?
 

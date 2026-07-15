@@ -45,8 +45,9 @@ Known current limits include local-storage JWTs, local/demo enrollment, no coach
 - Backend startup honors the provider port, with liveness and database-readiness probes.
 - Vercel single-page-app routing and a Render service/database Blueprint are defined.
 - CI covers backend, clean PostgreSQL migrations, frontend checks, and Compose builds.
-- Application/API/package metadata is aligned to `0.3.0` from a centralized backend version source.
+- Application/API/package metadata is aligned to `0.4.1`; backend health and OpenAPI metadata use the centralized `app.__version__` source.
 - Demo credentials and invite guidance are gated by client environment.
+- Role-aware registration, backend-protected coach bootstrap, and coach-specific single-use trainee invitations.
 - Requests carry `X-Request-ID` correlation and sanitized structured operational logs.
 
 ### Operational work required to complete staging
@@ -69,7 +70,7 @@ This phase takes priority over new product modules if real personal or health da
 
 - Replace local-storage-only session design with a reviewed protected session/token architecture.
 - Add refresh/revocation, key rotation, session/device controls, recovery, email verification, and coach MFA.
-- Replace the shared invite/oldest-coach behavior with controlled enrollment and explicit assignment.
+- Add rate limits, email verification, MFA, administrative enrollment controls, invite audit events, and assignment transfer/removal workflows around the coach-specific invitation model.
 - Add rate limiting, abuse protection, and security-event monitoring.
 
 ### Privacy and lifecycle

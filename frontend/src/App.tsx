@@ -12,6 +12,7 @@ const CheckInPage = lazy(() => import('./pages/DailyPages').then(module => ({ de
 const ProgressPage = lazy(() => import('./pages/DailyPages').then(module => ({ default: module.ProgressPage })))
 const CoachDashboard = lazy(() => import('./components/DailyCoach').then(module => ({ default: module.CoachDashboardPage })))
 const CoachTraineePage = lazy(() => import('./components/DailyCoach').then(module => ({ default: module.CoachTraineeLongitudinalPage })))
+const CoachInvitesPage = lazy(() => import('./pages/CoachInvitesPage').then(module => ({ default: module.CoachInvitesPage })))
 
 function Home() {
   const { user } = useAuth()
@@ -25,5 +26,5 @@ function NotFound() {
 }
 
 export default function App() {
-  return <Suspense fallback={<div className="mx-auto max-w-4xl p-6"><LoadingState label="Loading page" /></div>}><Routes><Route path="/" element={<Home />} /><Route path="/login" element={<LoginPage />} /><Route path="/register" element={<RegisterPage />} /><Route path="/onboarding" element={<RequireRole role="trainee"><OnboardingPage /></RequireRole>} /><Route path="/trainee/dashboard" element={<RequireRole role="trainee"><TodayPage /></RequireRole>} /><Route path="/trainee/today" element={<RequireRole role="trainee"><TodayPage /></RequireRole>} /><Route path="/trainee/check-in" element={<RequireRole role="trainee"><CheckInPage /></RequireRole>} /><Route path="/trainee/progress" element={<RequireRole role="trainee"><ProgressPage /></RequireRole>} /><Route path="/coach/dashboard" element={<RequireRole role="coach"><CoachDashboard /></RequireRole>} /><Route path="/coach/trainees/:traineeId" element={<RequireRole role="coach"><CoachTraineePage /></RequireRole>} /><Route path="*" element={<NotFound />} /></Routes></Suspense>
+  return <Suspense fallback={<div className="mx-auto max-w-4xl p-6"><LoadingState label="Loading page" /></div>}><Routes><Route path="/" element={<Home />} /><Route path="/login" element={<LoginPage />} /><Route path="/register" element={<RegisterPage />} /><Route path="/onboarding" element={<RequireRole role="trainee"><OnboardingPage /></RequireRole>} /><Route path="/trainee/dashboard" element={<RequireRole role="trainee"><TodayPage /></RequireRole>} /><Route path="/trainee/today" element={<RequireRole role="trainee"><TodayPage /></RequireRole>} /><Route path="/trainee/check-in" element={<RequireRole role="trainee"><CheckInPage /></RequireRole>} /><Route path="/trainee/progress" element={<RequireRole role="trainee"><ProgressPage /></RequireRole>} /><Route path="/coach/dashboard" element={<RequireRole role="coach"><CoachDashboard /></RequireRole>} /><Route path="/coach/invites" element={<RequireRole role="coach"><CoachInvitesPage /></RequireRole>} /><Route path="/coach/trainees/:traineeId" element={<RequireRole role="coach"><CoachTraineePage /></RequireRole>} /><Route path="*" element={<NotFound />} /></Routes></Suspense>
 }

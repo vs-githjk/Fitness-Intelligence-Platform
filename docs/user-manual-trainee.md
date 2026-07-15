@@ -28,7 +28,7 @@ New to the platform? Read [Getting started](getting-started.md) and the [Product
 
 As a trainee, you can:
 
-- register with the demonstration coach invite code;
+- register with a private, single-use invitation created by a coach;
 - complete and submit one onboarding baseline through the current interface;
 - submit or update the current local day's check-in;
 - view today's daily scores, readiness state, alerts, and recommendations;
@@ -47,7 +47,7 @@ On a desktop-sized screen, these links appear in the left sidebar. On a smaller 
 
 ## 2. Register as a trainee
 
-Registration currently creates trainee accounts only. There is no role selector and no coach self-registration option on this screen. A valid coach invite code is required.
+Registration begins with an account-type choice. Choose **Trainee** and use the private invitation code or link supplied by your coach. Login itself has no role selector.
 
 ![Trainee registration form](screenshots/manual/registration-desktop.png)
 
@@ -57,17 +57,16 @@ Registration currently creates trainee accounts only. There is no role selector 
 2. Enter your **First name** and **Last name**.
 3. Enter your **Email address**.
 4. In **Create a password**, enter at least 10 characters. Use the **Show password** button if you need to check what you typed; select **Hide password** to conceal it again.
-5. Enter the **Coach invite code**. In the local demonstration environment, the code shown by the form is `FIT-DEMO-2026`.
-6. Select **Create account**.
+5. Enter the **Coach invitation code**. A link from your coach prefills this field and removes the secret from the visible browser address after loading.
+6. Select **Create trainee account**.
 7. When registration succeeds, the application signs you in and opens the onboarding assessment.
 
-The local demonstration currently assigns a newly registered trainee to the first available coach account automatically. Trainees cannot choose a coach or accept, reject, or change that assignment in the interface.
+The invitation identifies the issuing coach. Successful registration consumes the invitation and assigns the trainee to that coach. Trainees cannot browse or select coaches publicly.
 
 ### Registration errors
 
-- An incorrect code produces **Account not created** with the message **The coach invite code is invalid**. The current demonstration code does not have a separate expiry state; an unavailable or changed code is handled as invalid.
-- An email that is already registered produces **An account with this email already exists**.
-- If no coach account is available for the demonstration assignment, registration cannot finish.
+- Used, expired, revoked, email-mismatched, and invalid invitations produce the same generic registration failure so invitation details are not exposed.
+- An already registered email also produces a generic registration conflict.
 - Field or service errors appear on the same page. Correct the highlighted value or try again. The application does not provide email verification, account recovery, or a password-reset flow.
 
 > **Local demonstration only:** Do not treat the displayed invite code or demo credentials as production credentials.

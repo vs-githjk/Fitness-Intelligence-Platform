@@ -26,7 +26,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
     const details = body.error ?? body.detail ?? { message: 'The request could not be completed. Please try again.' }
-    const isPublicAuthRequest = path === '/auth/login' || path === '/auth/register'
+    const isPublicAuthRequest = path === '/auth/login' || path.startsWith('/auth/register')
     if (response.status === 401 && !isPublicAuthRequest) {
       localStorage.removeItem('access_token')
       localStorage.removeItem('user')

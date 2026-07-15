@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     api_docs_enabled: bool = True
     seed_demo_data: bool = False
     demo_invite_code: str = LOCAL_INVITE_CODE
+    coach_registration_code: str | None = None
     log_level: str = "INFO"
     port: int = Field(default=8000, ge=1, le=65535)
 

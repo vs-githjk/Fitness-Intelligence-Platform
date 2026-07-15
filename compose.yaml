@@ -7,6 +7,7 @@ x-backend-environment: &backend-environment
   CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5175}
   TRUSTED_HOSTS: ${TRUSTED_HOSTS:-localhost,127.0.0.1,backend}
   DEMO_INVITE_CODE: ${DEMO_INVITE_CODE:-FIT-DEMO-2026}
+  COACH_REGISTRATION_CODE: ${COACH_REGISTRATION_CODE:-FIT-COACH-LOCAL-2026}
   SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
   API_DOCS_ENABLED: ${API_DOCS_ENABLED:-true}
@@ -34,6 +35,7 @@ services:
       retries: 10
 
   backend:
+    image: fitness-intelligence-backend:local
     build: ./backend
     environment: *backend-environment
     ports:
@@ -49,6 +51,7 @@ services:
 
   migrate:
     profiles: ["tools"]
+    image: fitness-intelligence-backend:local
     build: ./backend
     command: ["alembic", "upgrade", "head"]
     environment: *backend-environment
@@ -58,6 +61,7 @@ services:
 
   seed:
     profiles: ["tools"]
+    image: fitness-intelligence-backend:local
     build: ./backend
     command: ["python", "-m", "scripts.seed"]
     environment: *backend-environment
@@ -71,7 +75,7 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api/v1}
         VITE_APP_ENV: ${VITE_APP_ENV:-local}
-        VITE_APP_VERSION: ${VITE_APP_VERSION:-0.3.0}
+        VITE_APP_VERSION: ${VITE_APP_VERSION:-0.4.1}
     ports:
       - "127.0.0.1:5175:80"
     depends_on:
