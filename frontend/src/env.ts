@@ -51,7 +51,7 @@ export function createAppConfig(environment: ClientEnvironment): AppConfig {
   return {
     apiUrl: apiUrlValue.replace(/\/+$/, ''),
     appEnv,
-    appVersion: environment.VITE_APP_VERSION?.trim() || '0.4.1',
+    appVersion: environment.VITE_APP_VERSION?.trim() || '0.4.2',
     isLocal: appEnv === 'local',
     isStaging: appEnv === 'staging',
   }

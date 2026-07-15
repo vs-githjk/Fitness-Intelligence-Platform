@@ -54,6 +54,7 @@ The current seed creates known synthetic identities and rolling local-date histo
 | Database | Compose PostgreSQL volume | Never exposed | Separate Render managed PostgreSQL | Separate managed PostgreSQL |
 | Data class | Synthetic/local | Synthetic-only | Synthetic-only | Blocked pending production gates |
 | Demo seed | Explicit `seed` tool with `SEED_DEMO_DATA=true` | None | Explicit approved one-off only; disabled for web startup | Never |
+| Public demo sessions | Explicitly enabled locally | Frontend uses backend endpoint only | Explicitly enabled after approved seed | Disabled and rejected |
 | Secrets | Local ignored configuration | Build-time public API URL only | Render secret store | Separate production secret store |
 | CORS | `http://localhost:5175` | Exact staging origin | Allow exact staging frontend origin | Exact production origin |
 
@@ -67,7 +68,7 @@ Values below are placeholders. Do not paste real values into source control, tic
 |---|---|---|---|
 | `VITE_API_URL` | `https://<staging-api-service>.onrender.com/api/v1` | Public, compiled into browser assets | Required at build time; changing it requires a frontend rebuild. |
 | `VITE_APP_ENV` | `staging` | Public, compiled into browser assets | Enables strict hosted URL validation and the visible staging warning. |
-| `VITE_APP_VERSION` | `0.4.1` | Public, compiled into browser assets | Release metadata shown in the staging warning. |
+| `VITE_APP_VERSION` | `0.4.2` | Public, compiled into browser assets | Release metadata shown in the staging warning. |
 
 Vercel must not receive `DATABASE_URL`, `JWT_SECRET`, PostgreSQL credentials, or the backend invite value.
 
@@ -84,6 +85,8 @@ Vercel must not receive `DATABASE_URL`, `JWT_SECRET`, PostgreSQL credentials, or
 | `TRUSTED_HOSTS` | `<staging-api-service>.onrender.com` | No | Exact API host names; never use `*` in staging. |
 | `COACH_REGISTRATION_CODE` | `<unique-staging-coach-bootstrap-secret>` | Yes | Backend-only invitation gate for coach registration. Set directly in Render; never expose to Vercel. Missing configuration disables coach registration. |
 | `DEMO_INVITE_CODE` | `<local-or-seed-compatibility-value>` | Treat as restricted | Deprecated for normal registration; retained only for explicit synthetic compatibility where needed. |
+| `DEMO_MODE_ENABLED` | `true` after approved provisioning | No | Defaults false. Enables only the backend demo-session endpoint; production rejects true. |
+| `DEMO_SESSION_MINUTES` | `30` | No | Short lifetime for public demo JWTs. |
 | `SEED_DEMO_DATA` | `false` | No | Keep the web service false. Override to true only for an approved one-off staging seed command. |
 | `API_DOCS_ENABLED` | `false` | No | OpenAPI UI is disabled in deployed environments by current validation. |
 | `LOG_LEVEL` | `INFO` | No | Do not enable payload-oriented debug logging. |
@@ -130,7 +133,7 @@ Before approving staging:
 - The frontend host must support a single-page-application fallback so direct routes return `index.html`.
 - The backend start command must honor the provider port.
 - Database migration and web startup must be independently controllable.
-- The public demo credentials shown by the frontend must be acceptable for a synthetic-only deployment or hidden by an implemented environment-specific control.
+- The public demo must use the backend-controlled demo-session endpoint; the frontend must not contain or display demo credentials or prebuilt tokens.
 - The example signing-secret placeholder must be replaced with a valid generated provider secret.
 
 The backend container starts only the web process, while the Render blueprint declares `alembic upgrade head` as its pre-deploy action. The seed command is separate, requires `SEED_DEMO_DATA=true`, permits an approved synthetic-only staging run, and always rejects production.
@@ -187,6 +190,9 @@ Do not automatically run `alembic downgrade`. The daily-intelligence downgrade d
 4. In an approved Render shell or one-off job, run `SEED_DEMO_DATA=true python -m scripts.seed` once after migration. Do not change `APP_ENV=staging`.
 5. Verify the created identities and synthetic history against the beta account register.
 6. Restore/confirm the web service value remains `SEED_DEMO_DATA=false`. Do not use provisioning as a restart hook, scheduled task, backup restore, or production setup step.
+7. Verify the configured demo coach and trainee identities exist, are marked as demo users, and contain only synthetic data.
+8. Set `DEMO_MODE_ENABLED=true` explicitly on the staging backend and redeploy. Do not send this backend setting or any backend secret to Vercel.
+9. Confirm disabling `DEMO_MODE_ENABLED` makes `POST /api/v1/auth/demo-session` unavailable without affecting normal login.
 
 ### 6. Start and verify the backend
 
@@ -201,7 +207,7 @@ Do not automatically run `alembic downgrade`. The daily-intelligence downgrade d
 1. Connect the GitHub repository to the Vercel staging project.
 2. Select `frontend` as the project root.
 3. Use install command `npm ci`, build command `npm run build`, and output directory `dist`.
-4. Set `VITE_API_URL` to the verified Render HTTPS API base ending in `/api/v1`, `VITE_APP_ENV=staging`, and `VITE_APP_VERSION=0.4.1`.
+4. Set `VITE_API_URL` to the verified Render HTTPS API base ending in `/api/v1`, `VITE_APP_ENV=staging`, and `VITE_APP_VERSION=0.4.2`.
 5. Build and deploy the selected commit.
 6. Confirm the SPA fallback works for direct route requests.
 7. If the final Vercel origin differs from the planned origin, update backend `CORS_ORIGINS` exactly and redeploy the backend before testing.

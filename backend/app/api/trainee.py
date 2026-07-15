@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import CoachTraineeAssignment, TraineeProfile, User
 from app.schemas import ProfileOut, ProfileUpdate, TraineeCoachOut
-from app.security import require_trainee
+from app.security import ensure_not_demo, require_trainee
 
 router = APIRouter(prefix="/trainee", tags=["trainee"])
 
@@ -40,6 +40,7 @@ def get_profile(
 def update_profile(
     body: ProfileUpdate, user: User = Depends(require_trainee), db: Session = Depends(get_db)
 ) -> TraineeProfile:
+    ensure_not_demo(user)
     profile = db.scalar(select(TraineeProfile).where(TraineeProfile.user_id == user.id))
     for key, value in body.model_dump(exclude_unset=True).items():
         setattr(profile, key, value)

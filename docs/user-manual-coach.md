@@ -4,6 +4,12 @@ This guide describes the coach experience that is implemented in the current Fit
 
 For an introduction, see [Getting started](getting-started.md) and the [Product guide](product-guide.md). For scoring details, see [Health Index v1](scoring/health-index-v1.md) and [Daily Intelligence v1](scoring/daily-intelligence-v1.md). For setup problems, see [Troubleshooting](troubleshooting.md). Common product questions are answered in the [FAQ](faq.md).
 
+## Public demo access
+
+From sign-in, select **Explore Demo**, then **View as Coach**. The demo opens a fictional seven-trainee roster with varied readiness, check-in, baseline, and alert states. A persistent banner identifies the workspace as synthetic and read-only. You can open roster records and inspect details, but invitation creation and revocation are disabled and rejected by the backend. Select **Exit demo** to leave.
+
+This does not change normal coach enrollment: an ordinary coach account still requires the protected coach registration code.
+
 ## Sign in
 
 Open the application and enter the coach email and password on **Welcome back**, then choose **Sign in**. Use **Show password** or **Hide password** when needed.

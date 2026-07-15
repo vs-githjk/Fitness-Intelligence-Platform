@@ -40,7 +40,7 @@ export function loadStoredUser(storage: Storage): User | null {
       clearStoredSession(storage)
       return null
     }
-    return parsed
+    return { ...parsed, is_demo: parsed.is_demo === true }
   } catch {
     clearStoredSession(storage)
     return null

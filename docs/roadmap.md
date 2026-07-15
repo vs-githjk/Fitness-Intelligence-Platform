@@ -45,10 +45,20 @@ Known current limits include local-storage JWTs, local/demo enrollment, no coach
 - Backend startup honors the provider port, with liveness and database-readiness probes.
 - Vercel single-page-app routing and a Render service/database Blueprint are defined.
 - CI covers backend, clean PostgreSQL migrations, frontend checks, and Compose builds.
-- Application/API/package metadata is aligned to `0.4.1`; backend health and OpenAPI metadata use the centralized `app.__version__` source.
+- Application/API/package metadata is aligned to `0.4.2`; backend health and OpenAPI metadata use the centralized `app.__version__` source.
 - Demo credentials and invite guidance are gated by client environment.
 - Role-aware registration, backend-protected coach bootstrap, and coach-specific single-use trainee invitations.
 - Requests carry `X-Request-ID` correlation and sanitized structured operational logs.
+
+## Milestone 2E — public demo experience
+
+- Separate **Explore Demo** entry with coach and trainee role choice; normal login has no role selector.
+- Backend-controlled, short-lived demo sessions for explicitly configured synthetic identities.
+- Seven deterministic coach-roster scenarios and a 21-local-date trainee history with intentional missing dates.
+- Persistent `is_demo` identity marker and backend-enforced read-only mutation guard.
+- Explicit environment gate that defaults off and is rejected in production.
+- Normal startup remains seed-free; deterministic demo provisioning is an approved one-off operation.
+- Normal protected coach registration and coach-specific trainee invitations remain unchanged.
 
 ### Operational work required to complete staging
 

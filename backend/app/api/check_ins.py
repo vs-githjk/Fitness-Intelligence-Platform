@@ -13,7 +13,7 @@ from app.daily_services import (
 from app.database import get_db
 from app.models import User
 from app.schemas import DailyCheckInData, DailyCheckInOut
-from app.security import require_trainee
+from app.security import ensure_not_demo, require_trainee
 
 router = APIRouter(prefix="/check-ins", tags=["daily check-ins"])
 
@@ -45,6 +45,7 @@ def put_today_check_in(
     trainee: User = Depends(require_trainee),
     db: Session = Depends(get_db),
 ) -> DailyCheckInOut:
+    ensure_not_demo(trainee)
     item, _score = save_today_check_in(db, trainee, body)
     return item
 

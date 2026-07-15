@@ -45,6 +45,7 @@ class User(Base):
     last_name: Mapped[str] = mapped_column(String(100))
     role: Mapped[Role] = mapped_column(Enum(Role, native_enum=False), index=True)
     status: Mapped[str] = mapped_column(String(30), default="active")
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow

@@ -26,6 +26,7 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 - [Desktop and mobile visual verification](docs/screenshots)
 - Trainee routes: Today, atomic daily check-in, Progress, onboarding, and submitted-assessment review
 - Coach routes: roster overview, private trainee invitations, daily completion/readiness review, longitudinal trainee detail, and baseline context
+- Public demo: backend-issued, short-lived coach or trainee sessions over a deterministic synthetic workspace; demo users are read-only
 
 ## Documentation
 
@@ -52,7 +53,7 @@ The responsive interface uses role-specific navigation, reusable semantic compon
    ```bash
    docker compose build
    docker compose --profile tools run --rm migrate
-   docker compose --profile tools run --rm seed
+   docker compose --profile tools run --rm -e SEED_DEMO_DATA=true seed
    docker compose up --wait
    ```
 
@@ -62,7 +63,11 @@ Migration, seed, and web startup are separate commands. The seed refuses to run 
 
 Compose has safe local-development fallbacks. If you maintain a personal `.env`, update it yourself from `.env.example`; never commit it or reuse local values in staging.
 
-## Demo identities
+## Public demo and local test identities
+
+Open **Explore Demo** from the sign-in page to enter a backend-controlled synthetic coach or trainee workspace without credentials. Public demo users receive normal role-scoped tokens, but the backend rejects persistent mutations. The demo indicator remains visible until **Exit demo** is selected.
+
+The following credentialed identities are for explicitly seeded local development and automated testing only; they are not the public demo accounts and are not displayed by the frontend:
 
 | Role | Email | Password |
 |---|---|---|
@@ -117,6 +122,8 @@ npm run dev
 | `TRUSTED_HOSTS` | Comma-separated API hostnames accepted by the backend |
 | `API_DOCS_ENABLED` | Enables `/docs`, `/redoc`, and `/openapi.json` when appropriate |
 | `SEED_DEMO_DATA` | Explicit one-off synthetic seed gate; production always rejects it |
+| `DEMO_MODE_ENABLED` | Explicitly enables backend-issued public demo sessions; defaults false and production rejects true |
+| `DEMO_SESSION_MINUTES` | Short public-demo token lifetime, default 30 minutes |
 | `LOG_LEVEL` | Backend stdout log level |
 | `PORT` | Backend listener port; Render supplies this automatically |
 | `DATABASE_SSLMODE`, `DATABASE_POOL_SIZE`, `DATABASE_MAX_OVERFLOW`, `DATABASE_POOL_TIMEOUT`, `DATABASE_POOL_RECYCLE`, `DATABASE_CONNECT_TIMEOUT` | Database TLS and conservative SQLAlchemy connection controls |
@@ -158,13 +165,13 @@ cd ..
 docker compose --env-file .env.example config
 docker compose build
 docker compose --profile tools run --rm migrate
-docker compose --profile tools run --rm seed
+docker compose --profile tools run --rm -e SEED_DEMO_DATA=true seed
 docker compose up --wait
 ```
 
 ## API overview
 
-- Auth: `POST /api/v1/auth/register/coach`, `POST /register/trainee`, `POST /login`, `GET /me` (`POST /register` remains a deprecated trainee alias)
+- Auth: `POST /api/v1/auth/register/coach`, `POST /register/trainee`, `POST /login`, `POST /demo-session`, `GET /me` (`POST /register` remains a deprecated trainee alias)
 - Trainee profile: `GET|PUT /api/v1/trainee/profile`
 - Onboarding: `GET|PUT /api/v1/assessments/onboarding`, `POST /submit`
 - Health Index: `GET /api/v1/health-index/current|history|{snapshot_id}`

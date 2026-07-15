@@ -4,6 +4,18 @@ This FAQ covers the currently implemented Fitness Intelligence Platform. See the
 
 ## Product and access
 
+### Can I explore the application without an account?
+
+Yes, when the environment owner has explicitly enabled and seeded the public demo. Select **Explore Demo** on sign-in and choose a synthetic coach or trainee workspace. No credentials are shown or required. Demo accounts are read-only and must not be used for personal or medical information.
+
+### Why does Explore Demo say it is unavailable?
+
+Demo authentication fails closed. The backend returns an unavailable state when `DEMO_MODE_ENABLED` is false or when the configured synthetic identity has not been explicitly seeded. Normal sign-in and account creation remain separate.
+
+### Does the public demo weaken registration security?
+
+No. The demo endpoint can authenticate only active database users marked as demo identities. Normal coaches still need the protected coach registration code, normal trainees still need a coach-specific single-use invitation, and normal role and coach-assignment authorization remains active.
+
 ### What does the platform do today?
 
 It supports trainee registration, role-aware sign-in, coach assignment, onboarding, an immutable baseline Health Index, one atomic daily check-in for the trainee's current local date, daily recovery/activity/nutrition/readiness scores, bounded 7- or 30-day trends, deterministic recommendations and alerts, and read-only coach review.

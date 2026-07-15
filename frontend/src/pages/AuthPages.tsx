@@ -1,4 +1,4 @@
-import { Eye, EyeOff, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react'
+import { Dumbbell, Eye, EyeOff, LockKeyhole, ShieldCheck, Sparkles, Users } from 'lucide-react'
 import { FormEvent, ReactNode, useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api'
@@ -40,7 +40,23 @@ export function LoginPage() {
       setError(caught instanceof ApiError ? caught.message : 'We could not sign you in. Your email remains on this page; please try again.')
     } finally { setBusy(false) }
   }
-  return <AuthFrame title="Welcome back" subtitle="Sign in to continue to your role-specific workspace.">{sessionMessage && <StatusNotice tone="attention" title="Session ended" className="mb-5">{sessionMessage}</StatusNotice>}<form onSubmit={submit} className="space-y-5" noValidate><Field label="Email address">{({ id, describedBy, invalid }) => <TextInput id={id} name="email" type="email" inputMode="email" required autoComplete="email" placeholder="you@example.com" aria-describedby={describedBy} aria-invalid={invalid} />}</Field><PasswordField name="password" label="Password" autoComplete="current-password" />{error && <StatusNotice tone="risk" title="Sign-in unsuccessful">{error}</StatusNotice>}<Button type="submit" loading={busy} className="w-full">Sign in</Button><p className="text-center text-sm text-secondary">Need an account? <Link className="rounded font-semibold text-primary hover:text-primary-hover" to="/register">Create one</Link></p>{appConfig.isLocal ? <div className="rounded-xl bg-elevated p-4 text-xs leading-5 text-muted"><p className="font-semibold text-secondary">Demo access</p><p className="mt-1">Trainee: trainee@fitness.example.com<br />Coach: coach@fitness.example.com<br />Password: DemoPass123!</p></div> : appConfig.isStaging ? <div className="rounded-xl bg-elevated p-4 text-xs leading-5 text-muted"><p className="font-semibold text-secondary">Staging access</p><p className="mt-1">Use synthetic test information only. Do not enter personal or medical data.</p></div> : null}</form></AuthFrame>
+  return <AuthFrame title="Welcome back" subtitle="Sign in to continue to your role-specific workspace.">{sessionMessage && <StatusNotice tone="attention" title="Session ended" className="mb-5">{sessionMessage}</StatusNotice>}<form onSubmit={submit} className="space-y-5" noValidate><Field label="Email address">{({ id, describedBy, invalid }) => <TextInput id={id} name="email" type="email" inputMode="email" required autoComplete="email" placeholder="you@example.com" aria-describedby={describedBy} aria-invalid={invalid} />}</Field><PasswordField name="password" label="Password" autoComplete="current-password" />{error && <StatusNotice tone="risk" title="Sign-in unsuccessful">{error}</StatusNotice>}<Button type="submit" loading={busy} className="w-full">Sign in</Button><Link to="/demo" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary bg-primary/5 px-4 text-sm font-semibold text-primary hover:bg-primary/10"><Sparkles aria-hidden="true" className="size-4" />Explore Demo</Link><p className="text-center text-sm text-secondary">Need an account? <Link className="rounded font-semibold text-primary hover:text-primary-hover" to="/register">Create one</Link></p>{appConfig.isLocal ? <div className="rounded-xl bg-elevated p-4 text-xs leading-5 text-muted"><p className="font-semibold text-secondary">Local test accounts</p><p className="mt-1">Synthetic credentials may be available only in explicitly seeded local development.</p></div> : appConfig.isStaging ? <div className="rounded-xl bg-elevated p-4 text-xs leading-5 text-muted"><p className="font-semibold text-secondary">Staging access</p><p className="mt-1">Use synthetic test information only. Do not enter personal or medical data.</p></div> : null}</form></AuthFrame>
+}
+
+export function DemoPage() {
+  const { user, setSession } = useAuth(); const navigate = useNavigate()
+  const [busyRole, setBusyRole] = useState<Role | null>(null); const [error, setError] = useState('')
+  if (user) return <Navigate to={user.role === 'coach' ? '/coach/dashboard' : '/trainee/today'} replace />
+  async function enter(role: Role) {
+    setBusyRole(role); setError('')
+    try {
+      const auth = await api<AuthResponse>('/auth/demo-session', { method: 'POST', body: JSON.stringify({ role }) })
+      setSession(auth); navigate(role === 'coach' ? '/coach/dashboard' : '/trainee/today')
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'The demo workspace could not be opened. Please try again.')
+    } finally { setBusyRole(null) }
+  }
+  return <AuthFrame title="Explore the public demo" subtitle="Choose a synthetic, read-only workspace. No email, password, or invitation is required."><div className="space-y-5"><StatusNotice tone="info" title="Synthetic demonstration only">Demo information is fictional. Changes are disabled, and this workspace must not be used for personal or medical data.</StatusNotice><div className="grid gap-3 sm:grid-cols-2"><Button type="button" loading={busyRole === 'trainee'} disabled={busyRole !== null} onClick={() => enter('trainee')} className="min-h-24 flex-col"><Dumbbell aria-hidden="true" className="size-5" />View as Trainee</Button><Button type="button" variant="secondary" loading={busyRole === 'coach'} disabled={busyRole !== null} onClick={() => enter('coach')} className="min-h-24 flex-col"><Users aria-hidden="true" className="size-5" />View as Coach</Button></div>{error && <StatusNotice tone="risk" title="Demo unavailable">{error}</StatusNotice>}<div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm"><Link className="font-semibold text-primary" to="/login">Sign in</Link><Link className="font-semibold text-primary" to="/register">Create account</Link></div></div></AuthFrame>
 }
 
 export function RegisterPage() {

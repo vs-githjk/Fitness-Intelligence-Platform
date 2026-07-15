@@ -1,5 +1,5 @@
 export type Role = 'coach' | 'trainee'
-export interface User { id: string; email: string; first_name: string; last_name: string; role: Role }
+export interface User { id: string; email: string; first_name: string; last_name: string; role: Role; is_demo: boolean }
 export interface AuthResponse { access_token: string; token_type: string; user: User }
 export interface CoachInvite {
   id: string; intended_email: string | null; status: 'active' | 'used' | 'expired' | 'revoked'

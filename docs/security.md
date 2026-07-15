@@ -4,6 +4,14 @@ The first milestone's trust boundary is the FastAPI service and PostgreSQL datab
 
 Implemented controls include bcrypt password hashing, signed expiring JWT access tokens, strict request schemas/ranges, a restricted CORS allowlist, server-side coach assignment checks, UUID identifiers, foreign keys/uniqueness constraints, UTC audit-friendly timestamps, and environment-based secrets. Normal application code does not log access tokens or health request bodies.
 
+## Controlled public demo boundary
+
+Public demo access is an authentication convenience for explicitly seeded synthetic users, not an authorization bypass. `DEMO_MODE_ENABLED` defaults to false, must be deliberately enabled in local or staging environments, and is rejected by production configuration validation. The backend resolves configured users that are both active and marked `is_demo`, then issues an ordinary short-lived role-bearing JWT. No password or hardcoded token is sent to the frontend.
+
+Demo coach and trainee requests continue through the normal role and active-assignment authorization paths. A shared backend guard rejects persistent demo mutations with `403 demo_read_only`, including profile, onboarding, daily check-in, and coach-invitation changes. Frontend disabled controls and banners are explanatory only; they are not the security boundary. Future mutation modules, including workouts, must apply the same backend guard before being exposed to demo users.
+
+Normal web startup never provisions demo records. The explicit seed command is separately gated by `SEED_DEMO_DATA=true`; production rejects seeding. The public demo is synthetic-only and is not authorization to collect real personal or health data.
+
 Daily check-ins add self-reported recovery, activity, nutrition-compliance, feeling, and an optional 500-character note. Notes and raw check-in values are not intentionally written to normal application logs. Trainees can create or edit only their current timezone-local date; coach endpoints are read-only and require an active assignment. List endpoints are date-bounded, while detailed calculation payloads remain limited to the authorized trainee or assigned coach. Local dates are stored explicitly so historical records are not reinterpreted after timezone or daylight-saving changes.
 
 JWTs are stored in browser local storage for this local milestone. A production hardening pass should prefer an appropriately protected secure, HttpOnly, SameSite cookie or a rigorously designed token/refresh flow, add CSRF controls as applicable, revocation and rotation, rate limiting, breached-password controls, MFA for coaches, account recovery, and security event logging.

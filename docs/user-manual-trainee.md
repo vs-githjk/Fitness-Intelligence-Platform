@@ -6,6 +6,12 @@ The platform provides coaching support based on information that you report. It 
 
 New to the platform? Read [Getting started](getting-started.md) and the [Product guide](product-guide.md) first.
 
+## Public demo access
+
+From sign-in, select **Explore Demo**, then **View as Trainee**. The demo opens a fictional completed onboarding baseline, current daily scores, recommendations, alerts, and gap-aware progress history. You can navigate and interact with local controls, but profile, assessment, and check-in changes cannot be saved. A persistent banner identifies the workspace as synthetic and read-only; select **Exit demo** to leave.
+
+This does not change normal trainee enrollment: an ordinary trainee account still requires a private, single-use invitation from its coach.
+
 ## Contents
 
 1. [Your role and navigation](#1-your-role-and-navigation)
@@ -69,7 +75,7 @@ The invitation identifies the issuing coach. Successful registration consumes th
 - An already registered email also produces a generic registration conflict.
 - Field or service errors appear on the same page. Correct the highlighted value or try again. The application does not provide email verification, account recovery, or a password-reset flow.
 
-> **Local demonstration only:** Do not treat the displayed invite code or demo credentials as production credentials.
+> **Local synthetic testing only:** Repository seed identities and compatibility values are not production credentials. The application does not display them.
 
 ## 3. Sign in
 
@@ -86,7 +92,7 @@ The invitation identifies the issuing coach. Successful registration consumes th
 
 If the email or password is incorrect, the page shows **Sign-in unsuccessful** and **Email or password is incorrect**. If the service cannot be reached, the page explains that sign-in could not be completed and allows you to retry.
 
-The sign-in page displays local demo accounts and the local demo password. Those credentials are for the local demonstration environment only.
+The sign-in page does not display credentials. When public demo mode is enabled, **Explore Demo** opens a controlled synthetic read-only session without an email or password; normal sign-in remains email-and-password based.
 
 ## 4. Complete onboarding
 

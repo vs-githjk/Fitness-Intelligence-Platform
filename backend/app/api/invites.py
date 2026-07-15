@@ -9,7 +9,7 @@ from app.database import get_db
 from app.invitations import generate_invite_token, hash_invite_token, invite_out, invite_status
 from app.models import CoachInvite, User
 from app.schemas import CoachInviteCreate, CoachInviteCreatedOut, CoachInviteOut
-from app.security import require_coach
+from app.security import ensure_not_demo, require_coach
 
 router = APIRouter(prefix="/coach/invites", tags=["coach invitations"])
 
@@ -32,6 +32,7 @@ def create_invite(
     coach: User = Depends(require_coach),
     db: Session = Depends(get_db),
 ) -> dict:
+    ensure_not_demo(coach)
     token = generate_invite_token()
     now = datetime.now(UTC)
     invite = CoachInvite(
@@ -52,6 +53,7 @@ def revoke_invite(
     coach: User = Depends(require_coach),
     db: Session = Depends(get_db),
 ) -> dict:
+    ensure_not_demo(coach)
     invite = db.scalar(
         select(CoachInvite)
         .where(CoachInvite.id == invite_id, CoachInvite.coach_id == coach.id)

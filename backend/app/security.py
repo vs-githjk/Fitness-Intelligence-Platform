@@ -23,14 +23,16 @@ def verify_password(password: str, password_hash: str) -> bool:
     return bcrypt.checkpw(password.encode(), password_hash.encode())
 
 
-def create_access_token(user: User) -> str:
+def create_access_token(user: User, expires_minutes: int | None = None) -> str:
     now = datetime.now(UTC)
     return jwt.encode(
         {
             "sub": str(user.id),
             "role": user.role.value,
             "iat": now,
-            "exp": now + timedelta(minutes=settings.access_token_minutes),
+            "exp": now + timedelta(
+                minutes=expires_minutes or settings.access_token_minutes
+            ),
         },
         settings.jwt_secret,
         algorithm=ALGORITHM,
@@ -75,3 +77,14 @@ def require_role(role: Role):
 
 require_trainee = require_role(Role.TRAINEE)
 require_coach = require_role(Role.COACH)
+
+
+def ensure_not_demo(user: User) -> None:
+    if user.is_demo:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "demo_read_only",
+                "message": "Demo accounts are read-only.",
+            },
+        )

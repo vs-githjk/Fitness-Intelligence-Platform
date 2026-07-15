@@ -32,7 +32,7 @@ Production must not reuse staging projects, databases, secrets, domains, demo ac
 - No coach MFA, account recovery, email verification, or breached-password control exists.
 - No application rate limiting or abuse protection exists.
 - Coach-specific hashed invitations now replace shared-code/oldest-coach enrollment, but production still needs rate limiting, verified administrative coach enrollment, invitation audit events, abuse monitoring, and assignment lifecycle controls.
-- Public demo credentials and invite guidance must be removed from production builds.
+- Public demo mode must remain disabled in production, and no synthetic seed identities may be provisioned there.
 
 ### Privacy, governance, and compliance
 

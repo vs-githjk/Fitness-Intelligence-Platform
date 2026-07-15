@@ -18,6 +18,7 @@ from app.models import (
 )
 from app.schemas import (
     CoachRegisterRequest,
+    DemoSessionRequest,
     LoginRequest,
     RegisterRequest,
     TokenResponse,
@@ -142,6 +143,7 @@ def login(body: LoginRequest, db: Session = Depends(get_db)) -> dict:
     user = db.scalar(select(User).where(User.email == body.email.lower()))
     if (
         user is None
+        or user.is_demo
         or not verify_password(body.password, user.password_hash)
         or user.status != "active"
     ):
@@ -150,6 +152,39 @@ def login(body: LoginRequest, db: Session = Depends(get_db)) -> dict:
             detail={"code": "invalid_credentials", "message": "Email or password is incorrect"},
         )
     return {"access_token": create_access_token(user), "user": user}
+
+
+@router.post("/demo-session", response_model=TokenResponse)
+def demo_session(body: DemoSessionRequest, db: Session = Depends(get_db)) -> dict:
+    if not settings.demo_mode_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "demo_unavailable", "message": "The demo workspace is unavailable."},
+        )
+    email = (
+        settings.demo_coach_email
+        if body.role == Role.COACH
+        else settings.demo_trainee_email
+    )
+    user = db.scalar(
+        select(User).where(
+            User.email == email,
+            User.role == body.role,
+            User.is_demo.is_(True),
+            User.status == "active",
+        )
+    )
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "demo_unavailable", "message": "The demo workspace is unavailable."},
+        )
+    return {
+        "access_token": create_access_token(
+            user, expires_minutes=settings.demo_session_minutes
+        ),
+        "user": user,
+    }
 
 
 @router.get("/me", response_model=UserOut)

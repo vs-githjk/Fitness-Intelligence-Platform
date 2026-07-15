@@ -19,6 +19,7 @@ class UserOut(BaseModel):
     first_name: str
     last_name: str
     role: Role
+    is_demo: bool
 
 
 class RegistrationBase(BaseModel):
@@ -43,6 +44,10 @@ RegisterRequest = TraineeRegisterRequest
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class DemoSessionRequest(BaseModel):
+    role: Role
 
 
 class TokenResponse(BaseModel):

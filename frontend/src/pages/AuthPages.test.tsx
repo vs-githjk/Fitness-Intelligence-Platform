@@ -3,7 +3,7 @@ import { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthProvider } from '../auth'
-import { LoginPage, RegisterPage } from './AuthPages'
+import { DemoPage, LoginPage, RegisterPage } from './AuthPages'
 
 function renderPage(page: ReactNode) {
   return render(<MemoryRouter><AuthProvider>{page}</AuthProvider></MemoryRouter>)
@@ -54,6 +54,7 @@ describe('role-aware registration', () => {
     expect(screen.getByLabelText('Email address')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.queryByText('What type of account are you creating?')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Explore Demo' })).toHaveAttribute('href', '/demo')
   })
 
   it('routes a coach using the backend-owned role', async () => {
@@ -81,5 +82,39 @@ describe('role-aware registration', () => {
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'TraineePass123!' } })
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     expect(await screen.findByText('Start onboarding')).toBeInTheDocument()
+  })
+})
+
+describe('public demo entry', () => {
+  it('starts a trainee demo and routes using the backend-owned role', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      access_token: 'demo-token', token_type: 'bearer',
+      user: { id: 'demo-trainee', email: 'synthetic@example.invalid', first_name: 'Demo', last_name: 'Trainee', role: 'trainee', is_demo: true },
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } })))
+    render(<MemoryRouter initialEntries={['/demo']}><AuthProvider><Routes><Route path="/demo" element={<DemoPage />} /><Route path="/trainee/today" element={<p>Trainee demo workspace</p>} /></Routes></AuthProvider></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: 'View as Trainee' }))
+    expect(await screen.findByText('Trainee demo workspace')).toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem('user') ?? '{}')).toMatchObject({ role: 'trainee', is_demo: true })
+  })
+
+  it('starts a coach demo and routes to the coach workspace', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      access_token: 'demo-token', token_type: 'bearer',
+      user: { id: 'demo-coach', email: 'synthetic@example.invalid', first_name: 'Demo', last_name: 'Coach', role: 'coach', is_demo: true },
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } })))
+    render(<MemoryRouter initialEntries={['/demo']}><AuthProvider><Routes><Route path="/demo" element={<DemoPage />} /><Route path="/coach/dashboard" element={<p>Coach demo workspace</p>} /></Routes></AuthProvider></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: 'View as Coach' }))
+    expect(await screen.findByText('Coach demo workspace')).toBeInTheDocument()
+  })
+
+  it('shows a safe unavailable state without asking for credentials', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      detail: { code: 'demo_unavailable', message: 'The demo workspace is unavailable.' },
+    }), { status: 503, headers: { 'Content-Type': 'application/json' } })))
+    renderPage(<DemoPage />)
+    expect(screen.queryByLabelText('Email address')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Password')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'View as Coach' }))
+    expect(await screen.findByText('The demo workspace is unavailable.')).toBeInTheDocument()
   })
 })

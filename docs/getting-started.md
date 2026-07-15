@@ -2,7 +2,13 @@
 
 This guide explains how to access and begin using an already running local copy of the Fitness Intelligence Platform. For installation and startup commands, see the root [README](../README.md). For an overview of the scores and product boundaries, read the [Product guide](product-guide.md).
 
-> **Local demonstration only:** The accounts, password, and invite code below are public demo credentials. Do not reuse them for another service, deploy them to a shared or production environment, or enter real health information in the demo.
+> **Synthetic use only:** Never enter real health information. The public demo requires no credentials; optional credentialed seed identities below exist only for local developer regression testing.
+
+## Explore without an account
+
+When public demo mode has been explicitly enabled and its synthetic workspace has been seeded, open the sign-in page and select **Explore Demo**. Choose **View as Trainee** or **View as Coach**. No credentials are required. The resulting workspace is marked as synthetic and read-only; select **Exit demo** to return to normal sign-in.
+
+If the backend has demo mode disabled or the configured demo identities are missing, the page shows **Demo unavailable**. Normal sign-in and invitation-based registration remain available and unchanged.
 
 ## Open the application
 
@@ -16,7 +22,7 @@ The application redirects signed-out visitors to the sign-in page.
 
 ![The local sign-in screen](screenshots/manual/login-desktop.png)
 
-## Demo accounts
+## Optional local test accounts
 
 | Role | Email | Password | Best use |
 |---|---|---|---|
@@ -24,12 +30,12 @@ The application redirects signed-out visitors to the sign-in page.
 | Coach | `coach@fitness.example.com` | `DemoPass123!` | Explore the assigned roster and full trainee detail. |
 | Trainee with no check-ins | `no-checkins@fitness.example.com` | `DemoPass123!` | Explore daily empty states. |
 
-These credentials are defined by the repository’s demo seed. They are not private production credentials. `FIT-DEMO-2026` is retained only as a deprecated local compatibility setting; normal registration uses coach-created single-use invitations.
+These identities are created only by the explicit local seed and are separate from the backend-controlled public demo accounts. They are not displayed by the application and must not be deployed as real accounts. `FIT-DEMO-2026` is retained only as a deprecated local compatibility setting; normal registration uses coach-created single-use invitations.
 
 ## Sign in
 
 1. Open <http://localhost:5175/login>.
-2. Enter a demo email and `DemoPass123!`.
+2. Enter the email and password for a normal account. For local regression testing only, you may use one of the optional seeded identities above.
 3. Select **Sign in**.
 
 A trainee is sent to **Today**. A coach is sent to the **Coach overview**. The server enforces the role as well as the visible navigation, so changing a URL does not grant access to another role.

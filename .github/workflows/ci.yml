@@ -19,6 +19,7 @@ jobs:
       CORS_ORIGINS: http://localhost:5175
       TRUSTED_HOSTS: localhost,testserver
       DEMO_INVITE_CODE: FIT-DEMO-2026
+      DEMO_MODE_ENABLED: "false"
       SEED_DEMO_DATA: "false"
       API_DOCS_ENABLED: "true"
     steps:
@@ -57,6 +58,7 @@ jobs:
       CORS_ORIGINS: http://localhost:5175
       TRUSTED_HOSTS: localhost
       DEMO_INVITE_CODE: FIT-DEMO-2026
+      DEMO_MODE_ENABLED: "false"
       SEED_DEMO_DATA: "false"
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +81,7 @@ jobs:
     env:
       VITE_APP_ENV: local
       VITE_API_URL: http://localhost:8000/api/v1
-      VITE_APP_VERSION: 0.4.1
+      VITE_APP_VERSION: 0.4.2
     defaults:
       run:
         working-directory: frontend

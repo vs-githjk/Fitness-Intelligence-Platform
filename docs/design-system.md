@@ -229,7 +229,7 @@ Avoid diagnostic, shame-based, or absolute language such as “unhealthy,” “
 - The shared system does not currently include a modal, drawer, toast, or confirmation-dialog component because current flows do not require them.
 - Inter is requested through the font stack but is not bundled by the frontend.
 - The CSS establishes a minimum document width of 320px; narrower viewports are outside the implemented target.
-- The authentication screen displays local demo credentials. That content is appropriate to the current demo environment and should be removed or gated before a production deployment.
+- The authentication screen distinguishes normal sign-in, account creation, and the backend-controlled public demo. It never displays demo credentials; public demo mode must remain disabled in production.
 
 ## Source locations
 

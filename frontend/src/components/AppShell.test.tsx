@@ -1,0 +1,36 @@
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { AuthProvider } from '../auth'
+import { AppShell } from './AppShell'
+
+class MemoryStorage implements Storage {
+  private values = new Map<string, string>()
+  get length() { return this.values.size }
+  clear() { this.values.clear() }
+  getItem(key: string) { return this.values.get(key) ?? null }
+  key(index: number) { return [...this.values.keys()][index] ?? null }
+  removeItem(key: string) { this.values.delete(key) }
+  setItem(key: string, value: string) { this.values.set(key, value) }
+}
+
+beforeEach(() => {
+  const storage = new MemoryStorage()
+  storage.setItem('access_token', 'demo-token')
+  storage.setItem('user', JSON.stringify({
+    id: 'demo-id', email: 'demo@synthetic.invalid', first_name: 'Demo', last_name: 'Trainee', role: 'trainee', is_demo: true,
+  }))
+  vi.stubGlobal('localStorage', storage)
+})
+
+afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+
+describe('demo workspace shell', () => {
+  it('shows the read-only indicator and exits without retaining the session', () => {
+    render(<MemoryRouter initialEntries={['/trainee/today']}><AuthProvider><Routes><Route path="/trainee/today" element={<AppShell><p>Demo content</p></AppShell>} /><Route path="/login" element={<p>Signed out</p>} /></Routes></AuthProvider></MemoryRouter>)
+    expect(screen.getByRole('status', { name: 'Demo workspace' })).toHaveTextContent('changes are disabled')
+    fireEvent.click(screen.getAllByRole('button', { name: 'Exit demo' })[0])
+    expect(screen.getByText('Signed out')).toBeInTheDocument()
+    expect(localStorage.getItem('access_token')).toBeNull()
+  })
+})

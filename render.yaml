@@ -35,6 +35,10 @@ services:
         generateValue: true
       - key: COACH_REGISTRATION_CODE
         sync: false
+      - key: DEMO_MODE_ENABLED
+        sync: false
+      - key: DEMO_SESSION_MINUTES
+        value: 30
       - key: SEED_DEMO_DATA
         value: false
       - key: LOG_LEVEL

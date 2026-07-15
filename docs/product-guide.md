@@ -57,6 +57,14 @@ A protected coach can register with the backend-only coach registration code, th
 
 The assigned coach can view the trainee’s baseline, daily scores, recent raw check-in summaries, trends, alerts, and recommendations. Other coaches are denied access unless they have an active assignment.
 
+### Public demo workspace
+
+The sign-in page offers **Explore Demo** as a separate entry from **Sign in** and **Create account**. A visitor chooses a coach or trainee view, and the backend issues a short-lived normal role-scoped session for a configured synthetic demo identity. No email, password, coach registration code, trainee invitation, or prebuilt JWT is exposed.
+
+The demo coach has seven assigned fictional trainees representing improvement, low readiness, limited activity, hydration review, stress/sleep concern, missing check-ins, and stable high performance. The main demo trainee has a submitted baseline and a 21-local-date window with intentional gaps. Demo sessions are read-only: navigation and local UI exploration work, while persistent mutations are rejected by the backend. The visible demo banner states that all information is synthetic and changes are disabled.
+
+The public demo does not replace normal account creation. Coaches still require the protected coach registration code, trainees still require a coach-specific invitation, and ordinary login continues to detect the role from the authenticated backend identity.
+
 ## Core concepts
 
 ### Baseline assessment
