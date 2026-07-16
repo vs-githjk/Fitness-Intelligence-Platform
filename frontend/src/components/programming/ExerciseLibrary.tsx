@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../../api'
-import { useAuth } from '../../auth'
+import { useAccountQueryScope, useAuth } from '../../auth'
 import { ExerciseSummary } from '../../types'
 import { Badge, Button, Card, EmptyState, ErrorState, LoadingState, SearchField, SelectInput } from '../ui'
 import { ProgrammingShell } from './ProgrammingShell'
@@ -16,7 +16,8 @@ function unique(values: (string | undefined)[]) { return [...new Set(values.filt
 
 export function ExerciseLibrary() {
   const { user } = useAuth()
-  const query = useQuery({ queryKey: ['programming-exercises'], queryFn: () => api<ExerciseSummary[]>('/coach/exercises?include_archived=true') })
+  const accountScope = useAccountQueryScope()
+  const query = useQuery({ queryKey: [...accountScope, 'programming-exercises'], queryFn: () => api<ExerciseSummary[]>('/coach/exercises?include_archived=true') })
   const [scope, setScope] = useState('all'); const [status, setStatus] = useState('active'); const [search, setSearch] = useState('')
   const [category, setCategory] = useState('all'); const [movement, setMovement] = useState('all'); const [equipment, setEquipment] = useState('all'); const [tracking, setTracking] = useState('all'); const [page, setPage] = useState(1)
   const source = useMemo(() => query.data ?? [], [query.data])

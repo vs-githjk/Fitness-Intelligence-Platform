@@ -17,6 +17,7 @@ import { ReactNode, useEffect, useState } from 'react'
 import { FieldErrors, useForm, useWatch } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { api, ApiError } from '../api'
+import { useAccountQueryScope } from '../auth'
 import { AppShell, ProfileMeta } from '../components/AppShell'
 import {
   Badge,
@@ -77,9 +78,10 @@ function DailyMetric({ label, value, detail, icon: Icon, tone = 'primary' }: { l
 }
 
 export function TodayPage() {
-  const checkIn = useQuery({ queryKey: ['daily-check-in-today'], queryFn: () => api<DailyCheckIn>('/check-ins/today'), retry: false })
-  const score = useQuery({ queryKey: ['daily-score-today'], queryFn: () => api<DailyScore>('/daily-scores/today'), retry: false })
-  const baseline = useQuery({ queryKey: ['health-current'], queryFn: () => api<HealthIndex>('/health-index/current'), retry: false })
+  const scope = useAccountQueryScope()
+  const checkIn = useQuery({ queryKey: [...scope, 'daily-check-in-today'], queryFn: () => api<DailyCheckIn>('/check-ins/today'), retry: false })
+  const score = useQuery({ queryKey: [...scope, 'daily-score-today'], queryFn: () => api<DailyScore>('/daily-scores/today'), retry: false })
+  const baseline = useQuery({ queryKey: [...scope, 'health-current'], queryFn: () => api<HealthIndex>('/health-index/current'), retry: false })
   if (checkIn.isLoading || score.isLoading || baseline.isLoading) return <AppShell><LoadingState label="Loading today's fitness intelligence" /></AppShell>
   if (checkIn.error && !isMissing(checkIn.error)) return <AppShell><ErrorState description={checkIn.error.message} onRetry={() => checkIn.refetch()} /></AppShell>
   const complete = Boolean(checkIn.data && score.data)
@@ -97,12 +99,13 @@ function FormSection({ title, description, icon: Icon, children }: { title: stri
 
 export function CheckInPage() {
   const queryClient = useQueryClient(); const [message, setMessage] = useState(''); const [apiError, setApiError] = useState('')
-  const existing = useQuery({ queryKey: ['daily-check-in-today'], queryFn: () => api<DailyCheckIn>('/check-ins/today'), retry: false })
+  const scope = useAccountQueryScope()
+  const existing = useQuery({ queryKey: [...scope, 'daily-check-in-today'], queryFn: () => api<DailyCheckIn>('/check-ins/today'), retry: false })
   const form = useForm<DailyCheckInData>({ resolver: zodResolver(checkInSchema), defaultValues: defaults, mode: 'onBlur' })
   const { register, control, setValue, reset, handleSubmit, formState: { errors } } = form
   const values = useWatch({ control }) as DailyCheckInData
   useEffect(() => { if (existing.data) reset({ ...defaults, ...existing.data }) }, [existing.data, reset])
-  const mutation = useMutation({ mutationFn: (data: DailyCheckInData) => api<DailyCheckIn>('/check-ins/today', { method: 'PUT', body: JSON.stringify(data) }), onSuccess: async () => { setApiError(''); setMessage(existing.data ? 'Today’s check-in was updated.' : 'Today’s check-in was submitted and scored.'); await Promise.all([queryClient.invalidateQueries({ queryKey: ['daily-check-in-today'] }), queryClient.invalidateQueries({ queryKey: ['daily-score-today'] }), queryClient.invalidateQueries({ queryKey: ['daily-trends'] })]); window.scrollTo({ top: 0, behavior: 'smooth' }) }, onError: (error) => setApiError(error.message) })
+  const mutation = useMutation({ mutationFn: (data: DailyCheckInData) => api<DailyCheckIn>('/check-ins/today', { method: 'PUT', body: JSON.stringify(data) }), onSuccess: async () => { setApiError(''); setMessage(existing.data ? 'Today’s check-in was updated.' : 'Today’s check-in was submitted and scored.'); await Promise.all([queryClient.invalidateQueries({ queryKey: [...scope, 'daily-check-in-today'] }), queryClient.invalidateQueries({ queryKey: [...scope, 'daily-score-today'] }), queryClient.invalidateQueries({ queryKey: [...scope, 'daily-trends'] })]); window.scrollTo({ top: 0, behavior: 'smooth' }) }, onError: (error) => setApiError(error.message) })
   if (existing.isLoading) return <AppShell><LoadingState label="Loading today's check-in" /></AppShell>
   if (existing.error && !isMissing(existing.error)) return <AppShell><ErrorState description={existing.error.message} onRetry={() => existing.refetch()} /></AppShell>
   const selectedActivities = values.activity_types ?? []
@@ -121,7 +124,8 @@ export function TrendChart({ series }: { series: TrendSeries }) {
 
 export function ProgressPage() {
   const [days, setDays] = useState('7')
-  const trends = useQuery({ queryKey: ['daily-trends', days], queryFn: () => api<DailyTrends>(`/daily-scores/trends?days=${days}`) })
+  const scope = useAccountQueryScope()
+  const trends = useQuery({ queryKey: [...scope, 'daily-trends', days], queryFn: () => api<DailyTrends>(`/daily-scores/trends?days=${days}`) })
   if (trends.isLoading) return <AppShell><LoadingState label="Loading progress trends" /></AppShell>
   if (trends.error) return <AppShell><ErrorState description={trends.error.message} onRetry={() => trends.refetch()} /></AppShell>
   const data = trends.data!

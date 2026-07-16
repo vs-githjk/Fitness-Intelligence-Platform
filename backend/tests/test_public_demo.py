@@ -124,6 +124,46 @@ def test_demo_sessions_use_normal_roles_and_short_lived_tokens(
     ).status_code == 403
 
 
+def test_demo_coach_roster_contains_only_assigned_synthetic_trainees(
+    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    demo_coach, demo_trainee = _demo_users(db)
+    normal_coach = User(
+        email="normal-coach@example.com",
+        password_hash="not-used",
+        first_name="Normal",
+        last_name="Coach",
+        role=Role.COACH,
+    )
+    normal_trainee = User(
+        email="normal-trainee@example.com",
+        password_hash="not-used",
+        first_name="Normal",
+        last_name="Trainee",
+        role=Role.TRAINEE,
+    )
+    db.add_all([normal_coach, normal_trainee])
+    db.flush()
+    db.add(TraineeProfile(user_id=normal_trainee.id, timezone="UTC"))
+    db.add(
+        CoachTraineeAssignment(
+            coach_id=normal_coach.id,
+            trainee_id=normal_trainee.id,
+            accepted_at=datetime.now(UTC),
+        )
+    )
+    db.commit()
+    monkeypatch.setattr(settings, "demo_mode_enabled", True)
+
+    demo_token = _demo_session(client, "coach")["access_token"]
+    roster = client.get("/api/v1/coach/trainees", headers=_auth(demo_token))
+
+    assert roster.status_code == 200
+    assert {item["trainee_id"] for item in roster.json()} == {str(demo_trainee.id)}
+    assert all(item["trainee_id"] != str(normal_trainee.id) for item in roster.json())
+    assert demo_coach.id != normal_coach.id
+
+
 def test_demo_mutations_are_rejected_and_normal_mutations_still_work(
     client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:

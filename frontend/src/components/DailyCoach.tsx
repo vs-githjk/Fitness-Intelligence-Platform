@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowLeft, ArrowRight, CalendarCheck, Gauge, Moon, Users
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api, ApiError } from '../api'
+import { useAccountQueryScope } from '../auth'
 import { formatDate, formatDateTime, titleize } from '../lib/format'
 import { DailyAlert, DailyCheckIn, DailyScore, DailyScoreSummary, DailyTrends, TraineeDetail, TraineeSummary } from '../types'
 import { AppShell, ProfileMeta } from './AppShell'
@@ -24,7 +25,8 @@ function localDate(value: string) { return formatDate(`${value}T12:00:00`) }
 function stateTone(state?: string | null) { return state === 'ready_to_push' ? 'positive' as const : state === 'maintain' ? 'info' as const : state ? 'attention' as const : 'neutral' as const }
 
 export function CoachDailyOverview({ trainees }: { trainees: TraineeSummary[] }) {
-  const alerts = useQuery({ queryKey: ['coach-daily-alerts'], queryFn: () => api<DailyAlert[]>('/coach/daily-alerts') })
+  const scope = useAccountQueryScope()
+  const alerts = useQuery({ queryKey: [...scope, 'coach-daily-alerts'], queryFn: () => api<DailyAlert[]>('/coach/daily-alerts') })
   if (alerts.isLoading) return <LoadingState label="Loading daily coaching signals" />
   if (alerts.error) return <ErrorState description={alerts.error.message} onRetry={() => alerts.refetch()} />
   const missing = trainees.filter(item => !item.checked_in_today)
@@ -35,7 +37,8 @@ export function CoachDailyOverview({ trainees }: { trainees: TraineeSummary[] })
 }
 
 export function CoachDashboardPage() {
-  const roster = useQuery({ queryKey: ['coach-trainees'], queryFn: () => api<TraineeSummary[]>('/coach/trainees') })
+  const scope = useAccountQueryScope()
+  const roster = useQuery({ queryKey: [...scope, 'coach-trainees'], queryFn: () => api<TraineeSummary[]>('/coach/trainees') })
   if (roster.isLoading) return <AppShell><LoadingState label="Loading coach workspace" /></AppShell>
   if (roster.error) return <AppShell><ErrorState description={roster.error.message} onRetry={() => roster.refetch()} /></AppShell>
   const trainees = roster.data ?? []
@@ -45,7 +48,8 @@ export function CoachDashboardPage() {
 
 export function CoachTraineeLongitudinalPage() {
   const { traineeId } = useParams()
-  const detail = useQuery({ queryKey: ['coach-trainee', traineeId], queryFn: () => api<TraineeDetail>(`/coach/trainees/${traineeId}`), enabled: Boolean(traineeId), retry: false })
+  const scope = useAccountQueryScope()
+  const detail = useQuery({ queryKey: [...scope, 'coach-trainee', traineeId], queryFn: () => api<TraineeDetail>(`/coach/trainees/${traineeId}`), enabled: Boolean(traineeId), retry: false })
   if (detail.isLoading) return <AppShell><LoadingState label="Loading trainee record" /></AppShell>
   if (detail.error) return <AppShell><div className="space-y-5"><Link to="/coach/dashboard" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary"><ArrowLeft aria-hidden="true" className="size-4" />Back to overview</Link><ErrorState title={detail.error instanceof ApiError && detail.error.status === 403 ? 'Trainee access unavailable' : 'We could not load this trainee'} description={detail.error.message} onRetry={() => detail.refetch()} /></div></AppShell>
   const data = detail.data!
@@ -54,11 +58,12 @@ export function CoachTraineeLongitudinalPage() {
 
 export function CoachTraineeDaily({ traineeId }: { traineeId: string }) {
   const [days, setDays] = useState('7')
-  const latestDetail = useQuery({ queryKey: ['coach-daily-score-latest', traineeId], queryFn: () => api<DailyScore>(`/coach/trainees/${traineeId}/daily-score-latest`), retry: false })
-  const scores = useQuery({ queryKey: ['coach-daily-scores', traineeId, days], queryFn: () => api<DailyScoreSummary[]>(`/coach/trainees/${traineeId}/daily-scores?days=${days}`) })
-  const checkIns = useQuery({ queryKey: ['coach-check-ins', traineeId, days], queryFn: () => api<DailyCheckIn[]>(`/coach/trainees/${traineeId}/check-ins?days=${days}`) })
-  const trends = useQuery({ queryKey: ['coach-trends', traineeId, days], queryFn: () => api<DailyTrends>(`/coach/trainees/${traineeId}/trends?days=${days}`) })
-  const alerts = useQuery({ queryKey: ['coach-daily-alerts'], queryFn: () => api<DailyAlert[]>('/coach/daily-alerts') })
+  const scope = useAccountQueryScope()
+  const latestDetail = useQuery({ queryKey: [...scope, 'coach-daily-score-latest', traineeId], queryFn: () => api<DailyScore>(`/coach/trainees/${traineeId}/daily-score-latest`), retry: false })
+  const scores = useQuery({ queryKey: [...scope, 'coach-daily-scores', traineeId, days], queryFn: () => api<DailyScoreSummary[]>(`/coach/trainees/${traineeId}/daily-scores?days=${days}`) })
+  const checkIns = useQuery({ queryKey: [...scope, 'coach-check-ins', traineeId, days], queryFn: () => api<DailyCheckIn[]>(`/coach/trainees/${traineeId}/check-ins?days=${days}`) })
+  const trends = useQuery({ queryKey: [...scope, 'coach-trends', traineeId, days], queryFn: () => api<DailyTrends>(`/coach/trainees/${traineeId}/trends?days=${days}`) })
+  const alerts = useQuery({ queryKey: [...scope, 'coach-daily-alerts'], queryFn: () => api<DailyAlert[]>('/coach/daily-alerts') })
   if (latestDetail.isLoading || scores.isLoading || checkIns.isLoading || trends.isLoading || alerts.isLoading) return <LoadingState label="Loading longitudinal trainee intelligence" />
   const latestDetailError = latestDetail.error instanceof ApiError && latestDetail.error.status === 404 ? null : latestDetail.error
   if (latestDetailError || scores.error || checkIns.error || trends.error || alerts.error) { const error = latestDetailError ?? scores.error ?? checkIns.error ?? trends.error ?? alerts.error!; return <ErrorState description={error.message} onRetry={() => { latestDetail.refetch(); scores.refetch(); checkIns.refetch(); trends.refetch(); alerts.refetch() }} /> }

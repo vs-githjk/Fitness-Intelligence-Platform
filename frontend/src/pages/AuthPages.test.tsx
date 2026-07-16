@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -6,7 +7,12 @@ import { AuthProvider } from '../auth'
 import { DemoPage, LoginPage, RegisterPage } from './AuthPages'
 
 function renderPage(page: ReactNode) {
-  return render(<MemoryRouter><AuthProvider>{page}</AuthProvider></MemoryRouter>)
+  return render(withQueryClient(<MemoryRouter><AuthProvider>{page}</AuthProvider></MemoryRouter>))
+}
+
+function withQueryClient(children: ReactNode) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 
 class MemoryStorage implements Storage {
@@ -63,7 +69,7 @@ describe('role-aware registration', () => {
       access_token: 'token', token_type: 'bearer',
       user: { id: 'coach-id', email: 'coach@example.com', first_name: 'Test', last_name: 'Coach', role: 'coach' },
     }), { status: 200, headers: { 'Content-Type': 'application/json' } })))
-    render(<MemoryRouter initialEntries={['/login']}><AuthProvider><Routes><Route path="/login" element={<LoginPage />} /><Route path="/coach/dashboard" element={<p>Coach workspace</p>} /></Routes></AuthProvider></MemoryRouter>)
+    render(withQueryClient(<MemoryRouter initialEntries={['/login']}><AuthProvider><Routes><Route path="/login" element={<LoginPage />} /><Route path="/coach/dashboard" element={<p>Coach workspace</p>} /></Routes></AuthProvider></MemoryRouter>))
     fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'coach@example.com' } })
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'CoachPass123!' } })
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
@@ -78,7 +84,7 @@ describe('role-aware registration', () => {
       }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ detail: { code: 'not_started', message: 'No onboarding assessment has been started' } }), { status: 404, headers: { 'Content-Type': 'application/json' } }))
     vi.stubGlobal('fetch', fetchMock)
-    render(<MemoryRouter initialEntries={['/login']}><AuthProvider><Routes><Route path="/login" element={<LoginPage />} /><Route path="/onboarding" element={<p>Start onboarding</p>} /></Routes></AuthProvider></MemoryRouter>)
+    render(withQueryClient(<MemoryRouter initialEntries={['/login']}><AuthProvider><Routes><Route path="/login" element={<LoginPage />} /><Route path="/onboarding" element={<p>Start onboarding</p>} /></Routes></AuthProvider></MemoryRouter>))
     fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'trainee@example.com' } })
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'TraineePass123!' } })
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
@@ -92,7 +98,7 @@ describe('public demo entry', () => {
       access_token: 'demo-token', token_type: 'bearer',
       user: { id: 'demo-trainee', email: 'synthetic@example.invalid', first_name: 'Demo', last_name: 'Trainee', role: 'trainee', is_demo: true },
     }), { status: 200, headers: { 'Content-Type': 'application/json' } })))
-    render(<MemoryRouter initialEntries={['/demo']}><AuthProvider><Routes><Route path="/demo" element={<DemoPage />} /><Route path="/trainee/today" element={<p>Trainee demo workspace</p>} /></Routes></AuthProvider></MemoryRouter>)
+    render(withQueryClient(<MemoryRouter initialEntries={['/demo']}><AuthProvider><Routes><Route path="/demo" element={<DemoPage />} /><Route path="/trainee/today" element={<p>Trainee demo workspace</p>} /></Routes></AuthProvider></MemoryRouter>))
     fireEvent.click(screen.getByRole('button', { name: 'View as Trainee' }))
     expect(await screen.findByText('Trainee demo workspace')).toBeInTheDocument()
     expect(JSON.parse(localStorage.getItem('user') ?? '{}')).toMatchObject({ role: 'trainee', is_demo: true })
@@ -103,7 +109,7 @@ describe('public demo entry', () => {
       access_token: 'demo-token', token_type: 'bearer',
       user: { id: 'demo-coach', email: 'synthetic@example.invalid', first_name: 'Demo', last_name: 'Coach', role: 'coach', is_demo: true },
     }), { status: 200, headers: { 'Content-Type': 'application/json' } })))
-    render(<MemoryRouter initialEntries={['/demo']}><AuthProvider><Routes><Route path="/demo" element={<DemoPage />} /><Route path="/coach/dashboard" element={<p>Coach demo workspace</p>} /></Routes></AuthProvider></MemoryRouter>)
+    render(withQueryClient(<MemoryRouter initialEntries={['/demo']}><AuthProvider><Routes><Route path="/demo" element={<DemoPage />} /><Route path="/coach/dashboard" element={<p>Coach demo workspace</p>} /></Routes></AuthProvider></MemoryRouter>))
     fireEvent.click(screen.getByRole('button', { name: 'View as Coach' }))
     expect(await screen.findByText('Coach demo workspace')).toBeInTheDocument()
   })

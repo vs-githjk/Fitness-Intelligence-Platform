@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ArrowRight, CheckCircle2, CircleStop, Plus, RefreshCw, Save, SkipForward } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import { api, ApiError } from '../api'
-import { useAuth } from '../auth'
+import { useAccountQueryScope, useAuth } from '../auth'
 import { AppShell } from '../components/AppShell'
 import { Badge, Button, Card, EmptyState, ErrorState, Field, LoadingState, PageHeader, SelectInput, StatusNotice, TextArea, TextInput } from '../components/ui'
 import { ScheduledWorkout, TrainingAssignmentWorkspace, WorkoutSession, WorkoutSessionExercise, WorkoutSetLog } from '../types'
@@ -14,17 +14,18 @@ const formatDate = (value: string) => new Intl.DateTimeFormat(undefined, { weekd
 
 export function WorkoutExecutionPage() {
   const { scheduledWorkoutId = '' } = useParams(); const { user } = useAuth(); const cache = useQueryClient(); const [sessionId, setSessionId] = useState<string | null>(null)
-  const workspace = useQuery({ queryKey: ['my-training-program'], queryFn: () => api<TrainingAssignmentWorkspace>('/trainee/program') })
+  const scope = useAccountQueryScope()
+  const workspace = useQuery({ queryKey: [...scope, 'my-training-program'], queryFn: () => api<TrainingAssignmentWorkspace>('/trainee/program') })
   const workout = workspace.data?.scheduled_workouts.find(item => item.id === scheduledWorkoutId)
   useEffect(() => { if (workout?.workout_session_id) setSessionId(workout.workout_session_id) }, [workout?.workout_session_id])
-  const session = useQuery({ queryKey: ['workout-session', sessionId], queryFn: () => api<WorkoutSession>(`/trainee/workout-sessions/${sessionId}`), enabled: Boolean(sessionId) })
-  const start = useMutation({ mutationFn: () => api<WorkoutSession>(`/trainee/workouts/${scheduledWorkoutId}/start`, { method: 'POST' }), onSuccess: value => { setSessionId(value.id); cache.setQueryData(['workout-session', value.id], value) } })
+  const session = useQuery({ queryKey: [...scope, 'workout-session', sessionId], queryFn: () => api<WorkoutSession>(`/trainee/workout-sessions/${sessionId}`), enabled: Boolean(sessionId) })
+  const start = useMutation({ mutationFn: () => api<WorkoutSession>(`/trainee/workouts/${scheduledWorkoutId}/start`, { method: 'POST' }), onSuccess: value => { setSessionId(value.id); cache.setQueryData([...scope, 'workout-session', value.id], value) } })
   if (workspace.isLoading) return <AppShell><LoadingState label="Loading workout" /></AppShell>
   if (workspace.error) return <AppShell><ErrorState title="Workout unavailable" description={workspace.error.message} onRetry={() => workspace.refetch()} /></AppShell>
   if (!workout) return <AppShell><EmptyState title="Workout not found" description="This scheduled workout is not available in your Program." /></AppShell>
   if (sessionId && session.isLoading) return <AppShell><LoadingState label="Loading saved workout progress" /></AppShell>
   if (session.error) return <AppShell><ErrorState title="Saved workout unavailable" description={session.error.message} onRetry={() => session.refetch()} /></AppShell>
-  if (session.data) return <SessionExperience session={session.data} onChange={value => cache.setQueryData(['workout-session', value.id], value)} onReload={() => session.refetch()} demo={Boolean(user?.is_demo)} />
+  if (session.data) return <SessionExperience session={session.data} onChange={value => cache.setQueryData([...scope, 'workout-session', value.id], value)} onReload={() => session.refetch()} demo={Boolean(user?.is_demo)} />
   return <ScheduledOverview workout={workout} programName={workspace.data?.current_assignment?.program_name ?? 'Assigned Program'} programVersion={workspace.data?.current_assignment?.program_version_number ?? 1} demo={Boolean(user?.is_demo)} starting={start.isPending} error={start.error} onStart={() => start.mutate()} />
 }
 

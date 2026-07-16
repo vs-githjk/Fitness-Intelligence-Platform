@@ -3,7 +3,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 're
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError } from '../../api'
-import { useAuth } from '../../auth'
+import { useAccountQueryScope, useAuth } from '../../auth'
 import { ExerciseSummary, ExerciseVersion, WorkoutTemplateDetail, WorkoutTemplateDraftData, WorkoutTemplateExerciseData, WorkoutTemplateSection } from '../../types'
 import { Badge, Button, Card, Field, LoadingState, Modal, StatusNotice, TextArea, TextInput } from '../ui'
 import { ExercisePicker } from './ExercisePicker'
@@ -17,8 +17,9 @@ const sectionOrder: Record<WorkoutTemplateSection, number> = { warm_up: 0, main:
 
 export function TemplateBuilder() {
   const { templateId } = useParams(); const isNew = templateId === 'new'; const { user } = useAuth(); const navigate = useNavigate(); const cache = useQueryClient()
-  const detailQuery = useQuery({ queryKey: ['workout-template', templateId], queryFn: () => api<WorkoutTemplateDetail>(`/coach/workout-templates/${templateId}`), enabled: !isNew })
-  const exercisesQuery = useQuery({ queryKey: ['programming-exercises'], queryFn: () => api<ExerciseSummary[]>('/coach/exercises?include_archived=true') })
+  const scope = useAccountQueryScope()
+  const detailQuery = useQuery({ queryKey: [...scope, 'workout-template', templateId], queryFn: () => api<WorkoutTemplateDetail>(`/coach/workout-templates/${templateId}`), enabled: !isNew })
+  const exercisesQuery = useQuery({ queryKey: [...scope, 'programming-exercises'], queryFn: () => api<ExerciseSummary[]>('/coach/exercises?include_archived=true') })
   const [form, setForm] = useState<WorkoutTemplateDraftData>(emptyTemplate); const [draftRevision, setDraftRevision] = useState<number | null>(null); const [dirty, setDirty] = useState(false); const [saveState, setSaveState] = useState('Not saved'); const [busy, setBusy] = useState(false); const [error, setError] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false); const [publishOpen, setPublishOpen] = useState(false); const [archiveOpen, setArchiveOpen] = useState(false); const [conflictOpen, setConflictOpen] = useState(false); const [mobilePanel, setMobilePanel] = useState<'builder' | 'preview'>('builder')
   const loaded = useRef(''); const detail = detailQuery.data; const draft = detail?.draft_version; const published = detail?.published_version; const visible = draft ?? published; const immutable = Boolean(detail && (!draft || detail.status === 'archived'))
@@ -44,7 +45,7 @@ export function TemplateBuilder() {
       const next = isNew
         ? await api<WorkoutTemplateDetail>('/coach/workout-templates', { method: 'POST', body: JSON.stringify(payload) })
         : await api<WorkoutTemplateDetail>(`/coach/workout-templates/${templateId}/draft`, { method: 'PUT', body: JSON.stringify({ ...payload, expected_draft_revision: draftRevision }) })
-      cache.setQueryData(['workout-template', next.id], next); await cache.invalidateQueries({ queryKey: ['workout-templates'] })
+      cache.setQueryData([...scope, 'workout-template', next.id], next); await cache.invalidateQueries({ queryKey: [...scope, 'workout-templates'] })
       const nextDraft = next.draft_version; loaded.current = nextDraft ? `${nextDraft.id}:${nextDraft.draft_revision}` : ''; setDraftRevision(nextDraft?.draft_revision ?? null); setDirty(false); setSaveState('Draft saved')
       if (isNew) navigate(`/coach/programming/templates/${next.id}`, { replace: true })
     } catch (caught) { if (caught instanceof ApiError && caught.status === 409) { setConflictOpen(true); setSaveState('Conflict detected') } else { failure(caught, 'The workout-template draft could not be saved.'); setSaveState('Save failed') } }
@@ -52,7 +53,7 @@ export function TemplateBuilder() {
   }
   async function action(name: 'publish' | 'revisions' | 'archive') {
     setBusy(true); setError('')
-    try { const next = await api<WorkoutTemplateDetail>(`/coach/workout-templates/${templateId}/${name}`, { method: 'POST' }); cache.setQueryData(['workout-template', templateId], next); await cache.invalidateQueries({ queryKey: ['workout-templates'] }); loaded.current = ''; setDirty(false); setPublishOpen(false); setArchiveOpen(false); setSaveState(name === 'publish' ? 'Published successfully' : name === 'revisions' ? 'Revision draft created' : 'Template archived') }
+    try { const next = await api<WorkoutTemplateDetail>(`/coach/workout-templates/${templateId}/${name}`, { method: 'POST' }); cache.setQueryData([...scope, 'workout-template', templateId], next); await cache.invalidateQueries({ queryKey: [...scope, 'workout-templates'] }); loaded.current = ''; setDirty(false); setPublishOpen(false); setArchiveOpen(false); setSaveState(name === 'publish' ? 'Published successfully' : name === 'revisions' ? 'Revision draft created' : 'Template archived') }
     catch (caught) { failure(caught, 'The workout-template action could not be completed.') }
     finally { setBusy(false) }
   }

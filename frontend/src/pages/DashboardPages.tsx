@@ -31,7 +31,7 @@ import {
 } from '../components/ui'
 import { formatDate, formatDateTime, formatGoal, severityRank, titleize } from '../lib/format'
 import { CoachAlert, CoachRelationship, HealthIndex, TraineeDetail, TraineeSummary } from '../types'
-import { useAuth } from '../auth'
+import { useAccountQueryScope, useAuth } from '../auth'
 
 function MetricCard({ label, value, detail, icon: Icon, tone = 'primary' }: { label: string; value: string | number; detail: string; icon: typeof Users; tone?: 'primary' | 'positive' | 'attention' | 'risk' }) {
   const colors = { primary: 'bg-primary/10 text-primary', positive: 'bg-[rgb(var(--status-positive-bg))] text-positive', attention: 'bg-[rgb(var(--status-attention-bg))] text-attention', risk: 'bg-[rgb(var(--status-risk-bg))] text-risk' }
@@ -39,9 +39,9 @@ function MetricCard({ label, value, detail, icon: Icon, tone = 'primary' }: { la
 }
 
 export function TraineeDashboard() {
-  const { user } = useAuth(); const [searchParams, setSearchParams] = useSearchParams()
-  const health = useQuery({ queryKey: ['health-current'], queryFn: () => api<HealthIndex>('/health-index/current'), retry: false })
-  const relationship = useQuery({ queryKey: ['trainee-coach'], queryFn: () => api<CoachRelationship>('/trainee/coach'), retry: false })
+  const { user } = useAuth(); const scope = useAccountQueryScope(); const [searchParams, setSearchParams] = useSearchParams()
+  const health = useQuery({ queryKey: [...scope, 'health-current'], queryFn: () => api<HealthIndex>('/health-index/current'), retry: false })
+  const relationship = useQuery({ queryKey: [...scope, 'trainee-coach'], queryFn: () => api<CoachRelationship>('/trainee/coach'), retry: false })
   const created = searchParams.get('baseline') === 'created'
   if (health.isLoading) return <AppShell><LoadingState label="Loading your Health Index" /></AppShell>
   if (health.error) {
@@ -55,8 +55,9 @@ export function TraineeDashboard() {
 function assessmentTone(status: string) { return status === 'submitted' ? 'positive' as const : status === 'draft' ? 'attention' as const : 'neutral' as const }
 
 export function CoachDashboard() {
-  const roster = useQuery({ queryKey: ['coach-trainees'], queryFn: () => api<TraineeSummary[]>('/coach/trainees') })
-  const alerts = useQuery({ queryKey: ['coach-alerts'], queryFn: () => api<CoachAlert[]>('/coach/risk-alerts') })
+  const scope = useAccountQueryScope()
+  const roster = useQuery({ queryKey: [...scope, 'coach-trainees'], queryFn: () => api<TraineeSummary[]>('/coach/trainees') })
+  const alerts = useQuery({ queryKey: [...scope, 'coach-alerts'], queryFn: () => api<CoachAlert[]>('/coach/risk-alerts') })
   const [search, setSearch] = useState(''); const [status, setStatus] = useState('all'); const [alertFilter, setAlertFilter] = useState('all'); const [goal, setGoal] = useState('all'); const [sort, setSort] = useState('name')
   const rows = useMemo(() => {
     const source = roster.data ?? []
@@ -81,7 +82,8 @@ function Filter({ value, onChange, label, options }: { value: string; onChange: 
 
 export function CoachTraineePage() {
   const { traineeId } = useParams()
-  const query = useQuery({ queryKey: ['coach-trainee', traineeId], queryFn: () => api<TraineeDetail>(`/coach/trainees/${traineeId}`), enabled: Boolean(traineeId), retry: false })
+  const scope = useAccountQueryScope()
+  const query = useQuery({ queryKey: [...scope, 'coach-trainee', traineeId], queryFn: () => api<TraineeDetail>(`/coach/trainees/${traineeId}`), enabled: Boolean(traineeId), retry: false })
   if (query.isLoading) return <AppShell><LoadingState label="Loading trainee record" /></AppShell>
   if (query.error) return <AppShell><div className="space-y-5"><Link to="/coach/dashboard" className="inline-flex min-h-11 items-center gap-2 rounded-xl text-sm font-semibold text-primary"><ArrowLeft aria-hidden="true" className="size-4" />Back to overview</Link><ErrorState title={query.error instanceof ApiError && query.error.status === 403 ? 'Trainee access unavailable' : 'We could not load this trainee'} description={query.error instanceof ApiError && query.error.status === 403 ? 'This trainee is not assigned to your coach account. Return to your assigned roster.' : query.error.message} onRetry={() => query.refetch()} /></div></AppShell>
   const detail = query.data!

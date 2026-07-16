@@ -3,7 +3,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError } from '../../api'
-import { useAuth } from '../../auth'
+import { useAccountQueryScope, useAuth } from '../../auth'
 import { ExerciseDetail, ExerciseDraftData, ExerciseTrackingMode } from '../../types'
 import { Badge, Button, Card, Field, LoadingState, Modal, SelectInput, StatusNotice, TextArea, TextInput } from '../ui'
 import { ProgrammingShell } from './ProgrammingShell'
@@ -20,7 +20,8 @@ const empty: ExerciseDraftData = { name: '', description: null, instructions: ''
 
 export function ExerciseEditor() {
   const { exerciseId } = useParams(); const isNew = exerciseId === 'new'; const { user } = useAuth(); const navigate = useNavigate(); const cache = useQueryClient()
-  const query = useQuery({ queryKey: ['programming-exercise', exerciseId], queryFn: () => api<ExerciseDetail>(`/coach/exercises/${exerciseId}`), enabled: !isNew })
+  const scope = useAccountQueryScope()
+  const query = useQuery({ queryKey: [...scope, 'programming-exercise', exerciseId], queryFn: () => api<ExerciseDetail>(`/coach/exercises/${exerciseId}`), enabled: !isNew })
   const [form, setForm] = useState<ExerciseDraftData>(empty); const [dirty, setDirty] = useState(false); const [saving, setSaving] = useState(false); const [saveState, setSaveState] = useState('Not saved')
   const [error, setError] = useState(''); const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({}); const [publishOpen, setPublishOpen] = useState(false); const [archiveOpen, setArchiveOpen] = useState(false)
   const loaded = useRef('')
@@ -44,7 +45,7 @@ export function ExerciseEditor() {
       const next = isNew
         ? await api<ExerciseDetail>('/coach/exercises', { method: 'POST', body: JSON.stringify({ slug: slugify(form.name), ...form }) })
         : await api<ExerciseDetail>(`/coach/exercises/${exerciseId}/draft`, { method: 'PUT', body: JSON.stringify(form) })
-      cache.setQueryData(['programming-exercise', next.id], next); await cache.invalidateQueries({ queryKey: ['programming-exercises'] })
+      cache.setQueryData([...scope, 'programming-exercise', next.id], next); await cache.invalidateQueries({ queryKey: [...scope, 'programming-exercises'] })
       loaded.current = next.draft_version?.id ?? ''; setDirty(false); setSaveState('Draft saved')
       if (isNew) navigate(`/coach/programming/exercises/${next.id}`, { replace: true })
     } catch (caught) { setSaveState('Save failed'); apiFailure(caught, 'The exercise draft could not be saved.') }
@@ -52,7 +53,7 @@ export function ExerciseEditor() {
   }
   async function action(path: string, success: string) {
     setSaving(true); setError('')
-    try { const next = await api<ExerciseDetail>(`/coach/exercises/${exerciseId}/${path}`, { method: 'POST' }); cache.setQueryData(['programming-exercise', exerciseId], next); await cache.invalidateQueries({ queryKey: ['programming-exercises'] }); loaded.current = ''; setDirty(false); setSaveState(success); setPublishOpen(false); setArchiveOpen(false) }
+    try { const next = await api<ExerciseDetail>(`/coach/exercises/${exerciseId}/${path}`, { method: 'POST' }); cache.setQueryData([...scope, 'programming-exercise', exerciseId], next); await cache.invalidateQueries({ queryKey: [...scope, 'programming-exercises'] }); loaded.current = ''; setDirty(false); setSaveState(success); setPublishOpen(false); setArchiveOpen(false) }
     catch (caught) { apiFailure(caught, 'The exercise action could not be completed.') }
     finally { setSaving(false) }
   }

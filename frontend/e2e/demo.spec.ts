@@ -1,6 +1,28 @@
 import { expect, request, test } from '@playwright/test'
 import { apiUrl } from './config'
 
+test('real coach roster never survives sign-out into the coach demo', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel('Email address').fill('coach@fitness.example.com')
+  await page.locator('input[name="password"]').fill('DemoPass123!')
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await expect(page).toHaveURL(/\/coach\/dashboard$/)
+  await expect(page.getByText('Arjun Trainee', { exact: true }).first()).toBeVisible()
+
+  await page.getByRole('button', { name: 'Sign out' }).first().click()
+  await page.getByRole('link', { name: 'Explore Demo' }).click()
+  const demoRosterResponse = page.waitForResponse(response =>
+    response.url().endsWith('/coach/trainees') && response.request().method() === 'GET',
+  )
+  await page.getByRole('button', { name: 'View as Coach' }).click()
+  const demoRoster = await (await demoRosterResponse).json() as Array<{ trainee_id: string }>
+
+  await expect(page.getByRole('status', { name: 'Demo workspace' })).toBeVisible()
+  expect(demoRoster).toHaveLength(7)
+  await expect(page.getByText('Aarav Improving', { exact: true }).first()).toBeVisible()
+  await expect(page.getByText('Arjun Trainee', { exact: true })).toHaveCount(0)
+})
+
 test('visitor explores read-only trainee and coach demo workspaces', async ({ page }) => {
   await page.goto('/login')
   await page.getByRole('link', { name: 'Explore Demo' }).click()

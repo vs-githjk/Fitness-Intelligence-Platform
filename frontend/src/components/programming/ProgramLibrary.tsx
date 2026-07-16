@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../../api'
-import { useAuth } from '../../auth'
+import { useAccountQueryScope, useAuth } from '../../auth'
 import { TrainingProgramDetail, TrainingProgramList, TrainingProgramSummary } from '../../types'
 import { Badge, Button, Card, EmptyState, ErrorState, LoadingState, Modal, SearchField, SelectInput, StatusNotice } from '../ui'
 import { ProgrammingShell } from './ProgrammingShell'
@@ -11,16 +11,16 @@ import { ProgrammingShell } from './ProgrammingShell'
 const PAGE_SIZE = 12
 
 export function ProgramLibrary() {
-  const { user } = useAuth(); const navigate = useNavigate(); const cache = useQueryClient()
+  const { user } = useAuth(); const scope = useAccountQueryScope(); const navigate = useNavigate(); const cache = useQueryClient()
   const [status, setStatus] = useState('active'); const [publication, setPublication] = useState('all'); const [goal, setGoal] = useState('all'); const [search, setSearch] = useState(''); const [page, setPage] = useState(1)
   const [archiveTarget, setArchiveTarget] = useState<TrainingProgramSummary | null>(null); const [busy, setBusy] = useState(''); const [error, setError] = useState('')
-  const query = useQuery({ queryKey: ['training-programs', status], queryFn: () => api<TrainingProgramList>(`/coach/training-programs?status=${status}&page=1&per_page=100`) })
+  const query = useQuery({ queryKey: [...scope, 'training-programs', status], queryFn: () => api<TrainingProgramList>(`/coach/training-programs?status=${status}&page=1&per_page=100`) })
   const source = useMemo(() => query.data?.items ?? [], [query.data]); const goals = useMemo(() => [...new Set(source.flatMap(item => item.goal_tags))].sort(), [source])
   const filtered = useMemo(() => source.filter(item => (publication === 'all' || (publication === 'draft' ? item.has_draft : item.current_published_version_number !== null)) && (goal === 'all' || item.goal_tags.includes(goal)) && (!search.trim() || item.name.toLowerCase().includes(search.trim().toLowerCase()))), [goal, publication, search, source])
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)); const safePage = Math.min(page, pages); const rows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
   function update(setter: (value: string) => void, value: string) { setter(value); setPage(1) }
   function reset() { setPublication('all'); setGoal('all'); setSearch(''); setPage(1) }
-  async function action(item: TrainingProgramSummary, name: 'revisions' | 'archive') { setBusy(item.id); setError(''); try { const next = await api<TrainingProgramDetail>(`/coach/training-programs/${item.id}/${name}`, { method: 'POST' }); cache.setQueryData(['training-program', item.id], next); await cache.invalidateQueries({ queryKey: ['training-programs'] }); setArchiveTarget(null); if (name === 'revisions') navigate(`/coach/programming/programs/${item.id}`) } catch (caught) { setError(caught instanceof ApiError ? caught.message : 'The program action could not be completed.') } finally { setBusy('') } }
+  async function action(item: TrainingProgramSummary, name: 'revisions' | 'archive') { setBusy(item.id); setError(''); try { const next = await api<TrainingProgramDetail>(`/coach/training-programs/${item.id}/${name}`, { method: 'POST' }); cache.setQueryData([...scope, 'training-program', item.id], next); await cache.invalidateQueries({ queryKey: [...scope, 'training-programs'] }); setArchiveTarget(null); if (name === 'revisions') navigate(`/coach/programming/programs/${item.id}`) } catch (caught) { setError(caught instanceof ApiError ? caught.message : 'The program action could not be completed.') } finally { setBusy('') } }
   return <ProgrammingShell title="Programs" description="Create reusable multi-week structures pinned to exact published workout versions." action={user?.is_demo ? <Button disabled title="Demo workspace — changes are disabled"><Plus aria-hidden="true" className="size-4" />New program</Button> : <Link to="/coach/programming/programs/new" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover"><Plus aria-hidden="true" className="size-4" />New program</Link>}>
     {error && <StatusNotice tone="risk" title="Program action unsuccessful">{error}</StatusNotice>}
     <Card><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(14rem,1.5fr)_repeat(3,minmax(10rem,1fr))]"><SearchField value={search} onChange={value => update(setSearch, value)} label="Search programs" /><Filter label="Program status" value={status} onChange={value => update(setStatus, value)} options={[['active', 'Active'], ['archived', 'Archived']]} /><Filter label="Publication status" value={publication} onChange={value => update(setPublication, value)} options={[['all', 'Draft and published'], ['draft', 'Has draft'], ['published', 'Published only']]} /><Filter label="Goal tag" value={goal} onChange={value => update(setGoal, value)} options={[['all', 'All goal tags'], ...goals.map(value => [value, value.replaceAll('_', ' ')])]} /></div></Card>

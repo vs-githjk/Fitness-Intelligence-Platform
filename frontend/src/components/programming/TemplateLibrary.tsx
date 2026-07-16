@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../../api'
-import { useAuth } from '../../auth'
+import { useAccountQueryScope, useAuth } from '../../auth'
 import { WorkoutTemplateDetail, WorkoutTemplateList, WorkoutTemplateSummary } from '../../types'
 import { Badge, Button, Card, EmptyState, ErrorState, LoadingState, Modal, SearchField, SelectInput, StatusNotice } from '../ui'
 import { ProgrammingShell } from './ProgrammingShell'
@@ -12,16 +12,16 @@ import { TemplateStatusBadge } from './ProgrammingBadges'
 const PAGE_SIZE = 12
 
 export function TemplateLibrary() {
-  const { user } = useAuth(); const navigate = useNavigate(); const cache = useQueryClient()
+  const { user } = useAuth(); const scope = useAccountQueryScope(); const navigate = useNavigate(); const cache = useQueryClient()
   const [status, setStatus] = useState('active'); const [publication, setPublication] = useState('all'); const [goal, setGoal] = useState('all'); const [search, setSearch] = useState(''); const [page, setPage] = useState(1)
   const [archiveTarget, setArchiveTarget] = useState<WorkoutTemplateSummary | null>(null); const [busy, setBusy] = useState(''); const [error, setError] = useState('')
-  const query = useQuery({ queryKey: ['workout-templates', status], queryFn: () => api<WorkoutTemplateList>(`/coach/workout-templates?status=${status}&page=1&per_page=100`) })
+  const query = useQuery({ queryKey: [...scope, 'workout-templates', status], queryFn: () => api<WorkoutTemplateList>(`/coach/workout-templates?status=${status}&page=1&per_page=100`) })
   const source = useMemo(() => query.data?.items ?? [], [query.data]); const goals = useMemo(() => [...new Set(source.flatMap(item => item.goal_tags))].sort(), [source])
   const filtered = useMemo(() => source.filter(item => (publication === 'all' || (publication === 'draft' ? item.has_draft : !item.has_draft && item.current_published_version_number !== null)) && (goal === 'all' || item.goal_tags.includes(goal)) && (!search.trim() || item.name.toLowerCase().includes(search.trim().toLowerCase()))), [goal, publication, search, source])
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)); const safePage = Math.min(page, pages); const rows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
   function update(setter: (value: string) => void, value: string) { setter(value); setPage(1) }
   function reset() { setPublication('all'); setGoal('all'); setSearch(''); setPage(1) }
-  async function action(item: WorkoutTemplateSummary, actionName: 'revisions' | 'archive') { setBusy(item.id); setError(''); try { const next = await api<WorkoutTemplateDetail>(`/coach/workout-templates/${item.id}/${actionName}`, { method: 'POST' }); cache.setQueryData(['workout-template', item.id], next); await cache.invalidateQueries({ queryKey: ['workout-templates'] }); setArchiveTarget(null); if (actionName === 'revisions') navigate(`/coach/programming/templates/${item.id}`) } catch (caught) { setError(caught instanceof ApiError ? caught.message : 'The template action could not be completed.') } finally { setBusy('') } }
+  async function action(item: WorkoutTemplateSummary, actionName: 'revisions' | 'archive') { setBusy(item.id); setError(''); try { const next = await api<WorkoutTemplateDetail>(`/coach/workout-templates/${item.id}/${actionName}`, { method: 'POST' }); cache.setQueryData([...scope, 'workout-template', item.id], next); await cache.invalidateQueries({ queryKey: [...scope, 'workout-templates'] }); setArchiveTarget(null); if (actionName === 'revisions') navigate(`/coach/programming/templates/${item.id}`) } catch (caught) { setError(caught instanceof ApiError ? caught.message : 'The template action could not be completed.') } finally { setBusy('') } }
 
   return <ProgrammingShell title="Workout templates" description="Author reusable workout prescriptions, review trainee-facing content, and publish immutable versions." action={user?.is_demo ? <Button disabled><Plus aria-hidden="true" className="size-4" />New template</Button> : <Link to="/coach/programming/templates/new" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover"><Plus aria-hidden="true" className="size-4" />New template</Link>}>
     {error && <StatusNotice tone="risk" title="Template action unsuccessful">{error}</StatusNotice>}
