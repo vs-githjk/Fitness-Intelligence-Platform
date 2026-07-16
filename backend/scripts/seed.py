@@ -8,17 +8,25 @@ from sqlalchemy import select
 from app.config import AppEnvironment, Settings, settings
 from app.daily_services import calculate_and_store_daily_score, get_check_in, local_today
 from app.database import SessionLocal
+from app.exercise_services import exercise_content_hash
 from app.models import (
     AssessmentStatus,
     CoachProfile,
     CoachTraineeAssignment,
     DailyCheckIn,
+    Exercise,
+    ExerciseScope,
+    ExerciseStatus,
+    ExerciseTrackingMode,
+    ExerciseVersion,
+    ExerciseVersionStatus,
     OnboardingAssessment,
     Role,
     TraineeProfile,
     User,
     utcnow,
 )
+from app.repositories.exercises import ExerciseRepository
 from app.schemas import AssessmentData
 from app.security import hash_password
 from app.services import save_assessment, submit_assessment
@@ -127,6 +135,167 @@ DAILY_VALUES = [
     (1, 5.6, 8, 8, 3500, True, 80, 9, 1.1, "poor"),
     (0, 4.8, 9, 9, 2800, True, 90, 9, 1.0, "very_poor"),
 ]
+
+SYSTEM_EXERCISES: tuple[dict[str, Any], ...] = (
+    {
+        "slug": "dumbbell-goblet-squat",
+        "name": "Dumbbell goblet squat",
+        "tracking_mode": ExerciseTrackingMode.REPETITIONS_AND_LOAD,
+        "category": "strength",
+        "movement_pattern": "squat",
+        "equipment": ["dumbbell"],
+        "primary_muscle_groups": ["quadriceps", "glutes"],
+        "secondary_muscle_groups": ["core"],
+        "unilateral": False,
+        "instructions": "Hold one dumbbell at the chest and squat with controlled depth.",
+        "safety_cues": ["Keep the knees tracking in line with the toes."],
+    },
+    {
+        "slug": "dead-bug",
+        "name": "Dead bug",
+        "tracking_mode": ExerciseTrackingMode.REPETITIONS_ONLY,
+        "category": "core",
+        "movement_pattern": "anti-extension",
+        "equipment": [],
+        "primary_muscle_groups": ["core"],
+        "secondary_muscle_groups": [],
+        "unilateral": True,
+        "instructions": "Alternate lowering opposite limbs while keeping the trunk controlled.",
+        "safety_cues": ["Use a range that allows the lower back to remain controlled."],
+    },
+    {
+        "slug": "front-plank",
+        "name": "Front plank",
+        "tracking_mode": ExerciseTrackingMode.DURATION,
+        "category": "core",
+        "movement_pattern": "isometric",
+        "equipment": ["exercise mat"],
+        "primary_muscle_groups": ["core"],
+        "secondary_muscle_groups": ["shoulders"],
+        "unilateral": False,
+        "instructions": "Hold a straight, braced position supported by forearms and feet.",
+        "safety_cues": ["End the hold if position cannot be maintained comfortably."],
+    },
+    {
+        "slug": "treadmill-walk",
+        "name": "Treadmill walk",
+        "tracking_mode": ExerciseTrackingMode.DISTANCE_AND_DURATION,
+        "category": "cardio",
+        "movement_pattern": "walking",
+        "equipment": ["treadmill"],
+        "primary_muscle_groups": ["lower body"],
+        "secondary_muscle_groups": [],
+        "unilateral": False,
+        "instructions": "Walk at a controlled pace for the planned distance and duration.",
+        "safety_cues": ["Use the safety stop and step off if balance feels uncertain."],
+    },
+    {
+        "slug": "assisted-pull-up",
+        "name": "Assisted pull-up",
+        "tracking_mode": ExerciseTrackingMode.BODYWEIGHT_OR_ASSISTED_REPETITIONS,
+        "category": "strength",
+        "movement_pattern": "vertical pull",
+        "equipment": ["pull-up station"],
+        "primary_muscle_groups": ["back"],
+        "secondary_muscle_groups": ["biceps"],
+        "unilateral": False,
+        "instructions": "Complete controlled pull-up repetitions with optional assistance.",
+        "safety_cues": ["Avoid dropping rapidly into the bottom position."],
+    },
+)
+
+PRIVATE_EXERCISES: tuple[dict[str, Any], ...] = (
+    {
+        "slug": "coach-tempo-split-squat",
+        "name": "Coach tempo split squat",
+        "tracking_mode": ExerciseTrackingMode.REPETITIONS_ONLY,
+        "category": "strength",
+        "movement_pattern": "lunge",
+        "equipment": [],
+        "primary_muscle_groups": ["quadriceps", "glutes"],
+        "secondary_muscle_groups": ["core"],
+        "unilateral": True,
+        "instructions": "Use the coach-defined controlled tempo for each split-squat repetition.",
+        "safety_cues": ["Use stable support if balance is uncertain."],
+    },
+    {
+        "slug": "coach-marching-carry",
+        "name": "Coach marching carry",
+        "tracking_mode": ExerciseTrackingMode.DURATION,
+        "category": "conditioning",
+        "movement_pattern": "carry",
+        "equipment": ["dumbbell"],
+        "primary_muscle_groups": ["core"],
+        "secondary_muscle_groups": ["shoulders", "hips"],
+        "unilateral": True,
+        "instructions": "March in place while maintaining the coach-defined carry position.",
+        "safety_cues": ["Set the load down under control if grip or posture changes."],
+    },
+)
+
+
+def _seed_exercise(
+    db,
+    *,
+    specification: dict[str, Any],
+    scope: ExerciseScope,
+    coach: User | None = None,
+) -> Exercise:
+    repository = ExerciseRepository(db)
+    exercise = (
+        repository.get_system_by_slug(specification["slug"])
+        if scope == ExerciseScope.SYSTEM
+        else repository.get_private_by_slug(coach.id, specification["slug"])
+    )
+    if exercise is None:
+        exercise = Exercise(
+            scope=scope,
+            owner_coach_id=coach.id if coach else None,
+            slug=specification["slug"],
+            status=ExerciseStatus.ACTIVE,
+        )
+        db.add(exercise)
+        db.flush()
+    published = next(
+        (
+            item
+            for item in exercise.versions
+            if item.status == ExerciseVersionStatus.PUBLISHED
+        ),
+        None,
+    )
+    if published is None:
+        version = ExerciseVersion(
+            exercise_id=exercise.id,
+            version_number=1,
+            status=ExerciseVersionStatus.PUBLISHED,
+            description=None,
+            image_url=None,
+            thumbnail_url=None,
+            created_by_user_id=coach.id if coach else None,
+            published_at=utcnow(),
+            **{key: value for key, value in specification.items() if key != "slug"},
+        )
+        version.content_hash = exercise_content_hash(version)
+        exercise.versions.append(version)
+    return exercise
+
+
+def seed_exercise_library(db, coach: User | None = None) -> None:
+    """Idempotently add immutable system content and owner-private coach examples."""
+    for specification in SYSTEM_EXERCISES:
+        _seed_exercise(
+            db, specification=specification, scope=ExerciseScope.SYSTEM
+        )
+    if coach is not None:
+        for specification in PRIVATE_EXERCISES:
+            _seed_exercise(
+                db,
+                specification=specification,
+                scope=ExerciseScope.COACH_PRIVATE,
+                coach=coach,
+            )
+    db.commit()
 
 
 def ensure_seed_allowed(config: Settings = settings) -> None:
@@ -277,6 +446,7 @@ def seed_public_demo_workspace(
                 credentials_text="Synthetic public demo profile; credentials are not verified.",
             )
         )
+    seed_exercise_library(db, coach)
 
     for scenario in DEMO_SCENARIOS:
         email = (
@@ -426,6 +596,8 @@ def seed() -> None:
                 )
             )
         db.commit()
+
+        seed_exercise_library(db, coach)
 
         submitted = db.scalar(
             select(OnboardingAssessment).where(

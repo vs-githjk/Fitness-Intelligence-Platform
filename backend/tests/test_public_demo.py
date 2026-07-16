@@ -12,6 +12,8 @@ from app.models import (
     CoachTraineeAssignment,
     DailyCheckIn,
     DailyScoreSnapshot,
+    Exercise,
+    ExerciseScope,
     OnboardingAssessment,
     RiskAlert,
     Role,
@@ -19,7 +21,7 @@ from app.models import (
     User,
 )
 from app.security import ALGORITHM
-from scripts.seed import DEMO_SCENARIOS, seed_public_demo_workspace
+from scripts.seed import DEMO_SCENARIOS, seed_exercise_library, seed_public_demo_workspace
 
 
 def _demo_users(db: Session) -> tuple[User, User]:
@@ -118,7 +120,8 @@ def test_demo_sessions_use_normal_roles_and_short_lived_tokens(
 def test_demo_mutations_are_rejected_and_normal_mutations_still_work(
     client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    _demo_users(db)
+    demo_coach, _ = _demo_users(db)
+    seed_exercise_library(db, demo_coach)
     monkeypatch.setattr(settings, "demo_mode_enabled", True)
     coach_token = _demo_session(client, "coach")["access_token"]
     trainee_token = _demo_session(client, "trainee")["access_token"]
@@ -155,7 +158,59 @@ def test_demo_mutations_are_rejected_and_normal_mutations_still_work(
         headers=_auth(coach_token),
         json={"expires_in_days": 1},
     )
-    for response in (profile, assessment, check_in, invite):
+    exercise_payload = {
+        "slug": "demo-mutation",
+        "name": "Demo mutation",
+        "description": None,
+        "instructions": "This otherwise-valid content must not be saved.",
+        "tracking_mode": "repetitions_only",
+        "category": "strength",
+        "movement_pattern": "push",
+        "equipment": [],
+        "primary_muscle_groups": ["chest"],
+        "secondary_muscle_groups": [],
+        "unilateral": False,
+        "safety_cues": [],
+        "image_url": None,
+        "thumbnail_url": None,
+    }
+    system_exercise = db.scalar(
+        select(Exercise).where(Exercise.scope == ExerciseScope.SYSTEM)
+    )
+    assert system_exercise is not None
+    exercise_create = client.post(
+        "/api/v1/coach/exercises",
+        headers=_auth(coach_token),
+        json=exercise_payload,
+    )
+    exercise_draft = client.put(
+        f"/api/v1/coach/exercises/{system_exercise.id}/draft",
+        headers=_auth(coach_token),
+        json={key: value for key, value in exercise_payload.items() if key != "slug"},
+    )
+    exercise_publish = client.post(
+        f"/api/v1/coach/exercises/{system_exercise.id}/publish",
+        headers=_auth(coach_token),
+    )
+    exercise_revision = client.post(
+        f"/api/v1/coach/exercises/{system_exercise.id}/revisions",
+        headers=_auth(coach_token),
+    )
+    exercise_archive = client.post(
+        f"/api/v1/coach/exercises/{system_exercise.id}/archive",
+        headers=_auth(coach_token),
+    )
+    for response in (
+        profile,
+        assessment,
+        check_in,
+        invite,
+        exercise_create,
+        exercise_draft,
+        exercise_publish,
+        exercise_revision,
+        exercise_archive,
+    ):
         assert response.status_code == 403
         assert response.json()["detail"] == {
             "code": "demo_read_only",

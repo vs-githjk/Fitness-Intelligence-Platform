@@ -1,11 +1,12 @@
 import uuid
 from datetime import date, datetime
 from typing import Any, Literal
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
-from app.models import Role
+from app.models import ExerciseScope, ExerciseStatus, ExerciseTrackingMode, Role
 
 Goal = Literal[
     "fat_loss", "muscle_gain", "strength", "endurance", "general_health", "athletic_performance"
@@ -364,6 +365,99 @@ class DailyTrendsOut(BaseModel):
     end_date: date
     timezone: str
     series: list[TrendSeries]
+
+
+class ExerciseDraftData(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=2000)
+    instructions: str = Field(min_length=1, max_length=5000)
+    tracking_mode: ExerciseTrackingMode
+    category: str = Field(min_length=1, max_length=80)
+    movement_pattern: str = Field(min_length=1, max_length=80)
+    equipment: list[str] = Field(default_factory=list, max_length=20)
+    primary_muscle_groups: list[str] = Field(min_length=1, max_length=20)
+    secondary_muscle_groups: list[str] = Field(default_factory=list, max_length=20)
+    unilateral: bool = False
+    safety_cues: list[str] = Field(default_factory=list, max_length=20)
+    image_url: str | None = Field(default=None, max_length=2048)
+    thumbnail_url: str | None = Field(default=None, max_length=2048)
+
+    @field_validator("name", "description", "instructions", "category", "movement_pattern")
+    @classmethod
+    def clean_text(cls, value: str | None) -> str | None:
+        cleaned = value.strip() if value else None
+        if value is not None and not cleaned:
+            raise ValueError("Value must not be blank")
+        return cleaned
+
+    @field_validator("equipment", "primary_muscle_groups", "secondary_muscle_groups")
+    @classmethod
+    def clean_labels(cls, value: list[str]) -> list[str]:
+        cleaned = list(dict.fromkeys(item.strip().lower() for item in value if item.strip()))
+        if any(len(item) > 80 for item in cleaned):
+            raise ValueError("Metadata labels must be 80 characters or fewer")
+        return cleaned
+
+    @field_validator("safety_cues")
+    @classmethod
+    def clean_safety_cues(cls, value: list[str]) -> list[str]:
+        cleaned = list(dict.fromkeys(item.strip() for item in value if item.strip()))
+        if any(len(item) > 500 for item in cleaned):
+            raise ValueError("Safety cues must be 500 characters or fewer")
+        return cleaned
+
+    @field_validator("image_url", "thumbnail_url")
+    @classmethod
+    def validate_image_url(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        parsed = urlsplit(cleaned)
+        if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+            raise ValueError("Image URLs must be public HTTPS URLs without credentials")
+        return cleaned
+
+    @model_validator(mode="after")
+    def require_primary_muscle_group(self) -> "ExerciseDraftData":
+        if not self.primary_muscle_groups:
+            raise ValueError("At least one primary muscle group is required")
+        return self
+
+
+class ExerciseCreateRequest(ExerciseDraftData):
+    slug: str = Field(
+        min_length=2,
+        max_length=120,
+        pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    )
+
+
+class ExerciseVersionOut(ExerciseDraftData):
+    id: uuid.UUID
+    exercise_id: uuid.UUID
+    version_number: int
+    status: Literal["draft", "published"]
+    content_hash: str | None
+    created_by_user_id: uuid.UUID | None
+    created_at: datetime
+    updated_at: datetime
+    published_at: datetime | None
+
+
+class ExerciseSummaryOut(BaseModel):
+    id: uuid.UUID
+    scope: ExerciseScope
+    owner_coach_id: uuid.UUID | None
+    slug: str
+    status: ExerciseStatus
+    created_at: datetime
+    archived_at: datetime | None
+    published_version: ExerciseVersionOut | None
+    draft_version: ExerciseVersionOut | None
+
+
+class ExerciseDetailOut(ExerciseSummaryOut):
+    versions: list[ExerciseVersionOut]
 
 
 class ErrorDetail(BaseModel):

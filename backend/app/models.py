@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Enum,
@@ -16,6 +17,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,6 +36,33 @@ class Role(str, enum.Enum):
 class AssessmentStatus(str, enum.Enum):
     DRAFT = "draft"
     SUBMITTED = "submitted"
+
+
+class ExerciseScope(str, enum.Enum):
+    SYSTEM = "system"
+    COACH_PRIVATE = "coach_private"
+
+
+class ExerciseStatus(str, enum.Enum):
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
+class ExerciseVersionStatus(str, enum.Enum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+
+
+class ExerciseTrackingMode(str, enum.Enum):
+    REPETITIONS_AND_LOAD = "repetitions_and_load"
+    REPETITIONS_ONLY = "repetitions_only"
+    DURATION = "duration"
+    DISTANCE_AND_DURATION = "distance_and_duration"
+    BODYWEIGHT_OR_ASSISTED_REPETITIONS = "bodyweight_or_assisted_repetitions"
+
+
+def enum_values(enum_class: type[enum.Enum]) -> list[str]:
+    return [str(item.value) for item in enum_class]
 
 
 class User(Base):
@@ -124,6 +153,105 @@ class CoachInvite(Base):
     )
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Exercise(Base):
+    __tablename__ = "exercises"
+    __table_args__ = (
+        CheckConstraint(
+            "(scope = 'system' AND owner_coach_id IS NULL) OR "
+            "(scope = 'coach_private' AND owner_coach_id IS NOT NULL)",
+            name="ck_exercises_scope_owner",
+        ),
+        Index("ix_exercises_scope_status", "scope", "status"),
+        Index("ix_exercises_owner_status", "owner_coach_id", "status"),
+        Index(
+            "uq_exercises_system_slug",
+            "slug",
+            unique=True,
+            sqlite_where=text("scope = 'system'"),
+            postgresql_where=text("scope = 'system'"),
+        ),
+        Index(
+            "uq_exercises_owner_slug",
+            "owner_coach_id",
+            "slug",
+            unique=True,
+            sqlite_where=text("owner_coach_id IS NOT NULL"),
+            postgresql_where=text("owner_coach_id IS NOT NULL"),
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    scope: Mapped[ExerciseScope] = mapped_column(
+        Enum(ExerciseScope, native_enum=False, values_callable=enum_values)
+    )
+    owner_coach_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    slug: Mapped[str] = mapped_column(String(120))
+    status: Mapped[ExerciseStatus] = mapped_column(
+        Enum(ExerciseStatus, native_enum=False, values_callable=enum_values),
+        default=ExerciseStatus.ACTIVE,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    versions: Mapped[list["ExerciseVersion"]] = relationship(
+        back_populates="exercise", cascade="all, delete-orphan"
+    )
+
+
+class ExerciseVersion(Base):
+    __tablename__ = "exercise_versions"
+    __table_args__ = (
+        UniqueConstraint("exercise_id", "version_number", name="uq_exercise_version_number"),
+        CheckConstraint("version_number > 0", name="ck_exercise_versions_positive_version"),
+        CheckConstraint(
+            "(status = 'draft' AND published_at IS NULL AND content_hash IS NULL) OR "
+            "(status = 'published' AND published_at IS NOT NULL AND content_hash IS NOT NULL)",
+            name="ck_exercise_versions_publication_state",
+        ),
+        Index("ix_exercise_versions_exercise_status", "exercise_id", "status"),
+        Index(
+            "uq_exercise_versions_one_draft",
+            "exercise_id",
+            unique=True,
+            sqlite_where=text("status = 'draft'"),
+            postgresql_where=text("status = 'draft'"),
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    exercise_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("exercises.id", ondelete="CASCADE"), index=True
+    )
+    version_number: Mapped[int] = mapped_column(Integer)
+    status: Mapped[ExerciseVersionStatus] = mapped_column(
+        Enum(ExerciseVersionStatus, native_enum=False, values_callable=enum_values)
+    )
+    name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str | None] = mapped_column(Text)
+    instructions: Mapped[str] = mapped_column(Text)
+    tracking_mode: Mapped[ExerciseTrackingMode] = mapped_column(
+        Enum(ExerciseTrackingMode, native_enum=False, values_callable=enum_values), index=True
+    )
+    category: Mapped[str] = mapped_column(String(80), index=True)
+    movement_pattern: Mapped[str] = mapped_column(String(80), index=True)
+    equipment: Mapped[list[str]] = mapped_column(JSON, default=list)
+    primary_muscle_groups: Mapped[list[str]] = mapped_column(JSON, default=list)
+    secondary_muscle_groups: Mapped[list[str]] = mapped_column(JSON, default=list)
+    unilateral: Mapped[bool] = mapped_column(Boolean, default=False)
+    safety_cues: Mapped[list[str]] = mapped_column(JSON, default=list)
+    image_url: Mapped[str | None] = mapped_column(String(2048))
+    thumbnail_url: Mapped[str | None] = mapped_column(String(2048))
+    content_hash: Mapped[str | None] = mapped_column(String(64))
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    exercise: Mapped[Exercise] = relationship(back_populates="versions")
 
 
 class OnboardingAssessment(Base):
