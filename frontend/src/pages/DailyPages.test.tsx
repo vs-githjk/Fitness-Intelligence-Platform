@@ -1,8 +1,8 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
 import { TrendSeries } from '../types'
 import { checkInSchema } from '../lib/dailyValidation'
-import { TrendChart } from './DailyPages'
+import { CoachRelationshipCard, TrendChart } from './DailyPages'
 
 const valid = {
   sleep_hours: 7.5,
@@ -23,6 +23,8 @@ const valid = {
   overall_feeling: 'good' as const,
   note: null,
 }
+
+afterEach(cleanup)
 
 describe('daily check-in validation', () => {
   it('requires conditional exercise fields', () => {
@@ -74,5 +76,34 @@ describe('trend accessibility', () => {
       'Recovery Score trend with 2 recorded values',
     )
     expect(screen.queryByTitle(/Jul 13.*0 points/)).not.toBeInTheDocument()
+  })
+})
+
+describe('trainee coach relationship', () => {
+  it('shows an assigned coach with accessible external email context', () => {
+    render(<CoachRelationshipCard relationship={{ assignment_status: 'active', coach_name: 'Maya Coach', coach_email: 'maya@example.com' }} />)
+    expect(screen.getByRole('heading', { name: 'Your coach' })).toBeVisible()
+    expect(screen.getByText('Maya Coach')).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Email Maya Coach outside FitIntel 360' })).toHaveAttribute('href', 'mailto:maya@example.com')
+    expect(screen.getByText('Connected through your current coaching assignment.')).toBeVisible()
+  })
+
+  it('handles unassigned, inactive, loading, and unavailable states', () => {
+    const { rerender } = render(<CoachRelationshipCard relationship={{ assignment_status: 'unassigned' }} />)
+    expect(screen.getByText('No coach is currently assigned.')).toBeVisible()
+    rerender(<CoachRelationshipCard relationship={{ assignment_status: 'inactive' }} />)
+    expect(screen.getByText('Your previous coach relationship is no longer active.')).toBeVisible()
+    rerender(<CoachRelationshipCard loading />)
+    expect(screen.getByRole('status')).toHaveTextContent('Loading coach details…')
+    rerender(<CoachRelationshipCard error />)
+    expect(screen.getByText('Coach details are temporarily unavailable.')).toBeVisible()
+  })
+
+  it('labels synthetic demo data and safely falls back when optional fields are missing', () => {
+    render(<CoachRelationshipCard demo relationship={{ assignment_status: 'active' }} />)
+    expect(screen.getByRole('heading', { name: 'Synthetic demo coach' })).toBeVisible()
+    expect(screen.getByText('Assigned coach')).toBeVisible()
+    expect(screen.getByText('This is sample information from the read-only demo workspace.')).toBeVisible()
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
   })
 })

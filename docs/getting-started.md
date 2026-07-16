@@ -48,7 +48,7 @@ Sessions use an expiring bearer token stored in browser local storage for this l
 
 Registration first asks whether you are creating a **Coach** or **Trainee** account. Login never asks for a role; the server-stored role controls routing and authorization.
 
-For a clean database, register the first coach with the private `COACH_REGISTRATION_CODE` configured in the backend environment. After sign-in, open **Invitations**, optionally restrict the invite to one trainee email, choose an expiry, and create it. Copy the code or registration link immediately because the raw secret is returned only once.
+For a clean database, register the first coach with the private `COACH_REGISTRATION_CODE` configured in the backend environment. After sign-in, open **Invitations**, optionally restrict the invite to one trainee email, choose an expiry, and create it. This email is a redemption restriction, not a delivery address: FitIntel 360 sends no invitation email. Copy and share the code or registration link manually and immediately because the raw secret is returned only once.
 
 The trainee opens that link or chooses **Trainee** on registration, enters their name, email, password, and single-use invitation, then selects **Create trainee account**. Successful redemption creates the trainee profile, consumes the invitation, and connects the trainee to the issuing coach in one transaction. Used, expired, revoked, or email-mismatched invitations are rejected.
 
@@ -62,13 +62,13 @@ Trainee navigation contains three destinations:
 
 | Destination | What it currently provides |
 |---|---|
-| **Today** | Today’s check-in state, four daily scores, readiness guidance, review signals, recommended actions, calculation explanations, and a compact baseline score-and-band reference. |
+| **Today** | Current coach relationship details, today’s check-in state, four daily scores, readiness guidance, review signals, recommended actions, calculation explanations, and a compact baseline score-and-band reference. |
 | **Progress** | Gap-aware charts and data tables for 7 or 30 days. |
 | **Assessment** | The onboarding flow, a resumable draft, or the responses from a submitted assessment. |
 
 The check-in form is opened from Today. On mobile, Today, Progress, and Assessment appear in the bottom navigation.
 
-The current trainee interface does **not** provide a routed page for the full Health Index component breakdown. Today shows only the baseline overall score and band. The assigned coach can see the full baseline breakdown in the trainee record.
+The compact **Your coach** card shows the current assignment status and available coach contact information. An email link opens the device's normal email application; it is not FitIntel 360 messaging. The card does not imply continuous monitoring or an immediate response. The current trainee interface does **not** provide a routed page for the full Health Index component breakdown. Today shows only the baseline overall score and band. The assigned coach can see the full baseline breakdown in the trainee record.
 
 ![The trainee Today experience](screenshots/manual/trainee-today-desktop.png)
 

@@ -30,7 +30,7 @@ Check the email and password exactly as entered. An unsuccessful attempt display
 
 ### Invite code is invalid
 
-Choose the intended account type on registration. Coach registration requires the backend-only `COACH_REGISTRATION_CODE`; if it is absent, the route is intentionally disabled. Trainee registration requires an active, unused coach invitation. Ask the coach to create a new invitation if the code was used, expired, revoked, or restricted to another email. Registration errors are intentionally generic and never reveal stored invitation details.
+Choose the intended account type on registration. Coach registration requires the backend-only `COACH_REGISTRATION_CODE`; if it is absent, the route is intentionally disabled. Trainee registration requires an active, unused coach invitation. Ask the coach to create a new invitation if the code was used, expired, revoked, or restricted to another email. The optional email is only a redemption restriction: FitIntel 360 does not deliver the invitation. The coach must copy and share the one-time code or link manually when it is created. Registration errors are intentionally generic and never reveal stored invitation details.
 
 ### Onboarding will not save or continue
 
@@ -55,6 +55,10 @@ Complete at least one daily check-in. Missing local dates are intentionally gaps
 ### Coach cannot see a trainee
 
 Only an active assignment grants access. The coach cannot add or change assignments in the current UI. An unassigned direct link shows **Trainee access unavailable**.
+
+### Coach details are missing on Today
+
+The **Your coach** card reflects the current server-side assignment. It shows a no-coach or inactive state when appropriate and a temporary unavailable message if the request fails. Refresh once, then contact the local application operator if the assignment is unexpectedly missing. The email link uses the device's external email application; it is not FitIntel 360 messaging or evidence of continuous monitoring.
 
 ### A wrong-role page redirects
 

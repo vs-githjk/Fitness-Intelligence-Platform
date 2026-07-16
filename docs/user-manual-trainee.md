@@ -515,6 +515,8 @@ The service also authorizes the assigned coach to retrieve the underlying date-b
 
 Coaches have read-only daily endpoints in the current implementation. They cannot edit your check-ins, change your submitted assessment, write a note into your record, resolve alerts through the interface, or send a message. They can assign a published Program version, which creates a read-only date schedule for you.
 
+The **Your coach** card on **Today** shows whether a coaching assignment is active, plus the available coach name and email. Selecting the email uses your device's external email application; FitIntel 360 has no in-app messaging. The relationship does not mean the coach continuously monitors the application, will respond immediately, holds verified credentials, or provides medical supervision. In the public demo, this card is explicitly labeled as synthetic sample information.
+
 Authentication currently stores an expiring access token in browser local storage. This current-milestone design may be used only with synthetic data in staging and requires further security hardening for production use. The repository does not claim HIPAA, GDPR, or other legal compliance. See [Security and compliance notes](security.md) for the implemented controls and known production gaps.
 
 ## 12A. View My Program
@@ -612,7 +614,7 @@ Ask your assigned coach to review the full breakdown with you.
 
 ### I have no coach assigned
 
-The current registration flow normally creates an active assignment automatically. There is no trainee-facing coach-management page. If the assignment is missing or incorrect, contact the person operating the local application; you cannot select or change a coach yourself.
+The current registration flow normally creates an active assignment automatically. **Today** reports when no coach is assigned or when the previous relationship is inactive. There is no trainee-facing coach-management page. If the assignment is missing or incorrect, contact the person operating the local application; you cannot select or change a coach yourself.
 
 ### I missed a daily check-in
 

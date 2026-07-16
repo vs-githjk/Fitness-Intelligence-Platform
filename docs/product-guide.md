@@ -151,7 +151,7 @@ Recommendations are structured templates generated from score thresholds and tri
 
 ### Coach assignment
 
-An assignment is the server-enforced relationship that allows a coach to view a trainee. Knowing a trainee’s identifier is not enough. Redeeming a coach-specific invitation creates the assignment; invites expire, can be revoked, and cannot be reused. The application does not currently include assignment transfer or removal controls.
+An assignment is the server-enforced relationship that allows a coach to view a trainee. Knowing a trainee’s identifier is not enough. The trainee's Today page shows a compact status card with available coach name and email; this is contact information, not in-app messaging or continuous monitoring. Redeeming a coach-specific invitation creates the assignment; invites expire, can be revoked, and cannot be reused. The optional invitation email restricts redemption but does not send anything. FitIntel 360 shows the raw code/link only at creation, and the coach must copy and share it manually. The application does not currently include assignment transfer or removal controls.
 
 ## Health Index interpretation
 

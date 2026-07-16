@@ -27,7 +27,7 @@ Demo credentials are for local evaluation only. They are not suitable for a shar
 
 On a clean deployment, choose **Coach** on registration and enter the private coach registration code supplied by the platform owner. The code is checked only by the backend; it is never a Vercel variable. This invitation-only step creates the coach account and profile but does not verify professional credentials.
 
-After sign-in, open **Invitations**. You can optionally restrict an invitation to one email address, select a 1, 3, 7, 14, or 30-day expiry, and create it. Copy the raw code or registration link immediately: only its hash is stored and the raw value is not recoverable after refresh. The history shows active, used, expired, and revoked invitations. Only active invitations can be revoked, and no email is sent automatically.
+After sign-in, open **Invitations**. **Restrict to trainee email (optional)** controls who may redeem the invitation; it is not an email-delivery field. Leaving it blank allows any eligible trainee possessing the secret to redeem it. Select a 1, 3, 7, 14, or 30-day expiry and create the invitation. FitIntel 360 sends no email, so use **Copy invitation link** or **Copy invitation code** immediately and share it manually through a trusted channel. Only the hash is stored, and the raw value is not recoverable after refresh. The history shows active, used, expired, and revoked invitations. Only active invitations can be revoked.
 
 ## Navigation
 

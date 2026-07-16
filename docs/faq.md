@@ -54,7 +54,11 @@ No. Login accepts only email and password. The backend-stored account role deter
 
 ### How does a trainee invitation work?
 
-A signed-in coach creates an expiring, single-use invitation and shares its code or registration link through a trusted channel. Only a hash is stored, the raw secret is shown once, and redemption creates the coach assignment. Used, expired, revoked, and email-mismatched invitations cannot be redeemed. The application does not send invitation emails.
+A signed-in coach creates an expiring, single-use invitation and shares its code or registration link manually through a trusted channel. Only a hash is stored, the raw secret is shown once, and redemption creates the coach assignment. The optional email field restricts redemption to an account using that email; it does not cause email delivery. Leaving it blank allows any eligible trainee possessing the secret to redeem it. Used, expired, revoked, and email-mismatched invitations cannot be redeemed. FitIntel 360 does not send invitation emails.
+
+### Can a trainee contact their coach in FitIntel 360?
+
+Today shows the current coach relationship, available coach name, and email. The email link opens the device's external email application. FitIntel 360 has no in-app messaging, does not promise an immediate response or continuous monitoring, and does not verify professional credentials or provide medical supervision.
 
 ### Why was I redirected after opening a page?
 

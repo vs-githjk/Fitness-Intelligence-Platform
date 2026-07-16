@@ -26,14 +26,15 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 
 - [Design system and interaction rules](docs/design-system.md)
 - [Desktop and mobile visual verification](docs/screenshots)
-- Trainee routes: Today, atomic daily check-in, Progress, onboarding, submitted-assessment review, assigned Program calendar, and resumable workout execution
-- Coach routes: roster overview, private trainee invitations, longitudinal trainee review, Programming authoring, and date-only Program assignment
+- Trainee routes: Today with current coach details, atomic daily check-in, Progress, onboarding, submitted-assessment review, assigned Program calendar, and resumable workout execution
+- Coach routes: roster overview, private single-use trainee invitations, longitudinal trainee review, Programming authoring, and date-only Program assignment. FitIntel 360 does not deliver invitation emails; coaches copy and share the one-time code or link manually.
 - Public demo: backend-issued, short-lived coach or trainee sessions over a deterministic synthetic workspace; demo users are read-only
 
 ## Documentation
 
 - [Product guide](docs/product-guide.md)
 - [Getting started](docs/getting-started.md)
+- [Trainee invitations](docs/trainee-invitations.md)
 - [Trainee user manual](docs/user-manual-trainee.md)
 - [Coach user manual](docs/user-manual-coach.md)
 - [FAQ](docs/faq.md)

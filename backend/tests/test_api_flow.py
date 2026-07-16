@@ -1,8 +1,10 @@
+from uuid import UUID
+
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import User
+from app.models import CoachTraineeAssignment, User
 
 
 def login(client: TestClient, email: str, password: str) -> str:
@@ -95,3 +97,40 @@ def test_inactive_account_cannot_login(client: TestClient, db: Session) -> None:
     )
     assert response.status_code == 401
     assert response.json()["detail"]["code"] == "invalid_credentials"
+
+
+def test_trainee_coach_endpoint_reports_inactive_relationship(
+    client: TestClient, db: Session
+) -> None:
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "inactive-relationship@example.com",
+            "password": "TraineePass123!",
+            "first_name": "Inactive",
+            "last_name": "Relationship",
+            "invite_code": "FIT-DEMO-2026",
+        },
+    )
+    assert registered.status_code == 201, registered.text
+    trainee_id = registered.json()["user"]["id"]
+    assignment = db.scalar(
+        select(CoachTraineeAssignment).where(
+            CoachTraineeAssignment.trainee_id == UUID(trainee_id)
+        )
+    )
+    assert assignment is not None
+    assignment.status = "inactive"
+    db.commit()
+
+    relationship = client.get(
+        "/api/v1/trainee/coach",
+        headers=auth(registered.json()["access_token"]),
+    )
+    assert relationship.status_code == 200
+    assert relationship.json() == {
+        "assignment_status": "inactive",
+        "coach_id": relationship.json()["coach_id"],
+        "coach_name": "Test Coach",
+        "coach_email": "coach@example.com",
+    }

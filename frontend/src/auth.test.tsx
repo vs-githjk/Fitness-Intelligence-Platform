@@ -83,6 +83,7 @@ describe('account query identity scope', () => {
     ['coach A to coach B', account('coach-a', 'coach'), account('coach-b', 'coach')],
     ['real trainee to demo trainee', account('trainee-a', 'trainee'), account('demo-trainee', 'trainee', true)],
     ['demo trainee to real trainee', account('demo-trainee', 'trainee', true), account('trainee-a', 'trainee')],
+    ['trainee A to trainee B', account('trainee-a', 'trainee'), account('trainee-b', 'trainee')],
     ['coach to trainee role transition', account('coach-a', 'coach'), account('trainee-a', 'trainee')],
   ])('purges protected data across %s', (_name, previous, target) => {
     setStoredSession(previous)
@@ -108,7 +109,7 @@ describe('account query identity scope', () => {
     const target = account('coach-b', 'coach')
     setStoredSession(previous)
     const client = new QueryClient()
-    const previousKey = [...accountQueryScope(previous), 'health-current']
+    const previousKey = [...accountQueryScope(previous), 'trainee-coach']
     client.setQueryData(previousKey, { private: previous.id })
     renderTransition(client, target)
 
@@ -122,24 +123,24 @@ describe('account query identity scope', () => {
     expect(screen.getByText(`Current identity: ${target.id}`)).toBeVisible()
   })
 
-  it('prevents an old in-flight response from repopulating protected cache', async () => {
-    const previous = account('coach-a', 'coach')
-    const target = account('demo-coach', 'coach', true)
+  it('prevents an old coach-relationship response from repopulating another trainee cache', async () => {
+    const previous = account('trainee-a', 'trainee')
+    const target = account('demo-trainee', 'trainee', true)
     setStoredSession(previous)
     const client = new QueryClient()
-    const previousKey = [...accountQueryScope(previous), 'coach-trainees']
-    let resolveRequest!: (value: string[]) => void
-    const response = new Promise<string[]>(resolve => { resolveRequest = resolve })
+    const previousKey = [...accountQueryScope(previous), 'trainee-coach']
+    let resolveRequest!: (value: { coach_name: string }) => void
+    const response = new Promise<{ coach_name: string }>(resolve => { resolveRequest = resolve })
     const request = client.fetchQuery({ queryKey: previousKey, queryFn: () => response })
       .catch(() => undefined)
 
     renderTransition(client, target)
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
     fireEvent.click(screen.getByRole('button', { name: 'Sign in target' }))
-    resolveRequest(['Private trainee'])
+    resolveRequest({ coach_name: 'Private coach' })
     await request
 
     expect(client.getQueryData(previousKey)).toBeUndefined()
-    expect(client.getQueryData([...accountQueryScope(target), 'coach-trainees'])).toBeUndefined()
+    expect(client.getQueryData([...accountQueryScope(target), 'trainee-coach'])).toBeUndefined()
   })
 })

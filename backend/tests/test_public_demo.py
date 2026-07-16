@@ -112,6 +112,18 @@ def test_demo_sessions_use_normal_roles_and_short_lived_tokens(
     assert trainee_session["user"]["id"] == str(trainee.id)
     assert trainee_session["user"]["is_demo"] is True
 
+    relationship = client.get(
+        "/api/v1/trainee/coach",
+        headers=_auth(trainee_session["access_token"]),
+    )
+    assert relationship.status_code == 200
+    assert relationship.json() == {
+        "assignment_status": "active",
+        "coach_id": str(coach.id),
+        "coach_name": "Demo Coach",
+        "coach_email": coach.email,
+    }
+
     payload = jwt.decode(
         coach_session["access_token"], settings.jwt_secret, algorithms=[ALGORITHM]
     )
