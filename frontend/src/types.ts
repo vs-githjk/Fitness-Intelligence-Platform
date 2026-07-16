@@ -101,3 +101,90 @@ export interface DailyAlert extends CoachAlert {
   daily_score_snapshot_id: string; rule_version: string; status: string
   triggering_inputs: Record<string, unknown>; resolved_at?: string | null
 }
+
+export type ExerciseScope = 'system' | 'coach_private'
+export type ExerciseStatus = 'active' | 'archived'
+export type ExerciseVersionStatus = 'draft' | 'published'
+export type ExerciseTrackingMode = 'repetitions_and_load' | 'repetitions_only' | 'duration' | 'distance_and_duration' | 'bodyweight_or_assisted_repetitions'
+
+export interface ExerciseDraftData {
+  name: string; description: string | null; instructions: string
+  tracking_mode: ExerciseTrackingMode; category: string; movement_pattern: string
+  equipment: string[]; primary_muscle_groups: string[]; secondary_muscle_groups: string[]
+  unilateral: boolean; safety_cues: string[]; image_url: string | null; thumbnail_url: string | null
+}
+export interface ExerciseVersion extends ExerciseDraftData {
+  id: string; exercise_id: string; version_number: number; status: ExerciseVersionStatus
+  content_hash: string | null; created_by_user_id: string | null
+  created_at: string; updated_at: string; published_at: string | null
+}
+export interface ExerciseSummary {
+  id: string; scope: ExerciseScope; owner_coach_id: string | null; slug: string
+  status: ExerciseStatus; created_at: string; archived_at: string | null
+  published_version: ExerciseVersion | null; draft_version: ExerciseVersion | null
+}
+export interface ExerciseDetail extends ExerciseSummary { versions: ExerciseVersion[] }
+
+export type WorkoutTemplateStatus = 'active' | 'archived'
+export type WorkoutTemplateSection = 'warm_up' | 'main' | 'cool_down'
+export type WorkoutSetType = 'warm_up' | 'working' | 'back_off' | 'drop_set'
+export type WeightUnit = 'kg' | 'lb'
+export type DistanceUnit = 'meters' | 'kilometers' | 'miles'
+
+export interface WorkoutSetPrescriptionData {
+  set_number: number; set_type: WorkoutSetType
+  repetitions_min: number | null; repetitions_max: number | null
+  target_duration_seconds: number | null
+  target_distance_value: number | null; target_distance_unit: DistanceUnit | null
+  target_load_original_value: number | null; target_load_original_unit: WeightUnit | null
+  target_assistance_original_value: number | null; target_assistance_original_unit: WeightUnit | null
+  target_rpe: number | null; target_rir: number | null; rest_seconds: number | null
+  tempo: string | null; instructions: string | null
+}
+export interface WorkoutSetPrescription extends WorkoutSetPrescriptionData {
+  id: string; target_load_canonical_kg: number | null
+  target_assistance_canonical_kg: number | null; created_at: string
+}
+export interface WorkoutTemplateExerciseData {
+  exercise_version_id: string; section: WorkoutTemplateSection; display_order: number
+  coach_notes: string | null; trainee_instructions: string | null
+  sets: WorkoutSetPrescriptionData[]
+}
+export interface WorkoutTemplateExercise extends WorkoutTemplateExerciseData {
+  id: string; created_at: string; exercise_version: ExerciseVersion
+  sets: WorkoutSetPrescription[]
+}
+export interface WorkoutTemplateDraftData {
+  name: string; description: string | null; goal_tags: string[]
+  estimated_duration_minutes: number | null; target_session_rpe: number | null
+  coach_notes: string | null; trainee_instructions: string | null
+  exercises: WorkoutTemplateExerciseData[]
+}
+export interface WorkoutTemplateVersion extends Omit<WorkoutTemplateDraftData, 'exercises'> {
+  id: string; workout_template_id: string; version_number: number
+  version_status: 'draft' | 'published'; draft_revision: number
+  content_hash: string | null; created_by_user_id: string | null
+  created_at: string; updated_at: string; published_at: string | null
+  exercises: WorkoutTemplateExercise[]
+}
+export interface WorkoutTemplateVersionSummary {
+  id: string; version_number: number; version_status: 'draft' | 'published'
+  draft_revision: number; name: string; content_hash: string | null
+  updated_at: string; published_at: string | null
+}
+export interface WorkoutTemplateSummary {
+  id: string; status: WorkoutTemplateStatus; name: string; goal_tags: string[]
+  estimated_duration_minutes: number | null; target_session_rpe: number | null
+  exercise_count: number; current_published_version_number: number | null
+  published_at: string | null; has_draft: boolean; created_at: string
+  updated_at: string; archived_at: string | null
+}
+export interface WorkoutTemplateList {
+  items: WorkoutTemplateSummary[]; page: number; per_page: number; total: number
+}
+export interface WorkoutTemplateDetail {
+  id: string; owner_coach_id: string; status: WorkoutTemplateStatus
+  current_published_version_id: string | null; created_at: string; updated_at: string
+  archived_at: string | null; draft_version: WorkoutTemplateVersion | null
+  published_version: WorkoutTemplateVersion | null; versions: WorkoutTemplateVersionSummary[]
+}

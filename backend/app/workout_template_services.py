@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.domain.units import canonical_kilograms, canonical_meters, quantize_measurement
+from app.exercise_services import version_out as exercise_version_out
 from app.models import (
     ExerciseTrackingMode,
     ExerciseVersion,
@@ -379,6 +380,7 @@ def _version_out(version: WorkoutTemplateVersion) -> dict:
             {
                 "id": exercise.id,
                 "exercise_version_id": exercise.exercise_version_id,
+                "exercise_version": exercise_version_out(exercise.exercise_version),
                 "section": exercise.section,
                 "display_order": exercise.display_order,
                 "coach_notes": exercise.coach_notes,
@@ -468,9 +470,12 @@ def list_workout_templates(
                 "name": selected.name,
                 "goal_tags": selected.goal_tags,
                 "estimated_duration_minutes": selected.estimated_duration_minutes,
+                "target_session_rpe": selected.target_session_rpe,
+                "exercise_count": len(selected.exercises),
                 "current_published_version_number": (
                     published.version_number if published else None
                 ),
+                "published_at": published.published_at if published else None,
                 "has_draft": draft is not None,
                 "created_at": template.created_at,
                 "updated_at": template.updated_at,

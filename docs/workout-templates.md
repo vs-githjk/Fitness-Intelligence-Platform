@@ -1,7 +1,7 @@
 # Workout template authoring
 
-Workout templates are reusable, coach-owned prescription graphs. This backend-only
-capability was introduced after the exercise library and does not create programs,
+Workout templates are reusable, coach-owned prescription graphs. The coach Programming
+workspace provides their authoring interface. This capability does not create programs,
 assignments, scheduled workouts, or trainee execution records.
 
 ## Version lifecycle
@@ -57,3 +57,18 @@ IDs are excluded. Published metadata and child graphs have no mutation path.
 All endpoints require a coach. Ownership predicates are centralized and foreign
 template IDs return HTTP 404. Every mutation explicitly enforces the public-demo
 read-only guard. There is no hard-delete or trainee template endpoint.
+
+## Coach authoring workspace
+
+Open **Programming → Templates** to filter active or archived templates by publication state,
+goal, and name. The builder edits metadata and an ordered Warm-up, Main, and Cool-down graph.
+Its exercise picker includes only published, active system exercises and the current coach's
+published private exercises. Each set editor reveals only fields valid for the exercise's
+tracking mode and shows the canonical kilogram conversion when a load is entered in pounds.
+
+Saving replaces the complete draft graph and includes its expected revision. If another tab
+wins the revision race, the conflict dialog preserves local changes until the coach explicitly
+reloads the server draft. Publishing requires a review confirmation and locks the published
+graph; subsequent editing starts with **Create revision**. The trainee preview shows exactly
+the content a future trainee surface may consume and deliberately excludes coach notes. It is
+a preview only: assignment, scheduling, and workout execution are not implemented.

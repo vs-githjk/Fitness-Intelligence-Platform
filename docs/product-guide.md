@@ -200,6 +200,8 @@ Deterministic calculations are used so that score behavior is repeatable, testab
 - Review each trainee’s latest daily scores, check-in summary, recommendations, 7- or 30-day history, and selected trends.
 - Review the full onboarding Health Index, component contributions, baseline recommendations, missing optional fields, and safety notices.
 - Read assigned-trainee daily check-in history, including submitted notes through the authorized API, although the current coach detail UI’s summary table does not display note text.
+- Browse read-only system exercises and create, publish, revise, and archive coach-private exercise versions.
+- Build, preview, publish, revise, and archive reusable workout templates with tracking-mode-specific set prescriptions.
 - Sign out.
 
 ### Shared platform capabilities
@@ -232,7 +234,7 @@ The following are not available in the current application:
 - coach editing of trainee data;
 - coach account self-registration or assignment management;
 - password reset, account recovery, refresh-token rotation, revocation controls, or MFA;
-- workout-program building or workout planning;
+- multi-week programs, workout assignment, scheduling, or trainee workout execution;
 - meal-plan or nutrition-plan creation;
 - wearables and external health-data integrations;
 - messaging, notifications, or reminders;

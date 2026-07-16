@@ -33,4 +33,16 @@ describe('demo workspace shell', () => {
     expect(screen.getByText('Signed out')).toBeInTheDocument()
     expect(localStorage.getItem('access_token')).toBeNull()
   })
+
+  it('adds responsive coach Programming navigation without future Programs', () => {
+    const storage = new MemoryStorage()
+    storage.setItem('access_token', 'coach-token')
+    storage.setItem('user', JSON.stringify({ id: 'coach-id', email: 'coach@example.com', first_name: 'Test', last_name: 'Coach', role: 'coach', is_demo: false }))
+    vi.stubGlobal('localStorage', storage)
+    render(<MemoryRouter initialEntries={['/coach/programming/exercises']}><AuthProvider><AppShell><p>Programming content</p></AppShell></AuthProvider></MemoryRouter>)
+    const programming = screen.getAllByRole('link', { name: 'Programming' })
+    expect(programming).toHaveLength(2)
+    expect(programming.every(link => link.getAttribute('aria-current') === 'page')).toBe(true)
+    expect(screen.queryByRole('link', { name: 'Programs' })).not.toBeInTheDocument()
+  })
 })

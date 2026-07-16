@@ -235,6 +235,27 @@ There is no alert-resolution UI and no coach mutation for alerts. Daily alert st
 
 ## Save and validation problems
 
+### An exercise draft will not publish
+
+Save the draft first and correct every inline or summary error. Required content includes a
+name, instructions, category, movement pattern, and at least one primary muscle group. Only
+public HTTPS image URLs are accepted. System exercises, archived exercises, and demo sessions
+cannot be changed.
+
+### A workout template reports a draft conflict
+
+Another request saved the same draft revision first. The conflict dialog intentionally keeps
+your local graph intact. Review or copy any important local changes, then choose the confirmed
+reload action to replace them with the latest server draft. Publishing is disabled while the
+local draft is dirty.
+
+### An exercise is missing from the template picker
+
+The picker shows only active, published system exercises and active, published private
+exercises owned by the signed-in coach. Publish the private exercise, clear the picker filters,
+or restore the active root as appropriate. Draft-only, archived, and another coach's exercises
+are intentionally excluded.
+
 ### A daily check-in will not submit
 
 Review the inline field messages. When **Did you exercise?** is **Yes**, **Exercise duration** and **Session RPE** are required. Valid entries remain on the page after an API failure. Choose **Submit today’s check-in** or **Update today’s check-in** again after correcting the problem.

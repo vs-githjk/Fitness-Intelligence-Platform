@@ -15,7 +15,10 @@ import {
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+  useEffect,
   useId,
+  useRef,
 } from 'react'
 
 export type Tone = 'neutral' | 'positive' | 'info' | 'attention' | 'risk' | 'critical'
@@ -136,13 +139,44 @@ export function Field({ label, help, error, optional, children, id: providedId }
   )
 }
 
-export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function TextInput({ className = '', ...props }, ref) {
-  return <input ref={ref} className={`control mt-1.5 w-full ${props['aria-invalid'] ? 'border-critical' : ''} ${className}`} {...props} />
+export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean; describedBy?: string }>(function TextInput({ className = '', invalid, describedBy, ...props }, ref) {
+  const ariaInvalid = props['aria-invalid'] || invalid || undefined
+  return <input ref={ref} className={`control mt-1.5 w-full ${ariaInvalid ? 'border-critical' : ''} ${className}`} {...props} aria-describedby={props['aria-describedby'] ?? describedBy} aria-invalid={ariaInvalid} />
 })
 
-export const SelectInput = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(function SelectInput({ className = '', children, ...props }, ref) {
-  return <select ref={ref} className={`control mt-1.5 w-full ${props['aria-invalid'] ? 'border-critical' : ''} ${className}`} {...props}>{children}</select>
+export const SelectInput = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean; describedBy?: string }>(function SelectInput({ className = '', children, invalid, describedBy, ...props }, ref) {
+  const ariaInvalid = props['aria-invalid'] || invalid || undefined
+  return <select ref={ref} className={`control mt-1.5 w-full ${ariaInvalid ? 'border-critical' : ''} ${className}`} {...props} aria-describedby={props['aria-describedby'] ?? describedBy} aria-invalid={ariaInvalid}>{children}</select>
 })
+
+export const TextArea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement> & { invalid?: boolean; describedBy?: string }>(function TextArea({ className = '', invalid, describedBy, ...props }, ref) {
+  const ariaInvalid = props['aria-invalid'] || invalid || undefined
+  return <textarea ref={ref} className={`control mt-1.5 min-h-28 w-full resize-y py-3 ${ariaInvalid ? 'border-critical' : ''} ${className}`} {...props} aria-describedby={props['aria-describedby'] ?? describedBy} aria-invalid={ariaInvalid} />
+})
+
+export function Modal({ open, title, description, children, onClose, size = 'md' }: { open: boolean; title: string; description?: string; children: ReactNode; onClose: () => void; size?: 'md' | 'lg' | 'xl' }) {
+  const panel = useRef<HTMLDivElement>(null)
+  const previousFocus = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    if (!open) return
+    previousFocus.current = document.activeElement as HTMLElement | null
+    const frame = window.requestAnimationFrame(() => panel.current?.querySelector<HTMLElement>('button, input, select, textarea, [href]')?.focus())
+    function keydown(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose()
+      if (event.key !== 'Tab' || !panel.current) return
+      const controls = [...panel.current.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')]
+      if (!controls.length) return
+      const first = controls[0]; const last = controls[controls.length - 1]
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', keydown)
+    return () => { window.cancelAnimationFrame(frame); document.removeEventListener('keydown', keydown); previousFocus.current?.focus() }
+  }, [onClose, open])
+  if (!open) return null
+  const widths = { md: 'max-w-lg', lg: 'max-w-3xl', xl: 'max-w-6xl' }
+  return <div className="fixed inset-0 z-50 grid items-end bg-foreground/45 p-0 sm:items-center sm:p-6" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}><div ref={panel} role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby={description ? 'modal-description' : undefined} className={`max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border bg-surface p-5 shadow-xl sm:mx-auto sm:rounded-2xl sm:p-6 ${widths[size]}`}><div className="pr-10"><h2 id="modal-title" className="text-2xl font-semibold">{title}</h2>{description && <p id="modal-description" className="mt-2 text-sm leading-6 text-secondary">{description}</p>}</div><div className="mt-5">{children}</div></div></div>
+}
 
 export function SearchField({ value, onChange, label = 'Search' }: { value: string; onChange: (value: string) => void; label?: string }) {
   const id = useId()

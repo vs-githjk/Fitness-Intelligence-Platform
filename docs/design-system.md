@@ -116,9 +116,15 @@ Prefer composing these components over recreating local card, status, field, or 
 
 ### Coach
 
-At 1024px and above, the coach sees a persistent 256px left sidebar with the product brand, an Overview destination, workspace context, user identity, and sign-out action. The current milestone has only one working coach navigation destination, so future modules are not shown.
+At 1024px and above, the coach sees a persistent 256px left sidebar with the product brand,
+Overview and Programming destinations, workspace context, user identity, and sign-out action.
+Programming contains accessible Exercises and Templates tabs; unavailable future modules are
+not shown.
 
-Below 1024px, the sidebar becomes a sticky compact header. A fixed bottom navigation exposes the one working Overview destination. Trainee detail pages add a small `Trainee record` context label above the page content and an explicit link back to the overview.
+Below 1024px, the sidebar becomes a sticky compact header. A fixed three-item bottom
+navigation exposes Overview, Programming, and Invitations; Programming's internal tabs
+expose Exercises and Templates. Trainee detail pages add a small
+`Trainee record` context label above the page content and an explicit link back to the overview.
 
 ### Trainee
 
@@ -156,6 +162,7 @@ The current implementation includes the following practices:
 - Related choice inputs use `fieldset` and `legend`; custom choice cards and chips expose `aria-pressed`.
 - Onboarding validates the current section before continuing, focuses the step heading after a step change, and focuses its alert summary when validation fails.
 - Saving is described through a polite live region. Assessment loading is represented by a polite status. Submit and save controls expose busy/disabled behavior.
+- Programming confirmations use modal dialogs with initial focus, Escape dismissal, focus containment, and focus return. Reordering controls have specific accessible names and do not require drag gestures.
 - Progress bars expose accessible labels and numeric progress values.
 - The coach roster table includes a caption, column-header scopes, a screen-reader action header, and specific accessible names for row actions.
 - Native `details`/`summary` provides keyboard-accessible disclosure without a custom dialog model.

@@ -209,7 +209,24 @@ Treat an urgent notice as safety guidance, not as a diagnosis. If severe or wors
 
 ## Coach permissions and current limits
 
-The coach experience is read-only. A coach can view assigned-roster summaries, assigned trainee daily scores/check-ins/trends, current recommendations, daily alerts, baseline alerts, and the baseline Health Index.
+Trainee health intelligence remains read-only to coaches. A coach can also author content in
+**Programming**, while public demo sessions remain read-only everywhere.
+
+### Build an exercise library
+
+Use **Programming → Exercises** to browse system references or **My Exercises**. Private
+exercises begin as mutable drafts. Save the draft before publishing; publication freezes that
+version. Choose **Create revision** to change published content without rewriting history.
+Archiving removes an exercise from future selection while preserving historical references.
+
+### Build a workout template
+
+Use **Programming → Templates → New template**, enter the workout metadata, and add published
+exercises through the picker. Order exercises within Warm-up, Main, and Cool-down, then add or
+reorder sets. The available prescription fields follow each exercise's tracking mode. Review
+the trainee preview before saving and publishing; coach notes never appear in that preview.
+If a conflict reports that another tab saved first, keep the local form open until you decide
+whether to reload the server draft.
 
 A coach cannot:
 
@@ -219,7 +236,7 @@ A coach cannot:
 - Search, filter, sort, or create a custom attention queue
 - Add coach notes
 - Send messages or notifications
-- Assign workouts or nutrition plans
+- Assign or schedule workouts, or create nutrition plans
 - Create, remove, or change assignments
 - Export or delete trainee data
 

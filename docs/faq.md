@@ -140,7 +140,9 @@ No. It means no check-in exists for that trainee's current local date. The inter
 
 ### Are workouts, meal plans, messages, or wearables available?
 
-No. Workout and meal planning, wearables, notifications, messaging, exports, clinical reporting, and external AI narration are deferred.
+Coaches can author versioned exercise-library content and reusable workout templates. Programs,
+assignment, scheduling, trainee workout execution, meal planning, wearables, notifications,
+messaging, exports, clinical reporting, and external AI narration remain deferred.
 
 ### Is there a native mobile application?
 
@@ -148,7 +150,9 @@ No. The current product is a responsive web application. It adapts its navigatio
 
 ### Can a coach create workouts or meal plans?
 
-No. Coaches currently have read-only review access. Workout programming and nutrition-plan creation are not implemented.
+Coaches can create reusable workout templates from published system or private exercises. They
+cannot yet assemble multi-week programs, assign or schedule templates, record trainee sessions,
+or create meal plans. Trainee health records remain read-only to coaches.
 
 ### Can I close Docker?
 

@@ -102,9 +102,16 @@ This phase takes priority over new product modules if real personal or health da
 
 No real-data beta begins until the applicable [production-readiness gates](deployment/production-readiness.md#go-live-gates) have named owners and approval evidence.
 
-## Milestone 3 candidates — not implemented
+## Milestone 3 — Workout Intelligence foundations in progress
 
-The items below are candidates, not enabled routes or commitments. Discovery may reorder or reject them.
+The repository now includes the owned, immutable exercise library and coach workout-template
+authoring workspace. System/private ownership, deterministic seed content, version history,
+complete-graph draft replacement, conflict detection, tracking-mode prescription validation,
+and demo read-only enforcement are implemented.
+
+Programs, assignments, scheduling, trainee execution, set logging, safety reports, load and
+adherence analytics, and readiness context remain future slices. The items below are candidates,
+not enabled routes or commitments unless explicitly marked implemented.
 
 ### Coach workflow operations
 
@@ -126,9 +133,14 @@ Dependencies and gates:
 
 ### Workout programming
 
-Potential outcomes:
+Implemented foundation:
 
-- Coach-created workout templates and trainee assignments.
+- Coach-created, versioned exercises and reusable workout templates.
+- Trainee-facing template preview without assignment or execution.
+
+Potential next outcomes:
+
+- Multi-week programs and trainee assignments.
 - Scheduled sessions, completion, and coaching review.
 
 Dependencies and gates:

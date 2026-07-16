@@ -50,3 +50,16 @@ All routes use `/api/v1/coach/exercises` and require the coach role.
 
 List requests may filter by scope or exact tracking mode, search names/slugs, and explicitly
 include archived owner-private history. Every mutation rejects demo identities in the backend.
+
+## Coach workspace
+
+Open **Programming → Exercises** to browse published system exercises and coach-private
+content. The library supports ownership, active/archive, tracking-mode, category, movement,
+equipment, and text filters with bounded client-side pagination. System cards are always
+read-only. A coach can create a private draft, save it explicitly, publish it after reviewing
+the confirmation, create a revision from an immutable published version, or archive the root.
+
+The editor preserves unsaved entries after validation or network failures and warns before
+leaving a dirty form. Optional media fields accept public HTTPS image references only. Demo
+coaches can browse the same synthetic library, but every mutation control is disabled and the
+backend read-only guard remains authoritative.

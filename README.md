@@ -25,7 +25,7 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 - [Design system and interaction rules](docs/design-system.md)
 - [Desktop and mobile visual verification](docs/screenshots)
 - Trainee routes: Today, atomic daily check-in, Progress, onboarding, and submitted-assessment review
-- Coach routes: roster overview, private trainee invitations, daily completion/readiness review, longitudinal trainee detail, and baseline context
+- Coach routes: roster overview, private trainee invitations, daily completion/readiness review, longitudinal trainee detail, baseline context, and a Programming workspace for versioned exercises and workout templates
 - Public demo: backend-issued, short-lived coach or trainee sessions over a deterministic synthetic workspace; demo users are read-only
 
 ## Documentation
@@ -38,6 +38,8 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 - [Troubleshooting](docs/troubleshooting.md)
 - [Health Index v1 scoring](docs/scoring/health-index-v1.md)
 - [Daily Intelligence v1 scoring](docs/scoring/daily-intelligence-v1.md)
+- [Exercise library](docs/exercise-library.md)
+- [Workout templates](docs/workout-templates.md)
 - [Security and compliance notes](docs/security.md)
 - [Design system](docs/design-system.md)
 - [User-manual screenshot index](docs/screenshots/manual/README.md)

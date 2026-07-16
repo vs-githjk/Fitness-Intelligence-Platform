@@ -184,6 +184,9 @@ def test_create_replace_publish_revision_archive_and_immutability(
     published_v1 = published.json()["published_version"]
     assert published.json()["draft_version"] is None
     assert len(published_v1["content_hash"]) == 64
+    assert published_v1["exercises"][0]["exercise_version"]["id"] == str(
+        exercise_version.id
+    )
     assert client.post(
         f"/api/v1/coach/workout-templates/{template_id}/publish", headers=headers
     ).json()["published_version"]["id"] == published_v1["id"]
@@ -462,6 +465,9 @@ def test_hash_determinism_list_filters_and_decimal_conversions(
     assert listing.status_code == 200
     assert listing.json()["total"] == 1
     assert listing.json()["items"][0]["name"] == "Hash stable"
+    assert listing.json()["items"][0]["target_session_rpe"] == 7
+    assert listing.json()["items"][0]["exercise_count"] == 1
+    assert listing.json()["items"][0]["published_at"] is not None
     assert canonical_kilograms(Decimal("22"), WeightUnit.LB) == Decimal("9.979")
     assert canonical_kilograms(Decimal("10"), WeightUnit.KG) == Decimal("10.000")
     assert canonical_meters(Decimal("1"), DistanceUnit.MILES) == Decimal("1609.344")

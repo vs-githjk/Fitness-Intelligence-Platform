@@ -583,6 +583,7 @@ class WorkoutSetPrescriptionOut(WorkoutSetPrescriptionData):
 class WorkoutTemplateExerciseOut(BaseModel):
     id: uuid.UUID
     exercise_version_id: uuid.UUID
+    exercise_version: ExerciseVersionOut
     section: WorkoutTemplateSection
     display_order: int
     coach_notes: str | None
@@ -629,7 +630,10 @@ class WorkoutTemplateSummaryOut(BaseModel):
     name: str
     goal_tags: list[str]
     estimated_duration_minutes: int | None
+    target_session_rpe: float | None
+    exercise_count: int
     current_published_version_number: int | None
+    published_at: datetime | None
     has_draft: bool
     created_at: datetime
     updated_at: datetime
