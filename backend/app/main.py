@@ -24,6 +24,7 @@ from app.api import (
     trainee,
     training_assignments,
     training_programs,
+    workout_safety,
     workout_sessions,
     workout_templates,
 )
@@ -174,6 +175,7 @@ for router in (
     training_programs.router,
     training_assignments.router,
     workout_sessions.router,
+    workout_safety.router,
     invites.router,
 ):
     app.include_router(router, prefix="/api/v1")

@@ -111,8 +111,9 @@ System/private ownership,
 deterministic seed content, exact version pinning, complete-graph draft replacement, conflict
 detection, coach-authored deload context, exact schedule pinning, future supersession, and demo read-only enforcement are implemented.
 
-Workout safety reports, coach execution review, load and adherence analytics, readiness context,
-and post-completion corrections remain future slices. The items below are candidates,
+Append-only trainee workout safety reporting, scoped coach acknowledgement/resolution, and
+immutable fresh/stale/unavailable workout readiness context are implemented. Coach completed-session
+analytics, load and adherence analytics, and post-completion corrections remain future slices. The items below are candidates,
 not enabled routes or commitments unless explicitly marked implemented.
 
 ### Coach workflow operations

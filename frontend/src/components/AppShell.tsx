@@ -4,6 +4,7 @@ import {
   ClipboardList,
   LayoutDashboard,
   LogOut,
+  ShieldAlert,
   SquareCode,
   TrendingUp,
   UserRound,
@@ -20,6 +21,7 @@ const coachNav = [
   { to: '/coach/dashboard', label: 'Overview', icon: LayoutDashboard },
   { to: '/coach/programming', label: 'Programming', icon: SquareCode },
   { to: '/coach/assignments', label: 'Assignments', icon: CalendarRange },
+  { to: '/coach/safety-reports', label: 'Safety', icon: ShieldAlert },
   { to: '/coach/invites', label: 'Invitations', icon: UserPlus },
 ]
 const traineeNav = [

@@ -26,6 +26,9 @@ WORKOUT_EXECUTION_DEMO_MUTATIONS = frozenset(
         ),
         ("POST", "/api/v1/trainee/workout-sessions/{session_id}/complete"),
         ("POST", "/api/v1/trainee/workout-sessions/{session_id}/end-incomplete"),
+        ("POST", "/api/v1/trainee/workout-sessions/{session_id}/safety-reports"),
+        ("POST", "/api/v1/coach/safety-reports/{report_id}/acknowledge"),
+        ("POST", "/api/v1/coach/safety-reports/{report_id}/resolve"),
     }
 )
 

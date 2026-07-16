@@ -2,8 +2,8 @@
 
 Workout execution turns one eligible `ScheduledWorkout` into one trainee-owned immutable execution
 graph. It does not modify the published template, Program, assignment, or date-only schedule
-metadata. This phase intentionally excludes safety reports, readiness capture, load/adherence
-analytics, coach review, and post-completion corrections.
+metadata. Readiness context and safety reporting extend that execution graph without changing the
+Health Index, Daily Intelligence, prescription, or assignment.
 
 ## Lifecycle and snapshots
 
@@ -13,6 +13,10 @@ snapshots, prescribed `WorkoutSetLog` rows, and a `session_started` event in one
 unique scheduled-workout constraint prevents duplicate sessions. Cancelled, superseded, completed,
 and partial workouts cannot start.
 
+The same transaction captures the latest eligible readiness snapshot, or an explicit unavailable
+context, without changing the prescription. See
+[Workout readiness context](workout-readiness-context.md).
+
 The execution graph copies the exact exercise version, trainee-visible instructions, safety cues,
 order, set type, and planned prescription. Coach-only notes are not copied into trainee responses.
 Future source changes cannot alter active or historical execution. Schedule transitions are:
@@ -21,7 +25,7 @@ Future source changes cannot alter active or historical execution. Schedule tran
 - `in_progress` → `completed` after confirmed complete resolution; or
 - `in_progress` → `partial` after an intentional incomplete ending.
 
-Completed and ended-incomplete sessions are terminal and immutable through the API.
+Completed, ended-incomplete, and safety-ended sessions are terminal and immutable through the API.
 
 ## Explicit saves and concurrency
 
@@ -64,11 +68,19 @@ foreign IDs are denied without disclosing the object. Coaches cannot mutate exec
 mutation routes invoke the backend demo guard and are checked against a centralized inventory;
 synthetic demo users can inspect examples but receive `403 demo_read_only` for changes.
 
+## Safety lifecycle
+
+The persistent safety action does not unmount unsaved set inputs. Reports are append-only. Pain or
+unusual discomfort pauses the linked exercise, leaving explicit skip and end choices. Chest
+discomfort, breathing difficulty, and dizziness/faintness atomically produce terminal
+`safety_ended` state, a partial schedule state, and safety events; all execution controls then
+disappear. See [Workout safety reporting](workout-safety.md).
+
 ## Time behavior and current limits
 
 Scheduled occurrence remains a date in the assignment's trainee timezone snapshot; execution does
 not add a local clock time. Session/activity/event timestamps are UTC instants. Changing a profile
 timezone later does not reinterpret the pinned scheduled date.
 
-There are no safety reports, readiness context, load or adherence summaries, coach session-review
-API, missed-workout automation, offline sync, automatic conflict merge, or post-completion edits.
+There are no load or adherence summaries, coach completed-session analytics, missed-workout
+automation, offline sync, automatic conflict merge, or post-completion edits.

@@ -147,7 +147,9 @@ No. It means no check-in exists for that trainee's current local date. The inter
 Coaches can author versioned exercise-library content, reusable workout templates, and
 multi-week programs, then assign a published Program version on a trainee-local date. Trainees can
 start, explicitly log, resume, complete, or intentionally end those scheduled workouts incomplete.
-Coach execution review, load/adherence analytics, meal planning, wearables, notifications,
+Trainees can also view immutable readiness context and submit workout safety reports; assigned
+coaches can acknowledge or resolve those reports. Coach completed-session analytics,
+load/adherence analytics, meal planning, wearables, notifications,
 messaging, exports, clinical reporting, and external AI narration remain deferred.
 
 ### Is there a native mobile application?
@@ -167,6 +169,18 @@ read-only to coaches.
 Yes. Each scheduled workout has at most one execution session. Reopening its Program detail loads
 the same saved session and revision. Only an explicit per-set save is persisted; unsaved field
 changes may be lost on refresh. Completed and ended-incomplete sessions cannot be reopened.
+
+### Does readiness change my workout or provide medical clearance?
+
+No. It is an immutable copy of the latest eligible Daily Intelligence snapshot on or before the
+scheduled local date. Fresh means zero or one day old; stale means two or more days old. Unavailable
+means no eligible snapshot exists. It never blocks start or changes sets, loads, schedules, or Programs.
+
+### Are workout safety reports monitored immediately?
+
+No. Safety reports are not monitored continuously, and the platform does not diagnose medical
+conditions. Critical categories end the workout and display escalation guidance; pain or unusual
+discomfort pauses the exercise. The assigned coach can later append acknowledgement or resolution.
 
 ### Can I enter kilograms or pounds?
 

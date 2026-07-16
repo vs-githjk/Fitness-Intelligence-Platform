@@ -191,6 +191,7 @@ Deterministic calculations are used so that score behavior is repeatable, testab
 - View Recovery, Activity, Nutrition, Readiness, alerts, recommendations, and daily calculation explanations.
 - View gap-aware 7- or 30-day progress charts and accessible data tables.
 - Open an assigned scheduled workout, explicitly save or skip sets, resume it after navigation or refresh, and complete or intentionally end it incomplete.
+- View immutable fresh/stale/unavailable readiness context and submit append-only workout safety reports; critical categories safely end execution.
 - Sign out.
 
 ### Coach capabilities
@@ -204,6 +205,7 @@ Deterministic calculations are used so that score behavior is repeatable, testab
 - Browse read-only system exercises and create, publish, revise, and archive coach-private exercise versions.
 - Build, preview, publish, revise, and archive reusable workout templates with tracking-mode-specific set prescriptions.
 - Build, preview, publish, revise, and archive reusable 1–12 week programs pinned to exact published workout-template versions.
+- Filter assigned-trainee safety reports and append acknowledgement or resolution review history.
 - Assign an exact published Program version to an authorized trainee, preview its date-only schedule, and plan one future replacement.
 - Sign out.
 
@@ -237,7 +239,7 @@ The following are not available in the current application:
 - coach editing of trainee data;
 - coach account self-registration or assignment management;
 - password reset, account recovery, refresh-token rotation, revocation controls, or MFA;
-- coach workout-session review, post-completion corrections, safety reports, load/adherence analytics, readiness capture, or readiness-based schedule changes;
+- coach completed-session analytics, post-completion corrections, load/adherence analytics, or readiness-based schedule changes;
 - meal-plan or nutrition-plan creation;
 - wearables and external health-data integrations;
 - messaging, notifications, or reminders;

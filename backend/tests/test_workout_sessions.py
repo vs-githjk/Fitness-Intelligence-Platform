@@ -475,7 +475,11 @@ def test_execution_authorization_demo_inventory_and_event_history(
         for path, methods in client.app.openapi()["paths"].items()
         for method in methods
         if method.lower() in {"post", "put", "patch", "delete"}
-        and ("workout-sessions" in path or path.endswith("/start"))
+        and (
+            "workout-sessions" in path
+            or "safety-reports" in path
+            or path.endswith("/start")
+        )
     }
     assert documented == WORKOUT_EXECUTION_DEMO_MUTATIONS
     assert db.scalar(select(func.count(WorkoutSessionEvent.id))) >= 1

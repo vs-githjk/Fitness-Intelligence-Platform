@@ -129,6 +129,84 @@ it('shows an empty state for an unavailable schedule row', async () => {
   expect(await screen.findByText('Workout not found')).toBeVisible()
 })
 
+it('preserves a safety-report draft and shows API failures without losing set input', async () => {
+  const current = activeSession()
+  mockFetch((url, init) => {
+    if (url.endsWith('/trainee/program')) return ok(workspace('in_progress', current.id))
+    if (url.endsWith('/safety-reports') && init?.method === 'POST') return error(500, { detail: { code: 'failed', message: 'Report unavailable' } })
+    if (url.endsWith('/safety-reports')) return ok([])
+    return ok(current)
+  })
+  renderPage()
+  const repetitions = (await screen.findAllByLabelText('Actual repetitions'))[1]
+  fireEvent.change(repetitions, { target: { value: '12' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Report a safety concern' }))
+  fireEvent.change(screen.getByLabelText(/What should your coach know/), { target: { value: 'Sharp feeling during the set' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Keep draft and close' }))
+  expect(repetitions).toHaveValue(12)
+  fireEvent.click(screen.getByRole('button', { name: 'Report a safety concern' }))
+  expect(screen.getByLabelText(/What should your coach know/)).toHaveValue('Sharp feeling during the set')
+  fireEvent.click(screen.getByRole('button', { name: 'Submit safety report' }))
+  expect(await screen.findByText('Report unavailable')).toBeVisible()
+})
+
+it('submits a forced-stop report and renders a safety-ended immutable summary', async () => {
+  const current = activeSession()
+  const ended = activeSession(); ended.status = 'safety_ended'; ended.scheduled_workout_status = 'partial'; ended.exercises[0].status = 'safety_stopped'
+  let stopped = false
+  const report = { id: 'report-1', workout_session_id: current.id, workout_session_exercise_id: 'exercise-1', workout_set_log_id: null, trainee_id: 'trainee-1', category: 'chest_discomfort', severity: 'severe', note: null, activity_stopped: true, occurred_at: '2026-07-16T08:12:00Z', created_at: '2026-07-16T08:12:00Z', status: 'open', session_status: 'safety_ended', exercise_status: 'safety_stopped', guidance: 'Stop exercising.' }
+  mockFetch((url, init) => {
+    if (url.endsWith('/trainee/program')) return ok(workspace('in_progress', current.id))
+    if (url.endsWith('/safety-reports') && init?.method === 'POST') { stopped = true; return ok(report) }
+    if (url.endsWith('/safety-reports')) return ok(stopped ? [report] : [])
+    return ok(stopped ? ended : current)
+  })
+  renderPage()
+  fireEvent.click(await screen.findByRole('button', { name: 'Report a safety concern' }))
+  fireEvent.change(screen.getByLabelText('What happened?'), { target: { value: 'chest_discomfort' } })
+  expect(screen.getByText('Stop exercising now')).toBeVisible()
+  expect(screen.getByText(/Submitting this report will end the workout/)).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Submit and end workout' }))
+  expect(await screen.findByText('Workout stopped for safety')).toBeVisible()
+  expect(screen.queryByRole('button', { name: 'Complete workout' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Save completed set' })).not.toBeInTheDocument()
+})
+
+it('keeps skip and end actions enabled while pausing all exercise logging', async () => {
+  const current = activeSession(); current.exercises[0].status = 'paused_for_safety'
+  mockFetch(url => url.endsWith('/trainee/program') ? ok(workspace('in_progress', current.id)) : url.endsWith('/safety-reports') ? ok([]) : ok(current))
+  renderPage()
+  expect(await screen.findByText('Exercise paused for safety')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Skip exercise' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'End workout incomplete' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Add set' })).toBeDisabled()
+  screen.getAllByRole('button', { name: 'Save completed set' }).forEach(button => expect(button).toBeDisabled())
+  expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument()
+})
+
+it.each([
+  [0, false, '82 · ready', 'Fresh'],
+  [2, true, '61 · caution', 'Stale'],
+] as const)('shows readiness age %i with the correct freshness state', async (age, stale, heading, staleLabel) => {
+  const data = workspace()
+  data.scheduled_workouts[0].readiness_context = { id: null, scheduled_workout_id: 'workout-1', workout_session_id: null, daily_score_snapshot_id: 'score-1', available: true, readiness_score: age ? 61 : 82, readiness_state: age ? 'caution' : 'ready', source_local_date: age ? '2026-07-14' : '2026-07-16', calculation_timestamp: '2026-07-16T06:00:00Z', scoring_version: 'daily-v1', age_days: age, is_stale: stale, captured_at: null, guidance: 'Readiness is contextual guidance based on your latest available daily check-in. It does not provide medical clearance and does not change this workout automatically.' }
+  mockFetch(() => ok(data))
+  renderPage()
+  expect(await screen.findByText(heading)).toBeVisible()
+  expect(screen.getByText(staleLabel)).toBeVisible()
+  expect(screen.getByText(/does not provide medical clearance/)).toBeVisible()
+  expect(screen.getByText('Scoring version: daily-v1')).toBeVisible()
+})
+
+it('shows readiness as unavailable without blocking workout start', async () => {
+  const data = workspace()
+  data.scheduled_workouts[0].readiness_context = { id: null, scheduled_workout_id: 'workout-1', workout_session_id: null, daily_score_snapshot_id: null, available: false, readiness_score: null, readiness_state: null, source_local_date: null, calculation_timestamp: null, scoring_version: null, age_days: null, is_stale: null, captured_at: null, guidance: 'Readiness is contextual guidance based on your latest available daily check-in. It does not provide medical clearance and does not change this workout automatically.' }
+  mockFetch(() => ok(data))
+  renderPage()
+  expect(await screen.findByText('Readiness unavailable')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Start workout' })).toBeEnabled()
+})
+
 function renderPage() { const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }); return render(<QueryClientProvider client={client}><MemoryRouter initialEntries={['/trainee/workouts/workout-1']}><AuthProvider><Routes><Route path="/trainee/workouts/:scheduledWorkoutId" element={<WorkoutExecutionPage />} /></Routes></AuthProvider></MemoryRouter></QueryClientProvider>) }
 function setSession(demo: boolean) { const storage = new MemoryStorage(); storage.setItem('access_token', 'test-token'); storage.setItem('user', JSON.stringify({ id: 'trainee-1', email: 'trainee@example.com', first_name: demo ? 'Demo' : 'Test', last_name: 'Trainee', role: 'trainee', is_demo: demo })); vi.stubGlobal('localStorage', storage) }
 function mockFetch(handler: (url: string, init?: RequestInit) => Response) { vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => Promise.resolve(handler(String(input), init)))) }

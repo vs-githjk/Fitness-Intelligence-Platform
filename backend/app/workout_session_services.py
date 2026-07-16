@@ -30,6 +30,7 @@ from app.schemas import (
     WorkoutSetAddRequest,
     WorkoutSetUpdateRequest,
 )
+from app.workout_readiness_services import capture_readiness_context, readiness_out
 
 ACTUAL_FIELDS = (
     "actual_repetitions",
@@ -163,6 +164,11 @@ def session_out(session: WorkoutSession) -> dict:
         "session_rpe": session.session_rpe,
         "trainee_note": session.trainee_note,
         "revision": session.revision,
+        "readiness_context": (
+            readiness_out(session.readiness_context)
+            if session.readiness_context is not None
+            else None
+        ),
         "exercises": [
             {
                 "id": exercise.id,
@@ -264,6 +270,7 @@ def start_workout(db: Session, trainee: User, scheduled_workout_id: uuid.UUID) -
     )
     db.add(session)
     db.flush()
+    capture_readiness_context(db, session, now)
     for source_exercise in scheduled.workout_template_version.exercises:
         snapshot = WorkoutSessionExercise(
             workout_session_id=session.id,
@@ -362,7 +369,11 @@ def _apply_actuals(item: WorkoutSetLog, body: WorkoutSetActualData) -> None:
 
 
 def _refresh_exercise_status(exercise: WorkoutSessionExercise) -> None:
-    if exercise.status == WorkoutSessionExerciseStatus.SKIPPED:
+    if exercise.status in (
+        WorkoutSessionExerciseStatus.SKIPPED,
+        WorkoutSessionExerciseStatus.PAUSED_FOR_SAFETY,
+        WorkoutSessionExerciseStatus.SAFETY_STOPPED,
+    ):
         return
     statuses = {item.status for item in exercise.sets}
     if statuses and WorkoutSetLogStatus.PLANNED not in statuses:
@@ -386,8 +397,16 @@ def update_set(
     item = WorkoutSessionRepository(db).owned_set(trainee.id, session.id, set_id)
     if item is None:
         raise _error(404, "workout_set_not_found", "Workout set not found")
-    if item.session_exercise.status == WorkoutSessionExerciseStatus.SKIPPED:
-        raise _error(409, "exercise_already_skipped", "Skipped exercises cannot be changed")
+    if item.session_exercise.status in (
+        WorkoutSessionExerciseStatus.SKIPPED,
+        WorkoutSessionExerciseStatus.PAUSED_FOR_SAFETY,
+        WorkoutSessionExerciseStatus.SAFETY_STOPPED,
+    ):
+        raise _error(
+            409,
+            "exercise_not_mutable",
+            "Skipped or safety-stopped exercises cannot be changed",
+        )
     status = WorkoutSetLogStatus(body.status)
     _validate_actuals(body, item.tracking_mode, status)
     old_status = item.status
@@ -426,8 +445,16 @@ def add_set(
     if existing is not None:
         return session_out(session)
     _revision(session, body.expected_session_revision)
-    if exercise.status == WorkoutSessionExerciseStatus.SKIPPED:
-        raise _error(409, "exercise_already_skipped", "Skipped exercises cannot receive new sets")
+    if exercise.status in (
+        WorkoutSessionExerciseStatus.SKIPPED,
+        WorkoutSessionExerciseStatus.PAUSED_FOR_SAFETY,
+        WorkoutSessionExerciseStatus.SAFETY_STOPPED,
+    ):
+        raise _error(
+            409,
+            "exercise_not_mutable",
+            "Skipped or safety-stopped exercises cannot receive new sets",
+        )
     status = WorkoutSetLogStatus(body.status)
     mode = exercise.exercise_version.tracking_mode
     _validate_actuals(body, mode, status)

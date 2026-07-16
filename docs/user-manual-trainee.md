@@ -10,7 +10,7 @@ New to the platform? Read [Getting started](getting-started.md) and the [Product
 
 From sign-in, select **Explore Demo**, then **View as Trainee**. The demo opens fictional baseline,
 daily, Program, and workout-execution examples. You can inspect scheduled, active, completed, and
-partial workouts, but all persistent changes are disabled and rejected by the backend. A persistent
+partial workouts, readiness states, and seeded safety reports, but all persistent changes are disabled and rejected by the backend. A persistent
 banner identifies the workspace as synthetic and read-only; select **Exit demo** to leave.
 
 This does not change normal trainee enrollment: an ordinary trainee account still requires a private, single-use invitation from its coach.
@@ -551,6 +551,17 @@ bounded reason and **End workout incomplete**. Both outcomes preserve a summary 
 there is no reopen or correction workflow. Cancelled and superseded entries cannot start. If a
 future replacement exists, the page shows its effective date and does not rewrite past history.
 
+The workout detail, active execution, and historical summary show the captured readiness as Fresh,
+Stale, or Unavailable. It is contextual guidance only: it does not provide medical clearance,
+change the workout, or block starting.
+
+**Report a safety concern** remains available during active execution without clearing typed set
+values. Select a category and severity, optionally add a note, and submit. Pain or unusual
+discomfort pauses the exercise and leaves **Skip exercise**, **End workout incomplete**, and the
+submitted report—there is no casual Continue action. Chest discomfort, breathing difficulty, or
+dizziness/faintness stops the workout in an immutable safety-ended state. Safety reports are not
+monitored continuously, and the platform does not diagnose medical conditions.
+
 ## 13. Sign out and handle session expiry
 
 ### Sign out
@@ -672,7 +683,7 @@ The trainee experience currently does not provide:
 - coach selection or assignment management;
 - coach invitations through the trainee interface;
 - workout-program building, post-completion workout correction, or nutrition-plan creation;
-- workout safety reports, readiness capture, load analytics, or adherence analytics;
+- workout load analytics, adherence analytics, or post-completion corrections;
 - messaging, coach notes, reminders, or notifications;
 - wearable or device connections;
 - AI-generated narration;

@@ -20,6 +20,8 @@ from app.models import (
     Role,
     TraineeProfile,
     User,
+    WorkoutReadinessContext,
+    WorkoutSafetyReport,
     WorkoutTemplate,
 )
 from app.security import ALGORITHM
@@ -408,6 +410,19 @@ def test_public_demo_seed_is_idempotent_and_scenario_rich(db: Session) -> None:
     assert score_count == check_in_count
     assert alert_count is not None and alert_count >= 1
     assert primary_alert_count is not None and primary_alert_count >= 1
+    safety_statuses = set(
+        db.scalars(select(WorkoutSafetyReport.status).join(User).where(User.is_demo.is_(True))).all()
+    )
+    assert safety_statuses == {"open", "acknowledged", "resolved"}
+    assert db.scalar(select(func.count(WorkoutSafetyReport.id))) == 4
+    readiness_availability = set(
+        db.scalars(
+            select(WorkoutReadinessContext.is_available)
+            .join(User)
+            .where(User.is_demo.is_(True))
+        ).all()
+    )
+    assert readiness_availability == {True, False}
 
     first_counts = (demo_user_count, assignment_count, submitted_count, check_in_count)
     seed_public_demo_workspace(db, config, now)
@@ -430,3 +445,4 @@ def test_public_demo_seed_is_idempotent_and_scenario_rich(db: Session) -> None:
         ),
     )
     assert second_counts == first_counts
+    assert db.scalar(select(func.count(WorkoutSafetyReport.id))) == 4

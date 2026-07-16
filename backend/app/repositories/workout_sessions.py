@@ -24,6 +24,7 @@ def _scheduled_options():
         .selectinload(WorkoutTemplateVersion.exercises)
         .joinedload(WorkoutTemplateExercise.exercise_version),
         joinedload(ScheduledWorkout.assignment).joinedload(TrainingAssignment.program_version),
+        joinedload(ScheduledWorkout.readiness_context),
     )
 
 
@@ -39,6 +40,7 @@ def _session_options():
         ),
         selectinload(WorkoutSession.exercises).selectinload(WorkoutSessionExercise.sets),
         selectinload(WorkoutSession.events),
+        joinedload(WorkoutSession.readiness_context),
     )
 
 

@@ -26,7 +26,7 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 
 - [Design system and interaction rules](docs/design-system.md)
 - [Desktop and mobile visual verification](docs/screenshots)
-- Trainee routes: Today with current coach details, atomic daily check-in, Progress, onboarding, submitted-assessment review, assigned Program calendar, and resumable workout execution
+- Trainee routes: Today with current coach details, atomic daily check-in, Progress, onboarding, submitted-assessment review, assigned Program calendar, resumable workout execution, readiness context, and workout safety reporting
 - Coach routes: roster overview, private single-use trainee invitations, longitudinal trainee review, Programming authoring, and date-only Program assignment. FitIntel 360 does not deliver invitation emails; coaches copy and share the one-time code or link manually.
 - Public demo: backend-issued, short-lived coach or trainee sessions over a deterministic synthetic workspace; demo users are read-only
 
@@ -46,6 +46,8 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 - [Training programs](docs/training-programs.md)
 - [Program assignment and scheduling](docs/training-assignments.md)
 - [Workout execution](docs/workout-execution.md)
+- [Workout safety](docs/workout-safety.md)
+- [Workout readiness context](docs/workout-readiness-context.md)
 - [Public demo](docs/demo.md)
 - [Security and compliance notes](docs/security.md)
 - [Design system](docs/design-system.md)
@@ -190,7 +192,7 @@ docker compose up --wait
 - Coach: private invitation creation/list/revocation, roster summaries, assignment-protected check-ins/scores/trends, baseline alerts, and daily alerts
 - Coach programming: owned exercise, workout-template, and training-program draft/publish/revise/archive endpoints under `/api/v1/coach`
 - Training assignment: coach preview/create/history/cancel-future APIs and the trainee Program schedule
-- Workout execution: trainee-owned start/resume, set logging, exercise skip, completion, and intentional incomplete ending APIs
+- Workout execution: trainee-owned start/resume, set logging, exercise skip, completion, intentional incomplete ending, immutable readiness context, and append-only safety APIs; assigned coaches have a scoped safety review queue
 
 When API documentation is enabled, FastAPI publishes the exact OpenAPI contract at `/docs`. Coach endpoints enforce both role and active assignment; possession of a trainee UUID is insufficient. Operational probes are available at `/health/live` and `/health/ready`, with `/health` retained for compatibility.
 
@@ -208,6 +210,6 @@ This remains an early product. Before production use it needs TLS termination, m
 - The assessment payload is a validated JSON structure for flexibility; profile fields needed for querying are also typed columns.
 - Manual onboarding and daily check-ins are the only health-data providers.
 - Check-in drafts and past-date corrections are not implemented; submission is atomic and only today's local-date record is editable.
-- Workout load/adherence analytics, safety reports, readiness capture, meal planning, wearables, notifications, messaging, exports, clinical reporting, and external AI narration remain later milestones.
+- Workout load/adherence analytics, completed-session coach analytics, post-completion correction, meal planning, wearables, notifications, messaging, exports, clinical reporting, and external AI narration remain later milestones.
 
 See [Health Index v1](docs/scoring/health-index-v1.md), [Daily Intelligence v1](docs/scoring/daily-intelligence-v1.md), and [security notes](docs/security.md).

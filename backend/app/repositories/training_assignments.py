@@ -80,6 +80,9 @@ class TrainingAssignmentRepository:
                 selectinload(TrainingAssignment.scheduled_workouts)
                 .selectinload(ScheduledWorkout.workout_template_version)
                 .selectinload(WorkoutTemplateVersion.exercises),
+                selectinload(TrainingAssignment.scheduled_workouts).selectinload(
+                    ScheduledWorkout.readiness_context
+                ),
                 selectinload(TrainingAssignment.history),
             )
             .where(TrainingAssignment.trainee_id == trainee_id)
@@ -110,6 +113,9 @@ class TrainingAssignmentRepository:
                 selectinload(TrainingAssignment.scheduled_workouts)
                 .selectinload(ScheduledWorkout.workout_template_version)
                 .selectinload(WorkoutTemplateVersion.exercises),
+                selectinload(TrainingAssignment.scheduled_workouts).selectinload(
+                    ScheduledWorkout.readiness_context
+                ),
                 selectinload(TrainingAssignment.history),
             )
             .where(

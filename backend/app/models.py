@@ -126,6 +126,7 @@ class WorkoutSessionStatus(str, enum.Enum):
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     ENDED_INCOMPLETE = "ended_incomplete"
+    SAFETY_ENDED = "safety_ended"
 
 
 class WorkoutSessionExerciseStatus(str, enum.Enum):
@@ -133,6 +134,8 @@ class WorkoutSessionExerciseStatus(str, enum.Enum):
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     SKIPPED = "skipped"
+    PAUSED_FOR_SAFETY = "paused_for_safety"
+    SAFETY_STOPPED = "safety_stopped"
 
 
 class WorkoutSetLogSource(str, enum.Enum):
@@ -156,6 +159,37 @@ class WorkoutSessionEventType(str, enum.Enum):
     EXERCISE_SKIPPED = "exercise_skipped"
     SESSION_COMPLETED = "session_completed"
     SESSION_ENDED_INCOMPLETE = "session_ended_incomplete"
+    SAFETY_REPORT_SUBMITTED = "safety_report_submitted"
+    EXERCISE_PAUSED_FOR_SAFETY = "exercise_paused_for_safety"
+    SESSION_SAFETY_ENDED = "session_safety_ended"
+
+
+class SafetyCategory(str, enum.Enum):
+    PAIN = "pain"
+    UNUSUAL_DISCOMFORT = "unusual_discomfort"
+    CHEST_DISCOMFORT = "chest_discomfort"
+    BREATHING_DIFFICULTY = "breathing_difficulty"
+    DIZZINESS_OR_FAINTNESS = "dizziness_or_faintness"
+    LOSS_OF_BALANCE = "loss_of_balance"
+    EQUIPMENT_OR_ENVIRONMENT = "equipment_or_environment"
+    OTHER = "other"
+
+
+class SafetySeverity(str, enum.Enum):
+    MILD = "mild"
+    MODERATE = "moderate"
+    SEVERE = "severe"
+
+
+class SafetyReportStatus(str, enum.Enum):
+    OPEN = "open"
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
+
+
+class SafetyReviewAction(str, enum.Enum):
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
 
 
 class AssignmentHistoryEvent(str, enum.Enum):
@@ -868,6 +902,9 @@ class ScheduledWorkout(Base):
     workout_session: Mapped["WorkoutSession | None"] = relationship(
         back_populates="scheduled_workout", uselist=False
     )
+    readiness_context: Mapped["WorkoutReadinessContext | None"] = relationship(
+        back_populates="scheduled_workout", uselist=False
+    )
 
 
 class WorkoutSession(Base):
@@ -885,7 +922,8 @@ class WorkoutSession(Base):
         CheckConstraint(
             "(status = 'in_progress' AND completed_at IS NULL AND ended_at IS NULL) OR "
             "(status = 'completed' AND completed_at IS NOT NULL AND ended_at IS NULL) OR "
-            "(status = 'ended_incomplete' AND completed_at IS NULL AND ended_at IS NOT NULL)",
+            "(status IN ('ended_incomplete', 'safety_ended') "
+            "AND completed_at IS NULL AND ended_at IS NOT NULL)",
             name="ck_workout_sessions_lifecycle",
         ),
         Index("ix_workout_sessions_trainee_status", "trainee_id", "status"),
@@ -924,6 +962,12 @@ class WorkoutSession(Base):
         cascade="all, delete-orphan",
         order_by="WorkoutSessionEvent.created_at",
     )
+    readiness_context: Mapped["WorkoutReadinessContext | None"] = relationship(
+        back_populates="workout_session", uselist=False
+    )
+    safety_reports: Mapped[list["WorkoutSafetyReport"]] = relationship(
+        back_populates="workout_session", order_by="WorkoutSafetyReport.created_at"
+    )
 
 
 class WorkoutSessionExercise(Base):
@@ -960,7 +1004,12 @@ class WorkoutSessionExercise(Base):
     trainee_instructions: Mapped[str | None] = mapped_column(Text)
     prescription_snapshot: Mapped[dict[str, Any]] = mapped_column(JSON)
     status: Mapped[WorkoutSessionExerciseStatus] = mapped_column(
-        Enum(WorkoutSessionExerciseStatus, native_enum=False, values_callable=enum_values)
+        Enum(
+            WorkoutSessionExerciseStatus,
+            native_enum=False,
+            values_callable=enum_values,
+            length=20,
+        )
     )
     skip_reason: Mapped[str | None] = mapped_column(String(50))
     skip_note: Mapped[str | None] = mapped_column(String(500))
@@ -974,6 +1023,9 @@ class WorkoutSessionExercise(Base):
         back_populates="session_exercise",
         cascade="all, delete-orphan",
         order_by="WorkoutSetLog.set_number",
+    )
+    safety_reports: Mapped[list["WorkoutSafetyReport"]] = relationship(
+        back_populates="workout_session_exercise"
     )
 
 
@@ -1074,6 +1126,9 @@ class WorkoutSetLog(Base):
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
     )
     session_exercise: Mapped[WorkoutSessionExercise] = relationship(back_populates="sets")
+    safety_reports: Mapped[list["WorkoutSafetyReport"]] = relationship(
+        back_populates="workout_set_log"
+    )
 
 
 class WorkoutSessionEvent(Base):
@@ -1087,7 +1142,12 @@ class WorkoutSessionEvent(Base):
         ForeignKey("workout_sessions.id", ondelete="RESTRICT"), index=True
     )
     event_type: Mapped[WorkoutSessionEventType] = mapped_column(
-        Enum(WorkoutSessionEventType, native_enum=False, values_callable=enum_values)
+        Enum(
+            WorkoutSessionEventType,
+            native_enum=False,
+            values_callable=enum_values,
+            length=32,
+        )
     )
     actor_user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"), index=True
@@ -1095,6 +1155,127 @@ class WorkoutSessionEvent(Base):
     payload: Mapped[dict[str, Any]] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     workout_session: Mapped[WorkoutSession] = relationship(back_populates="events")
+
+
+class WorkoutReadinessContext(Base):
+    __tablename__ = "workout_readiness_contexts"
+    __table_args__ = (
+        CheckConstraint(
+            "(is_available AND daily_score_snapshot_id IS NOT NULL "
+            "AND readiness_score IS NOT NULL AND readiness_state IS NOT NULL "
+            "AND source_local_date IS NOT NULL AND calculation_timestamp IS NOT NULL "
+            "AND scoring_version IS NOT NULL AND age_days IS NOT NULL "
+            "AND age_days >= 0 AND is_stale IS NOT NULL) OR "
+            "(NOT is_available AND daily_score_snapshot_id IS NULL "
+            "AND readiness_score IS NULL AND readiness_state IS NULL "
+            "AND source_local_date IS NULL AND calculation_timestamp IS NULL "
+            "AND scoring_version IS NULL AND age_days IS NULL AND is_stale IS NULL)",
+            name="ck_workout_readiness_availability",
+        ),
+        UniqueConstraint("scheduled_workout_id", name="uq_workout_readiness_scheduled"),
+        UniqueConstraint("workout_session_id", name="uq_workout_readiness_session"),
+        Index("ix_workout_readiness_trainee_source", "trainee_id", "source_local_date"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    scheduled_workout_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("scheduled_workouts.id", ondelete="RESTRICT"), index=True
+    )
+    workout_session_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workout_sessions.id", ondelete="RESTRICT"), index=True
+    )
+    trainee_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    daily_score_snapshot_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("daily_score_snapshots.id", ondelete="RESTRICT"), index=True
+    )
+    is_available: Mapped[bool] = mapped_column(Boolean)
+    readiness_score: Mapped[float | None] = mapped_column(Float)
+    readiness_state: Mapped[str | None] = mapped_column(String(40))
+    source_local_date: Mapped[date | None] = mapped_column(Date)
+    calculation_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    scoring_version: Mapped[str | None] = mapped_column(String(50))
+    age_days: Mapped[int | None] = mapped_column(Integer)
+    is_stale: Mapped[bool | None] = mapped_column(Boolean)
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    scheduled_workout: Mapped[ScheduledWorkout] = relationship(
+        back_populates="readiness_context"
+    )
+    workout_session: Mapped[WorkoutSession] = relationship(
+        back_populates="readiness_context"
+    )
+
+
+class WorkoutSafetyReport(Base):
+    __tablename__ = "workout_safety_reports"
+    __table_args__ = (
+        CheckConstraint(
+            "note IS NULL OR length(note) <= 500", name="ck_workout_safety_report_note"
+        ),
+        Index("ix_workout_safety_reports_trainee_created", "trainee_id", "created_at"),
+        Index("ix_workout_safety_reports_status_created", "status", "created_at"),
+        Index("ix_workout_safety_reports_session_created", "workout_session_id", "created_at"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    workout_session_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workout_sessions.id", ondelete="RESTRICT"), index=True
+    )
+    workout_session_exercise_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("workout_session_exercises.id", ondelete="RESTRICT"), index=True
+    )
+    workout_set_log_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("workout_set_logs.id", ondelete="RESTRICT"), index=True
+    )
+    trainee_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    category: Mapped[SafetyCategory] = mapped_column(
+        Enum(SafetyCategory, native_enum=False, values_callable=enum_values, length=30)
+    )
+    severity: Mapped[SafetySeverity] = mapped_column(
+        Enum(SafetySeverity, native_enum=False, values_callable=enum_values, length=10)
+    )
+    note: Mapped[str | None] = mapped_column(String(500))
+    activity_stopped: Mapped[bool] = mapped_column(Boolean, default=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    status: Mapped[SafetyReportStatus] = mapped_column(
+        Enum(SafetyReportStatus, native_enum=False, values_callable=enum_values, length=20),
+        default=SafetyReportStatus.OPEN,
+    )
+    workout_session: Mapped[WorkoutSession] = relationship(back_populates="safety_reports")
+    workout_session_exercise: Mapped[WorkoutSessionExercise | None] = relationship(
+        back_populates="safety_reports"
+    )
+    workout_set_log: Mapped[WorkoutSetLog | None] = relationship(
+        back_populates="safety_reports"
+    )
+    reviews: Mapped[list["WorkoutSafetyReview"]] = relationship(
+        back_populates="report", order_by="WorkoutSafetyReview.created_at"
+    )
+
+
+class WorkoutSafetyReview(Base):
+    __tablename__ = "workout_safety_reviews"
+    __table_args__ = (
+        CheckConstraint(
+            "note IS NULL OR length(note) <= 500", name="ck_workout_safety_review_note"
+        ),
+        Index("ix_workout_safety_reviews_report_created", "workout_safety_report_id", "created_at"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    workout_safety_report_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workout_safety_reports.id", ondelete="RESTRICT"), index=True
+    )
+    coach_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    action: Mapped[SafetyReviewAction] = mapped_column(
+        Enum(SafetyReviewAction, native_enum=False, values_callable=enum_values, length=20)
+    )
+    note: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    report: Mapped[WorkoutSafetyReport] = relationship(back_populates="reviews")
 
 
 class AssignmentHistory(Base):

@@ -38,7 +38,7 @@ Coach navigation contains **Overview**, **Programming**, and **Invitations**.
 - Use the sign-out icon beside your identity to end the local browser session.
 - On a trainee record, use **Back to overview** to return to the roster.
 
-Trainees can execute assigned workouts, but coach execution review, corrections, safety reports,
+Trainees can execute assigned workouts and submit safety reports, but coach completed-session analytics, corrections,
 messages, analytics reports, nutrition plans, settings, and an alerts-management page are not
 implemented.
 
@@ -263,6 +263,13 @@ completion becomes **Completed**, while an intentional early ending becomes **Pa
 states are visible in the trainee's Program calendar and never rewrite the assigned Program or
 pinned workout-template version. This phase does not expose the trainee's set log or session-event
 history to coaches and does not let a coach reopen or correct an execution.
+
+Open **Safety** to filter open, acknowledged, or resolved trainee workout safety reports. Detail
+shows the trainee, workout, linked exercise, category, severity, occurrence time, immutable note,
+and append-only review history. **Acknowledge** and **Resolve report** each append a review; they do
+not edit trainee content or execution. Safety reports are not monitored continuously. The platform
+does not diagnose medical conditions. Use professional judgment and appropriate escalation. Demo
+review controls remain disabled.
 
 A coach cannot:
 

@@ -149,6 +149,7 @@ The implementation supports viewports from 320px upward. Its active Tailwind bre
 - From 1280px, portfolio metrics can occupy four columns and Health Index sections use asymmetric two-column layouts.
 - Program weeks use accessible disclosure sections. Weekdays and workout cards remain a vertical stream below 1280px, then may use a two-column weekday layout; the interface never forces seven columns onto a small screen. Builder and trainee-preview panels switch through labelled controls below 1024px.
 - Workout execution remains a single-column, touch-first flow from 320px upward. Set editors expose planned context beside mode-specific actual inputs, use explicit save/skip actions with at least 44px targets, and report dirty, saving, saved, error, and revision-conflict states through text and polite live regions. Previous/next exercise controls wrap without horizontal overflow.
+- The persistent workout safety action uses the shared focus-trapped modal/bottom-sheet without unmounting set editors. Critical state combines an icon, heading, explicit text, and risk color; color is never the only signal. Paused exercises remove casual navigation and keep explicit skip/end/report choices. Readiness cards label Fresh, Stale, or Unavailable in text and retain the medical-clearance disclaimer from 320px upward.
 - The app content is capped at 1440px. Health Index grids use `minmax(0, ...)` and components use wrapping/min-width controls to limit overflow from long values and labels.
 - Authentication is a focused single column below 1024px and a split contextual/form layout from 1024px.
 - The onboarding step rail is hidden below 1024px and replaced by named percentage progress. Completed steps in the desktop rail can be revisited; future steps remain disabled.
@@ -236,7 +237,7 @@ Avoid diagnostic, shame-based, or absolute language such as “unhealthy,” “
 ## Current-scope limits
 
 - The application is light-mode only. Dark-mode values and a theme switch are not implemented.
-- The product supports baseline onboarding plus manual daily check-ins and bounded longitudinal trends. Workouts, nutrition plans, wearables, messages, and notifications remain unimplemented.
+- The product supports baseline onboarding, manual daily check-ins, bounded longitudinal trends, workout programming/execution, immutable readiness context, and append-only workout safety reporting. Nutrition plans, wearables, messages, notifications, load/adherence analytics, and AI remain unimplemented.
 - Coach navigation contains Overview; trainee navigation contains Today, Progress, and Assessment.
 - Submitted assessments are locked. Starting a new assessment version is explicitly deferred.
 - Data visualization includes numeric summaries, status badges, exact contribution text, progress bars, restrained trend lines, and accessible data tables.

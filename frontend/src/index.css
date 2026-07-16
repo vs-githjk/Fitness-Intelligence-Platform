@@ -63,3 +63,7 @@
   nav, .no-print { display: none !important; }
   body { background: white; }
 }
+
+nav[aria-label="coach navigation"].safe-bottom > div {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}

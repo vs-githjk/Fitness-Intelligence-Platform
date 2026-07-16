@@ -37,5 +37,8 @@ weeks, rest days, deload labels, Required/Optional status, and workout details. 
 workouts can be opened for execution. Their lifecycle extends through `in_progress`, `completed`,
 or `partial`; `cancelled` and `superseded` entries remain historical and cannot start. Session
 execution never changes the pinned Program, template version, scheduled local date, or assignment
-timezone snapshot. Adherence, readiness capture, training load, missed-state automation, and
-safety reports remain deferred. See [Workout execution](workout-execution.md).
+timezone snapshot. Scheduled details and Today cards can show fresh, stale, or unavailable
+readiness without changing start eligibility. A safety-ended session leaves the schedule partial.
+Adherence, training load, and missed-state automation remain deferred. See
+[Workout execution](workout-execution.md), [Workout safety](workout-safety.md), and
+[Workout readiness context](workout-readiness-context.md).

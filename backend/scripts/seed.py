@@ -22,6 +22,9 @@ from app.models import (
     ExerciseVersionStatus,
     OnboardingAssessment,
     Role,
+    SafetyCategory,
+    SafetyReviewAction,
+    SafetySeverity,
     ScheduledWorkout,
     ScheduledWorkoutStatus,
     TraineeProfile,
@@ -31,6 +34,8 @@ from app.models import (
     TrainingProgramVersion,
     TrainingProgramVersionStatus,
     User,
+    WorkoutReadinessContext,
+    WorkoutSafetyReport,
     WorkoutSessionStatus,
     WorkoutTemplate,
     WorkoutTemplateVersion,
@@ -42,6 +47,8 @@ from app.schemas import (
     TrainingAssignmentCreateRequest,
     TrainingProgramCreateRequest,
     WorkoutExerciseSkipRequest,
+    WorkoutSafetyReportCreateRequest,
+    WorkoutSafetyReviewRequest,
     WorkoutSessionCompleteRequest,
     WorkoutSessionEndIncompleteRequest,
     WorkoutSetAddRequest,
@@ -55,6 +62,7 @@ from app.training_program_services import (
     create_training_program,
     publish_training_program_draft,
 )
+from app.workout_safety_services import create_safety_report, review_safety_report
 from app.workout_session_services import (
     add_set,
     complete_session,
@@ -117,7 +125,7 @@ DEMO_SCENARIOS: tuple[dict[str, Any], ...] = (
         "first_name": "Isha",
         "last_name": "Missing Check-ins",
         "pattern": "missing",
-        "missing": set(range(21)) - {0, 3, 9, 16},
+        "missing": set(range(21)),
     },
     {
         "email": "demo.stable@fitness.example.com",
@@ -882,6 +890,147 @@ def seed_workout_execution(db, trainee: User) -> None:
                 note="Synthetic partial execution.",
             ),
         )
+
+
+def _seed_safety_report(
+    db,
+    *,
+    coach: User,
+    trainee: User,
+    workout: ScheduledWorkout,
+    category: SafetyCategory,
+    severity: SafetySeverity,
+    note: str,
+    review_actions: tuple[SafetyReviewAction, ...] = (),
+) -> None:
+    """Create one deterministic report example without duplicating prior seed runs."""
+    existing = db.scalar(
+        select(WorkoutSafetyReport).where(
+            WorkoutSafetyReport.trainee_id == trainee.id,
+            WorkoutSafetyReport.note == note,
+        )
+    )
+    if existing is not None:
+        return
+    session = (
+        get_session(db, trainee, workout.workout_session.id)
+        if workout.workout_session
+        else start_workout(db, trainee, workout.id)
+    )
+    report = create_safety_report(
+        db,
+        trainee,
+        session["id"],
+        WorkoutSafetyReportCreateRequest(
+            workout_session_exercise_id=session["exercises"][0]["id"],
+            category=category,
+            severity=severity,
+            note=note,
+            activity_stopped=category != SafetyCategory.OTHER,
+        ),
+    )
+    for action in review_actions:
+        review_safety_report(
+            db,
+            coach,
+            report["id"],
+            action,
+            WorkoutSafetyReviewRequest(note=f"Synthetic {action.value} review."),
+        )
+
+
+def seed_workout_safety_examples(db, coach: User, trainee: User) -> None:
+    """Seed open, acknowledged, resolved, paused, and safety-ended examples."""
+    workouts = list(
+        db.scalars(
+            select(ScheduledWorkout)
+            .where(
+                ScheduledWorkout.trainee_id == trainee.id,
+                ScheduledWorkout.status.notin_(
+                    [ScheduledWorkoutStatus.CANCELLED, ScheduledWorkoutStatus.SUPERSEDED]
+                ),
+            )
+            .order_by(ScheduledWorkout.scheduled_date, ScheduledWorkout.display_order)
+        ).all()
+    )
+    active_workout = next(
+        (
+            item
+            for item in workouts
+            if item.workout_session
+            and item.workout_session.status == WorkoutSessionStatus.IN_PROGRESS
+        ),
+        None,
+    )
+    report_workout = next(
+        (
+            item
+            for item in workouts
+            if item.status == ScheduledWorkoutStatus.SCHEDULED
+            and item.workout_session is None
+            and item is not active_workout
+        ),
+        None,
+    )
+    if active_workout is None or report_workout is None:
+        return
+    examples = (
+        (
+            active_workout,
+            SafetyCategory.PAIN,
+            SafetySeverity.MODERATE,
+            "Synthetic open pain report.",
+            (),
+        ),
+        (
+            report_workout,
+            SafetyCategory.LOSS_OF_BALANCE,
+            SafetySeverity.MILD,
+            "Synthetic acknowledged balance report.",
+            (SafetyReviewAction.ACKNOWLEDGED,),
+        ),
+        (
+            report_workout,
+            SafetyCategory.EQUIPMENT_OR_ENVIRONMENT,
+            SafetySeverity.MILD,
+            "Synthetic resolved equipment report.",
+            (SafetyReviewAction.ACKNOWLEDGED, SafetyReviewAction.RESOLVED),
+        ),
+        (
+            report_workout,
+            SafetyCategory.CHEST_DISCOMFORT,
+            SafetySeverity.SEVERE,
+            "Synthetic safety-ended session report.",
+            (),
+        ),
+    )
+    for workout, category, severity, note, actions in examples:
+        _seed_safety_report(
+            db,
+            coach=coach,
+            trainee=trainee,
+            workout=workout,
+            category=category,
+            severity=severity,
+            note=note,
+            review_actions=actions,
+        )
+
+
+def seed_unavailable_readiness_example(db, trainee: User) -> None:
+    """Persist an explicit unavailable context for a demo trainee without check-ins."""
+    workout = db.scalar(
+        select(ScheduledWorkout)
+        .where(
+            ScheduledWorkout.trainee_id == trainee.id,
+            ScheduledWorkout.status == ScheduledWorkoutStatus.SCHEDULED,
+        )
+        .order_by(ScheduledWorkout.scheduled_date, ScheduledWorkout.display_order)
+    )
+    if workout is not None and workout.workout_session is None:
+        start_workout(db, trainee, workout.id)
+
+
 def ensure_seed_allowed(config: Settings = settings) -> None:
     if not config.seed_demo_data:
         raise RuntimeError("Demo seeding is disabled; set SEED_DEMO_DATA=true explicitly")
@@ -1087,6 +1236,17 @@ def seed_public_demo_workspace(
             save_assessment(db, trainee, AssessmentData.model_validate(baseline))
             submit_assessment(db, trainee)
 
+        if scenario["pattern"] == "missing" and db.scalar(
+            select(WorkoutReadinessContext.id).where(
+                WorkoutReadinessContext.trainee_id == trainee.id
+            )
+        ) is None:
+            for check_in in db.scalars(
+                select(DailyCheckIn).where(DailyCheckIn.trainee_id == trainee.id)
+            ).all():
+                db.delete(check_in)
+            db.commit()
+
         today = now.astimezone(ZoneInfo("Asia/Kolkata")).date()
         for offset in range(20, -1, -1):
             if offset in scenario["missing"]:
@@ -1113,9 +1273,11 @@ def seed_public_demo_workspace(
             db.commit()
     demo_today = now.astimezone(ZoneInfo("Asia/Kolkata")).date()
     seed_training_assignments(
-        db, coach, demo_trainees[:3], demo_today, include_future=True
+        db, coach, demo_trainees[:6], demo_today, include_future=True
     )
     seed_workout_execution(db, demo_trainees[0])
+    seed_workout_safety_examples(db, coach, demo_trainees[0])
+    seed_unavailable_readiness_example(db, demo_trainees[5])
 
 
 def seed() -> None:

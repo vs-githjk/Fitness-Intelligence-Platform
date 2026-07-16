@@ -15,6 +15,10 @@ from app.models import (
     ExerciseTrackingMode,
     ProgramWeekday,
     Role,
+    SafetyCategory,
+    SafetyReportStatus,
+    SafetyReviewAction,
+    SafetySeverity,
     ScheduledWorkoutStatus,
     TrainingAssignmentStatus,
     TrainingProgramStatus,
@@ -856,6 +860,23 @@ class TrainingAssignmentPreviewRequest(TrainingAssignmentCreateRequest):
     pass
 
 
+class WorkoutReadinessContextOut(BaseModel):
+    id: uuid.UUID | None
+    scheduled_workout_id: uuid.UUID | None
+    workout_session_id: uuid.UUID | None
+    daily_score_snapshot_id: uuid.UUID | None
+    available: bool
+    readiness_score: float | None
+    readiness_state: str | None
+    source_local_date: date | None
+    calculation_timestamp: datetime | None
+    scoring_version: str | None
+    age_days: int | None
+    is_stale: bool | None
+    captured_at: datetime | None
+    guidance: str
+
+
 class ScheduledWorkoutOut(BaseModel):
     id: uuid.UUID | None = None
     workout_session_id: uuid.UUID | None = None
@@ -873,6 +894,7 @@ class ScheduledWorkoutOut(BaseModel):
     trainee_instructions: str | None
     status: ScheduledWorkoutStatus
     workout_template_version: ProgramTemplateVersionSummaryOut
+    readiness_context: WorkoutReadinessContextOut | None = None
 
 
 class TrainingAssignmentOut(BaseModel):
@@ -1013,6 +1035,65 @@ class WorkoutSessionEndIncompleteRequest(BaseModel):
     note: str | None = Field(default=None, max_length=500)
 
 
+class WorkoutSafetyReportCreateRequest(BaseModel):
+    workout_session_exercise_id: uuid.UUID | None = None
+    workout_set_log_id: uuid.UUID | None = None
+    category: SafetyCategory
+    severity: SafetySeverity
+    note: str | None = Field(default=None, max_length=500)
+    activity_stopped: bool = False
+    occurred_at: datetime | None = None
+
+    @field_validator("note")
+    @classmethod
+    def clean_safety_note(cls, value: str | None) -> str | None:
+        return value.strip() or None if value else None
+
+
+class WorkoutSafetyReviewRequest(BaseModel):
+    note: str | None = Field(default=None, max_length=500)
+
+    @field_validator("note")
+    @classmethod
+    def clean_review_note(cls, value: str | None) -> str | None:
+        return value.strip() or None if value else None
+
+
+class WorkoutSafetyReviewOut(BaseModel):
+    id: uuid.UUID
+    coach_id: uuid.UUID
+    action: SafetyReviewAction
+    note: str | None
+    created_at: datetime
+
+
+class WorkoutSafetyReportOut(BaseModel):
+    id: uuid.UUID
+    workout_session_id: uuid.UUID
+    workout_session_exercise_id: uuid.UUID | None
+    workout_set_log_id: uuid.UUID | None
+    trainee_id: uuid.UUID
+    category: SafetyCategory
+    severity: SafetySeverity
+    note: str | None
+    activity_stopped: bool
+    occurred_at: datetime
+    created_at: datetime
+    status: SafetyReportStatus
+    session_status: WorkoutSessionStatus
+    exercise_status: WorkoutSessionExerciseStatus | None
+    guidance: str
+
+
+class CoachWorkoutSafetyReportOut(WorkoutSafetyReportOut):
+    trainee_name: str
+    trainee_email: str
+    workout_name: str
+    scheduled_date: date
+    exercise_name: str | None
+    reviews: list[WorkoutSafetyReviewOut]
+
+
 class WorkoutSetLogOut(BaseModel):
     id: uuid.UUID
     source_prescription_id: uuid.UUID | None
@@ -1094,6 +1175,7 @@ class WorkoutSessionOut(BaseModel):
     session_rpe: Decimal | None
     trainee_note: str | None
     revision: int
+    readiness_context: WorkoutReadinessContextOut | None
     exercises: list[WorkoutSessionExerciseOut]
     events: list[WorkoutSessionEventOut]
 

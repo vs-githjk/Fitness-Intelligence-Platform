@@ -18,6 +18,7 @@ from app.models import (
 )
 from app.repositories.training_assignments import TrainingAssignmentRepository
 from app.schemas import TrainingAssignmentCreateRequest, TrainingAssignmentPreviewRequest
+from app.workout_readiness_services import readiness_preview
 
 DAY_OFFSET = {
     ProgramWeekday.MONDAY: 0,
@@ -148,7 +149,7 @@ def _assignment_out(assignment: TrainingAssignment) -> dict:
     }
 
 
-def _workout_out(workout: ScheduledWorkout) -> dict:
+def _workout_out(db: Session, workout: ScheduledWorkout) -> dict:
     return {
         "id": workout.id,
         "workout_session_id": (
@@ -167,6 +168,7 @@ def _workout_out(workout: ScheduledWorkout) -> dict:
         "target_session_rpe": workout.target_session_rpe,
         "trainee_instructions": workout.trainee_instructions,
         "status": workout.status,
+        "readiness_context": readiness_preview(db, workout),
         "workout_template_version": _template_summary(workout.workout_template_version),
     }
 
@@ -271,7 +273,7 @@ def _workspace(
             for item in events
         ],
         "scheduled_workouts": [
-            _workout_out(item)
+            _workout_out(db, item)
             for item in sorted(workouts, key=lambda value: (value.scheduled_date, value.display_order))
         ],
     }

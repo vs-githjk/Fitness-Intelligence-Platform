@@ -300,10 +300,26 @@ leaving the page.
 
 ### A workout cannot be started or resumed
 
-Cancelled and superseded schedule entries cannot start. Completed and ended-incomplete sessions
+Cancelled and superseded schedule entries cannot start. Completed, ended-incomplete, and
+safety-ended sessions
 are immutable. If the workout is active, reopen it from **Program** to load its saved progress.
 Demo sessions can inspect seeded examples but every mutation is intentionally disabled and returns
 `403 demo_read_only` if called directly.
+
+### Readiness is stale or unavailable
+
+This does not block the workout. Stale means the latest persisted Daily Intelligence snapshot on or
+before the scheduled local date is at least two days old. Unavailable means no eligible snapshot
+exists. Complete a current check-in for future context; a session already started keeps its original
+immutable capture.
+
+### A safety report paused or ended the workout
+
+Pain and unusual discomfort intentionally pause the linked exercise; use **Skip exercise** or
+**End workout incomplete**. Chest discomfort, breathing difficulty, and dizziness/faintness create
+terminal safety-ended state, so resume, set logging, and normal completion are unavailable. Safety
+reports are not monitored continuously. If symptoms are severe, worsening, or continue, seek urgent
+professional medical assistance.
 
 ### An exercise is missing from the template picker
 

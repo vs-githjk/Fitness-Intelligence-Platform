@@ -12,6 +12,14 @@ Demo coach and trainee requests continue through the normal role and active-assi
 
 Workout execution reads and writes use trainee-owned queries, so unrelated session and set IDs are not discoverable through direct identifier changes. Start locks the scheduled workout and a unique constraint permits only one session per schedule row. Every later mutation requires the current session revision; a stale write returns `409` without overwriting newer data. Terminal sessions and their prescription snapshots are immutable through the API. Coach-only template notes are excluded from trainee execution payloads, while bounded session events provide an append-only operational history.
 
+Workout safety content is immutable and coach acknowledgement/resolution history is append-only.
+Trainee ownership and active coach-assignment joins prevent cross-account discovery; coach review
+notes are absent from trainee responses. Critical report creation atomically persists the report,
+terminal session state, partial schedule state, and safety events. Safety mutations are part of the
+centralized demo inventory. Readiness captures a unique immutable copy of an eligible persisted
+Daily Score snapshot, or explicit unavailability, and cannot mutate Daily Intelligence or workout
+content.
+
 Normal web startup never provisions demo records. The explicit seed command is separately gated by `SEED_DEMO_DATA=true`; production rejects seeding. The public demo is synthetic-only and is not authorization to collect real personal or health data.
 
 Daily check-ins add self-reported recovery, activity, nutrition-compliance, feeling, and an optional 500-character note. Notes and raw check-in values are not intentionally written to normal application logs. Trainees can create or edit only their current timezone-local date; coach endpoints are read-only and require an active assignment. List endpoints are date-bounded, while detailed calculation payloads remain limited to the authorized trainee or assigned coach. Local dates are stored explicitly so historical records are not reinterpreted after timezone or daylight-saving changes.
