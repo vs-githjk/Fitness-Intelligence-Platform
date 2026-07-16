@@ -1,10 +1,11 @@
+import { version as packageVersion } from '../package.json'
+
 export type AppEnvironment = 'local' | 'staging' | 'production'
 
 interface ClientEnvironment {
   readonly DEV?: boolean
   readonly VITE_API_URL?: string
   readonly VITE_APP_ENV?: string
-  readonly VITE_APP_VERSION?: string
 }
 
 export interface AppConfig {
@@ -51,7 +52,7 @@ export function createAppConfig(environment: ClientEnvironment): AppConfig {
   return {
     apiUrl: apiUrlValue.replace(/\/+$/, ''),
     appEnv,
-    appVersion: environment.VITE_APP_VERSION?.trim() || '0.4.2',
+    appVersion: packageVersion,
     isLocal: appEnv === 'local',
     isStaging: appEnv === 'staging',
   }

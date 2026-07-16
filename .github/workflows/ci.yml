@@ -81,7 +81,6 @@ jobs:
     env:
       VITE_APP_ENV: local
       VITE_API_URL: http://localhost:8000/api/v1
-      VITE_APP_VERSION: 0.4.2
     defaults:
       run:
         working-directory: frontend

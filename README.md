@@ -129,9 +129,10 @@ npm run dev
 | `DATABASE_SSLMODE`, `DATABASE_POOL_SIZE`, `DATABASE_MAX_OVERFLOW`, `DATABASE_POOL_TIMEOUT`, `DATABASE_POOL_RECYCLE`, `DATABASE_CONNECT_TIMEOUT` | Database TLS and conservative SQLAlchemy connection controls |
 | `VITE_API_URL` | Browser-visible versioned API base URL |
 | `VITE_APP_ENV` | Browser-visible environment label (`local`, `staging`, or `production`) |
-| `VITE_APP_VERSION` | Browser-visible release metadata |
 | `DEMO_INVITE_CODE` | Deprecated local/synthetic compatibility value; normal registration uses coach-specific invitations |
 | `COACH_REGISTRATION_CODE` | Backend-only code that enables invitation-only coach registration; never expose it to Vercel |
+
+The browser-visible release version is compiled from `frontend/package.json`; it is not configured through an environment variable.
 
 Never commit a real `.env` or production secret.
 

@@ -68,7 +68,8 @@ Values below are placeholders. Do not paste real values into source control, tic
 |---|---|---|---|
 | `VITE_API_URL` | `https://<staging-api-service>.onrender.com/api/v1` | Public, compiled into browser assets | Required at build time; changing it requires a frontend rebuild. |
 | `VITE_APP_ENV` | `staging` | Public, compiled into browser assets | Enables strict hosted URL validation and the visible staging warning. |
-| `VITE_APP_VERSION` | `0.4.2` | Public, compiled into browser assets | Release metadata shown in the staging warning. |
+
+The staging warning reads its release version from `frontend/package.json` at build time, so no separate frontend version environment variable is configured.
 
 Vercel must not receive `DATABASE_URL`, `JWT_SECRET`, PostgreSQL credentials, or the backend invite value.
 
@@ -207,7 +208,7 @@ Do not automatically run `alembic downgrade`. The daily-intelligence downgrade d
 1. Connect the GitHub repository to the Vercel staging project.
 2. Select `frontend` as the project root.
 3. Use install command `npm ci`, build command `npm run build`, and output directory `dist`.
-4. Set `VITE_API_URL` to the verified Render HTTPS API base ending in `/api/v1`, `VITE_APP_ENV=staging`, and `VITE_APP_VERSION=0.4.2`.
+4. Set `VITE_API_URL` to the verified Render HTTPS API base ending in `/api/v1` and `VITE_APP_ENV=staging`. The visible release version is compiled from `frontend/package.json`.
 5. Build and deploy the selected commit.
 6. Confirm the SPA fallback works for direct route requests.
 7. If the final Vercel origin differs from the planned origin, update backend `CORS_ORIGINS` exactly and redeploy the backend before testing.

@@ -77,7 +77,6 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api/v1}
         VITE_APP_ENV: ${VITE_APP_ENV:-local}
-        VITE_APP_VERSION: ${VITE_APP_VERSION:-0.4.2}
     ports:
       - "127.0.0.1:5175:80"
     depends_on:

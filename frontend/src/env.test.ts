@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { version as packageVersion } from '../package.json'
 import { loadStoredUser } from './auth'
 import { createAppConfig } from './env'
 
@@ -6,6 +7,12 @@ describe('client environment contract', () => {
   it('keeps the localhost API fallback only for local builds', () => {
     expect(createAppConfig({ VITE_APP_ENV: 'local' }).apiUrl).toBe(
       'http://localhost:8000/api/v1',
+    )
+  })
+
+  it('uses package metadata as the frontend release version', () => {
+    expect(createAppConfig({ VITE_APP_ENV: 'local' }).appVersion).toBe(
+      packageVersion,
     )
   })
 
