@@ -51,6 +51,7 @@ describe('role-aware registration', () => {
 
   it('does not ask for a role during login', () => {
     renderPage(<LoginPage />)
+    expect(screen.getAllByAltText('FitIntel 360')).toHaveLength(2)
     expect(screen.getByLabelText('Email address')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.queryByText('What type of account are you creating?')).not.toBeInTheDocument()

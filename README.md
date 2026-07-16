@@ -1,4 +1,6 @@
-# Fitness Intelligence Platform
+# FitIntel 360
+
+FitIntel 360 is the user-facing brand for the Fitness Intelligence Platform repository.
 
 A role-aware coaching application that combines an explainable baseline Health Index with deterministic daily recovery, activity, nutrition-compliance, readiness, and longitudinal trend intelligence.
 

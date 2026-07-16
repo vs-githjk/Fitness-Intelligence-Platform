@@ -1,4 +1,8 @@
-# Fitness Intelligence design system
+# FitIntel 360 design system
+
+## Brand identity
+
+FitIntel 360 uses an elegant ink wordmark, warm cream field, and restrained gold 360-degree arc. The compact `FI · 360` mark is used in navigation and at favicon sizes; detailed horizontal artwork is reserved for larger surfaces. The light and dark SVG variants live in `frontend/public/brand/`, while browser and platform raster icons are generated from the compact vector source. Product UI must not substitute generic gym, flame, heartbeat, or dumbbell imagery for the brand mark.
 
 This document describes the design system implemented in the current frontend. It is a reference for extending the baseline, daily-intelligence, and coach-review experiences without introducing visual or interaction patterns that the application does not yet use.
 

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">FitIntel 360 compact mark</title>
+  <desc id="desc">Light FI monogram and 360 label within two gold arcs on a dark background.</desc>
+  <rect width="128" height="128" rx="28" fill="#171717"/>
+  <path d="M25 54A42 42 0 0 1 103 38" fill="none" stroke="#d7b06f" stroke-width="6" stroke-linecap="round"/>
+  <path d="M103 82A42 42 0 0 1 25 65" fill="none" stroke="#d7b06f" stroke-width="6" stroke-linecap="round"/>
+  <text x="32" y="75" fill="#fbf7f0" font-family="Georgia, 'Times New Roman', serif" font-size="48" font-weight="600" letter-spacing="-3">FI</text>
+  <circle cx="39" cy="94" r="3" fill="#d7b06f"/>
+  <text x="48" y="99" fill="#d7b06f" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" letter-spacing="2">360</text>
+  <circle cx="94" cy="94" r="3" fill="#d7b06f"/>
+</svg>

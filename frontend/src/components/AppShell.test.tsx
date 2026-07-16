@@ -40,6 +40,7 @@ describe('demo workspace shell', () => {
     storage.setItem('user', JSON.stringify({ id: 'coach-id', email: 'coach@example.com', first_name: 'Test', last_name: 'Coach', role: 'coach', is_demo: false }))
     vi.stubGlobal('localStorage', storage)
     render(<MemoryRouter initialEntries={['/coach/programming/exercises']}><AuthProvider><AppShell><p>Programming content</p></AppShell></AuthProvider></MemoryRouter>)
+    expect(screen.getAllByAltText('FitIntel 360')).toHaveLength(2)
     const programming = screen.getAllByRole('link', { name: 'Programming' })
     expect(programming).toHaveLength(2)
     expect(programming.every(link => link.getAttribute('aria-current') === 'page')).toBe(true)

@@ -79,7 +79,7 @@ The invitation identifies the issuing coach. Successful registration consumes th
 
 ## 3. Sign in
 
-![Fitness Intelligence sign-in page](screenshots/manual/login-desktop.png)
+![FitIntel 360 sign-in page](screenshots/manual/login-desktop.png)
 
 ### Procedure
 
