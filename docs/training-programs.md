@@ -2,8 +2,8 @@
 
 A Program is a reusable, coach-owned multi-week training structure. A Program week is one fixed
 Monday–Sunday week, and a workout slot is one planned workout occurrence inside that definition.
-Programs are authoring content only: they cannot yet be assigned, scheduled, or executed by a
-trainee.
+Published Program versions can be assigned and materialized as date-only trainee schedules.
+Trainees cannot execute those workouts yet.
 
 ## Structure and v1 limits
 
@@ -12,8 +12,8 @@ Every duration value produces exactly one contiguous `ProgramWeek` for each week
 weekday represents rest and does not create a fake workout record. A weekday can contain multiple
 slots with an explicit contiguous order, and each slot is visibly Required or Optional.
 
-Program definitions are timezone-neutral: Monday–Sunday identifies relative week structure, not
-a calendar instant. Timezone conversion belongs to the future assignment and scheduling phase.
+Program definitions are timezone-neutral. Assignment converts their Monday–Sunday structure to
+date-only scheduled workouts using the trainee profile timezone.
 
 Goal tags reuse the existing goal vocabulary as coach-facing context. They do not generate,
 select, or assign a program.
@@ -70,3 +70,6 @@ All endpoints require the coach role and scope roots to the authenticated owner;
 identifier returns HTTP 404. Every create, draft-save, publish, revision, and archive endpoint also
 enforces the backend demo read-only guard. Demo coaches can inspect deterministic synthetic
 programs, while every mutation returns HTTP 403 and the interface disables its mutation controls.
+
+See [Program assignment and scheduling](training-assignments.md) for effective dates, version
+pinning, future replacement, and the read-only trainee calendar.

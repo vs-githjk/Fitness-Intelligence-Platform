@@ -203,6 +203,7 @@ Deterministic calculations are used so that score behavior is repeatable, testab
 - Browse read-only system exercises and create, publish, revise, and archive coach-private exercise versions.
 - Build, preview, publish, revise, and archive reusable workout templates with tracking-mode-specific set prescriptions.
 - Build, preview, publish, revise, and archive reusable 1–12 week programs pinned to exact published workout-template versions.
+- Assign an exact published Program version to an authorized trainee, preview its date-only schedule, and plan one future replacement.
 - Sign out.
 
 ### Shared platform capabilities
@@ -235,7 +236,7 @@ The following are not available in the current application:
 - coach editing of trainee data;
 - coach account self-registration or assignment management;
 - password reset, account recovery, refresh-token rotation, revocation controls, or MFA;
-- assigning programs or workouts to trainees, scheduling, or trainee workout execution;
+- workout execution, set logging, completion/adherence, or readiness-based schedule changes;
 - meal-plan or nutrition-plan creation;
 - wearables and external health-data integrations;
 - messaging, notifications, or reminders;

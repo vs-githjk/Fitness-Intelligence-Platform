@@ -2,8 +2,8 @@
 
 Workout templates are reusable, coach-owned workout graphs. The coach Programming
 workspace provides their authoring interface. Published versions can be pinned inside
-[training programs](training-programs.md), but templates do not create assignments,
-scheduled workouts, or trainee execution records.
+[training programs](training-programs.md), whose exact versions can then generate
+[date-only assignments](training-assignments.md). Templates do not create trainee execution records.
 
 ## Version lifecycle
 
@@ -71,8 +71,8 @@ Saving replaces the complete draft graph and includes its expected revision. If 
 wins the revision race, the conflict dialog preserves local changes until the coach explicitly
 reloads the server draft. Publishing requires a review confirmation and locks the published
 graph; subsequent editing starts with **Create revision**. The trainee preview shows exactly
-the content a future trainee surface may consume and deliberately excludes coach notes. It is
-a preview only: assignment, scheduling, and workout execution are not implemented.
+the content a trainee schedule may consume and deliberately excludes coach notes. Assignment
+materializes exact versions into read-only scheduled workouts; workout execution is not implemented.
 
 Program references never follow a template root's current version. Publishing a newer template
 therefore does not rewrite existing program history. Archived template roots remain readable

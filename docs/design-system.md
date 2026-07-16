@@ -117,20 +117,20 @@ Prefer composing these components over recreating local card, status, field, or 
 ### Coach
 
 At 1024px and above, the coach sees a persistent 256px left sidebar with the product brand,
-Overview and Programming destinations, workspace context, user identity, and sign-out action.
+Overview, Programming, Assignments, and Invitations destinations, workspace context, user identity, and sign-out action.
 Programming contains accessible Exercises, Workout Templates, and Programs tabs; unavailable
 future modules are not shown.
 
-Below 1024px, the sidebar becomes a sticky compact header. A fixed three-item bottom
-navigation exposes Overview, Programming, and Invitations; Programming's internal tabs
+Below 1024px, the sidebar becomes a sticky compact header. A fixed four-item bottom
+navigation exposes Overview, Programming, Assignments, and Invitations; Programming's internal tabs
 expose Exercises, Workout Templates, and Programs. Trainee detail pages add a small
 `Trainee record` context label above the page content and an explicit link back to the overview.
 
 ### Trainee
 
-At 1024px and above, the trainee uses the same shell structure with a role-specific sidebar containing Today, Progress, and Assessment.
+At 1024px and above, the trainee uses the same shell structure with a role-specific sidebar containing Today, Progress, Program, and Assessment.
 
-Below 1024px, a compact header and three-item fixed bottom navigation expose Today, Progress, and Assessment. Main content receives additional bottom padding so it is not covered by the navigation. The navigation does not advertise plans, workouts, messages, or profile pages that are not implemented.
+Below 1024px, a compact header and four-item fixed bottom navigation expose Today, Progress, Program, and Assessment. Main content receives additional bottom padding so it is not covered by the navigation. Program calendar weeks become seven columns only from 768px; mobile keeps a vertical day sequence.
 
 Active desktop and mobile links use primary color and a visible active treatment. Navigation containers have role-specific accessible labels.
 

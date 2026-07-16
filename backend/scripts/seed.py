@@ -1,5 +1,5 @@
 import secrets
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -23,8 +23,11 @@ from app.models import (
     OnboardingAssessment,
     Role,
     TraineeProfile,
+    TrainingAssignment,
+    TrainingAssignmentStatus,
     TrainingProgram,
     TrainingProgramVersion,
+    TrainingProgramVersionStatus,
     User,
     WorkoutTemplate,
     WorkoutTemplateVersion,
@@ -33,11 +36,13 @@ from app.models import (
 from app.repositories.exercises import ExerciseRepository
 from app.schemas import (
     AssessmentData,
+    TrainingAssignmentCreateRequest,
     TrainingProgramCreateRequest,
     WorkoutTemplateCreateRequest,
 )
 from app.security import hash_password
 from app.services import save_assessment, submit_assessment
+from app.training_assignment_services import create_training_assignment
 from app.training_program_services import (
     create_training_program,
     publish_training_program_draft,
@@ -620,7 +625,37 @@ def _program_payloads(db, coach: User) -> tuple[tuple[dict[str, Any], bool], ...
             for number in range(1, 3)
         ],
     }
-    return ((published, True), (draft, False))
+    payloads: list[tuple[dict[str, Any], bool]] = [(published, True), (draft, False)]
+    if coach.is_demo:
+        demo_recovery = {
+            "name": "Two Week Recovery Reset",
+            "description": "Synthetic published recovery Program for assignment variety.",
+            "goal_tags": ["general_health"],
+            "duration_weeks": 2,
+            "coach_notes": "Synthetic demo Program.",
+            "trainee_instructions": "Keep every session comfortable and controlled.",
+            "weeks": [
+                {
+                    "week_number": number,
+                    "label": "Recovery deload" if number == 2 else "Reset week",
+                    "coach_notes": None,
+                    "is_deload": number == 2,
+                    "sessions": [
+                        {
+                            "workout_template_version_id": str(recovery.id),
+                            "weekday": "wednesday",
+                            "display_order": 1,
+                            "required": True,
+                            "target_session_rpe_override": 4,
+                            "trainee_instructions": "Move gently through the full range.",
+                        }
+                    ],
+                }
+                for number in range(1, 3)
+            ],
+        }
+        payloads.append((demo_recovery, True))
+    return tuple(payloads)
 
 
 def seed_training_programs(db, coach: User) -> None:
@@ -644,6 +679,70 @@ def seed_training_programs(db, coach: User) -> None:
         )
         if should_publish:
             publish_training_program_draft(db, coach, created["id"])
+
+
+def seed_training_assignments(
+    db, coach: User, trainees: list[User], local_date: date, *, include_future: bool
+) -> None:
+    """Idempotently materialize synthetic date-only schedules from exact Program versions."""
+    programs = list(
+        db.scalars(
+            select(TrainingProgramVersion)
+            .join(
+                TrainingProgram,
+                TrainingProgram.id == TrainingProgramVersion.training_program_id,
+            )
+            .where(
+                TrainingProgram.owner_coach_id == coach.id,
+                TrainingProgramVersion.version_status
+                == TrainingProgramVersionStatus.PUBLISHED,
+            )
+            .order_by(TrainingProgramVersion.name)
+        ).all()
+    )
+    if not programs:
+        raise RuntimeError("Published Programs must be seeded before training assignments")
+    monday = local_date - timedelta(days=local_date.weekday())
+    for index, trainee in enumerate(trainees):
+        existing = db.scalar(
+            select(TrainingAssignment.id).where(
+                TrainingAssignment.coach_id == coach.id,
+                TrainingAssignment.trainee_id == trainee.id,
+                TrainingAssignment.status.in_(
+                    [TrainingAssignmentStatus.ACTIVE, TrainingAssignmentStatus.SCHEDULED]
+                ),
+            )
+        )
+        if existing is None:
+            create_training_assignment(
+                db,
+                coach,
+                trainee.id,
+                TrainingAssignmentCreateRequest(
+                    training_program_version_id=programs[index % len(programs)].id,
+                    effective_start_date=monday - timedelta(weeks=index % 2),
+                ),
+                allow_past=True,
+            )
+    if include_future and trainees:
+        future_exists = db.scalar(
+            select(TrainingAssignment.id).where(
+                TrainingAssignment.coach_id == coach.id,
+                TrainingAssignment.trainee_id == trainees[0].id,
+                TrainingAssignment.status == TrainingAssignmentStatus.SCHEDULED,
+            )
+        )
+        if future_exists is None:
+            create_training_assignment(
+                db,
+                coach,
+                trainees[0].id,
+                TrainingAssignmentCreateRequest(
+                    training_program_version_id=programs[-1].id,
+                    effective_start_date=monday + timedelta(weeks=1),
+                ),
+                allow_past=True,
+            )
 
 
 def ensure_seed_allowed(config: Settings = settings) -> None:
@@ -798,6 +897,7 @@ def seed_public_demo_workspace(
     seed_workout_templates(db, coach)
     seed_training_programs(db, coach)
 
+    demo_trainees: list[User] = []
     for scenario in DEMO_SCENARIOS:
         email = (
             getattr(config, scenario["email_setting"])
@@ -811,6 +911,7 @@ def seed_public_demo_workspace(
             last_name=scenario["last_name"],
             role=Role.TRAINEE,
         )
+        demo_trainees.append(trainee)
         profile = db.scalar(
             select(TraineeProfile).where(TraineeProfile.user_id == trainee.id)
         )
@@ -873,6 +974,10 @@ def seed_public_demo_workspace(
             db.flush()
             calculate_and_store_daily_score(db, trainee.id, item, timestamp)
             db.commit()
+    demo_today = now.astimezone(ZoneInfo("Asia/Kolkata")).date()
+    seed_training_assignments(
+        db, coach, demo_trainees[:3], demo_today, include_future=True
+    )
 
 
 def seed() -> None:
@@ -950,6 +1055,10 @@ def seed() -> None:
         seed_exercise_library(db, coach)
         seed_workout_templates(db, coach)
         seed_training_programs(db, coach)
+        local_date, _timezone_name = local_today(db, trainee.id)
+        seed_training_assignments(
+            db, coach, [trainee], local_date, include_future=False
+        )
 
         submitted = db.scalar(
             select(OnboardingAssessment).where(

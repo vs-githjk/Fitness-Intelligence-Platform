@@ -106,6 +106,27 @@ class ProgramWeekday(str, enum.Enum):
     SUNDAY = "sunday"
 
 
+class TrainingAssignmentStatus(str, enum.Enum):
+    ACTIVE = "active"
+    SCHEDULED = "scheduled"
+    SUPERSEDED = "superseded"
+    CANCELLED = "cancelled"
+
+
+class ScheduledWorkoutStatus(str, enum.Enum):
+    SCHEDULED = "scheduled"
+    CANCELLED = "cancelled"
+    SUPERSEDED = "superseded"
+
+
+class AssignmentHistoryEvent(str, enum.Enum):
+    ASSIGNED = "assigned"
+    SCHEDULED = "scheduled"
+    ACTIVATED = "activated"
+    SUPERSEDED = "superseded"
+    CANCELLED = "cancelled"
+
+
 class WeightUnit(str, enum.Enum):
     KG = "kg"
     LB = "lb"
@@ -693,6 +714,138 @@ class ProgramSession(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     program_week: Mapped[ProgramWeek] = relationship(back_populates="sessions")
     workout_template_version: Mapped[WorkoutTemplateVersion] = relationship()
+
+
+class TrainingAssignment(Base):
+    __tablename__ = "training_assignments"
+    __table_args__ = (
+        CheckConstraint(
+            "effective_end_date IS NULL OR effective_end_date >= effective_start_date",
+            name="ck_training_assignments_date_range",
+        ),
+        Index(
+            "uq_training_assignments_active_primary",
+            "trainee_id",
+            unique=True,
+            sqlite_where=text("is_primary = 1 AND status = 'active'"),
+            postgresql_where=text("is_primary = true AND status = 'active'"),
+        ),
+        Index(
+            "uq_training_assignments_scheduled_primary",
+            "trainee_id",
+            unique=True,
+            sqlite_where=text("is_primary = 1 AND status = 'scheduled'"),
+            postgresql_where=text("is_primary = true AND status = 'scheduled'"),
+        ),
+        Index("ix_training_assignments_coach_trainee", "coach_id", "trainee_id"),
+        Index("ix_training_assignments_trainee_dates", "trainee_id", "effective_start_date"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    coach_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    trainee_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    training_program_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("training_program_versions.id", ondelete="RESTRICT"), index=True
+    )
+    status: Mapped[TrainingAssignmentStatus] = mapped_column(
+        Enum(TrainingAssignmentStatus, native_enum=False, values_callable=enum_values)
+    )
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=True)
+    effective_start_date: Mapped[date] = mapped_column(Date)
+    effective_end_date: Mapped[date | None] = mapped_column(Date)
+    timezone: Mapped[str] = mapped_column(String(80))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    program_version: Mapped[TrainingProgramVersion] = relationship()
+    scheduled_workouts: Mapped[list["ScheduledWorkout"]] = relationship(
+        back_populates="assignment", cascade="all, delete-orphan", order_by="ScheduledWorkout.scheduled_date"
+    )
+    history: Mapped[list["AssignmentHistory"]] = relationship(
+        back_populates="assignment", cascade="all, delete-orphan", order_by="AssignmentHistory.created_at"
+    )
+
+
+class ScheduledWorkout(Base):
+    __tablename__ = "scheduled_workouts"
+    __table_args__ = (
+        UniqueConstraint(
+            "training_assignment_id",
+            "program_week_number",
+            "weekday",
+            "display_order",
+            name="uq_scheduled_workout_assignment_slot",
+        ),
+        CheckConstraint("program_week_number > 0 AND program_week_number <= 12", name="ck_scheduled_workouts_week"),
+        CheckConstraint("display_order > 0 AND display_order <= 14", name="ck_scheduled_workouts_order"),
+        Index("ix_scheduled_workouts_trainee_date", "trainee_id", "scheduled_date"),
+        Index("ix_scheduled_workouts_assignment_status", "training_assignment_id", "status"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    training_assignment_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("training_assignments.id", ondelete="CASCADE"), index=True
+    )
+    trainee_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    program_session_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("program_sessions.id", ondelete="RESTRICT"), index=True
+    )
+    workout_template_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workout_template_versions.id", ondelete="RESTRICT"), index=True
+    )
+    scheduled_date: Mapped[date] = mapped_column(Date)
+    program_week_number: Mapped[int] = mapped_column(Integer)
+    program_week_label: Mapped[str | None] = mapped_column(String(120))
+    is_deload: Mapped[bool] = mapped_column(Boolean, default=False)
+    weekday: Mapped[ProgramWeekday] = mapped_column(
+        Enum(ProgramWeekday, native_enum=False, values_callable=enum_values)
+    )
+    display_order: Mapped[int] = mapped_column(Integer)
+    required: Mapped[bool] = mapped_column(Boolean, default=True)
+    planned_duration_minutes: Mapped[int | None] = mapped_column(Integer)
+    target_session_rpe: Mapped[float | None] = mapped_column(Float)
+    coach_notes: Mapped[str | None] = mapped_column(Text)
+    trainee_instructions: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[ScheduledWorkoutStatus] = mapped_column(
+        Enum(ScheduledWorkoutStatus, native_enum=False, values_callable=enum_values),
+        default=ScheduledWorkoutStatus.SCHEDULED,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    assignment: Mapped[TrainingAssignment] = relationship(back_populates="scheduled_workouts")
+    program_session: Mapped[ProgramSession] = relationship()
+    workout_template_version: Mapped[WorkoutTemplateVersion] = relationship()
+
+
+class AssignmentHistory(Base):
+    __tablename__ = "assignment_history"
+    __table_args__ = (
+        Index("ix_assignment_history_trainee_created", "trainee_id", "created_at"),
+        Index("ix_assignment_history_assignment_created", "training_assignment_id", "created_at"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    training_assignment_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("training_assignments.id", ondelete="RESTRICT"), index=True
+    )
+    coach_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    trainee_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    event_type: Mapped[AssignmentHistoryEvent] = mapped_column(
+        Enum(AssignmentHistoryEvent, native_enum=False, values_callable=enum_values)
+    )
+    effective_date: Mapped[date] = mapped_column(Date)
+    snapshot: Mapped[dict[str, Any]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    assignment: Mapped[TrainingAssignment] = relationship(back_populates="history")
 
 
 class OnboardingAssessment(Base):

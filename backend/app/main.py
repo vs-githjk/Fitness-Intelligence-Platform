@@ -22,6 +22,7 @@ from app.api import (
     health,
     invites,
     trainee,
+    training_assignments,
     training_programs,
     workout_templates,
 )
@@ -170,6 +171,7 @@ for router in (
     exercises.router,
     workout_templates.router,
     training_programs.router,
+    training_assignments.router,
     invites.router,
 ):
     app.include_router(router, prefix="/api/v1")

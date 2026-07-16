@@ -262,6 +262,24 @@ The picker includes only published versions whose active template root belongs t
 coach. Publish the template and confirm it is not archived. A program that already pins an
 archived template version remains readable, but that version cannot be selected for a new draft.
 
+### A Program is missing from Assignments
+
+Only active Program roots with a published version are selectable. Publish the Program or choose
+another active root. Existing assignments continue to display their exact pinned version even if
+the authoring root is later archived.
+
+### A Program assignment start date is rejected
+
+The date cannot be earlier than the trainee's current date in their profile timezone. Choose that
+local date or a future date and preview again. Week 1 begins on the first Monday on or after the
+effective date.
+
+### A replacement changed future calendar rows
+
+This is expected supersession behavior. Workouts before the replacement effective date remain
+unchanged; displaced future rows retain history with `superseded` status. Cancelling a future
+assignment marks its rows `cancelled` instead of deleting them.
+
 ### An exercise is missing from the template picker
 
 The picker shows only active, published system exercises and active, published private

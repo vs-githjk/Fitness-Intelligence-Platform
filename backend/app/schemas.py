@@ -8,12 +8,15 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 from app.models import (
+    AssignmentHistoryEvent,
     DistanceUnit,
     ExerciseScope,
     ExerciseStatus,
     ExerciseTrackingMode,
     ProgramWeekday,
     Role,
+    ScheduledWorkoutStatus,
+    TrainingAssignmentStatus,
     TrainingProgramStatus,
     WeightUnit,
     WorkoutSetType,
@@ -837,6 +840,83 @@ class TrainingProgramDetailOut(BaseModel):
     draft_version: TrainingProgramVersionOut | None
     published_version: TrainingProgramVersionOut | None
     versions: list[TrainingProgramVersionSummaryOut]
+
+
+class TrainingAssignmentCreateRequest(BaseModel):
+    training_program_version_id: uuid.UUID
+    effective_start_date: date
+
+
+class TrainingAssignmentPreviewRequest(TrainingAssignmentCreateRequest):
+    pass
+
+
+class ScheduledWorkoutOut(BaseModel):
+    id: uuid.UUID | None = None
+    training_assignment_id: uuid.UUID | None = None
+    workout_template_version_id: uuid.UUID
+    scheduled_date: date
+    program_week_number: int
+    program_week_label: str | None
+    is_deload: bool
+    weekday: ProgramWeekday
+    display_order: int
+    required: bool
+    planned_duration_minutes: int | None
+    target_session_rpe: float | None
+    trainee_instructions: str | None
+    status: ScheduledWorkoutStatus
+    workout_template_version: ProgramTemplateVersionSummaryOut
+
+
+class TrainingAssignmentOut(BaseModel):
+    id: uuid.UUID
+    coach_id: uuid.UUID
+    trainee_id: uuid.UUID
+    training_program_version_id: uuid.UUID
+    status: TrainingAssignmentStatus
+    is_primary: bool
+    effective_start_date: date
+    effective_end_date: date | None
+    timezone: str
+    program_name: str
+    program_version_number: int
+    duration_weeks: int
+    goal_tags: list[str]
+    created_at: datetime
+    activated_at: datetime | None
+    superseded_at: datetime | None
+    cancelled_at: datetime | None
+
+
+class AssignmentHistoryOut(BaseModel):
+    id: uuid.UUID
+    training_assignment_id: uuid.UUID
+    event_type: AssignmentHistoryEvent
+    effective_date: date
+    snapshot: dict[str, Any]
+    created_at: datetime
+
+
+class TrainingAssignmentPreviewOut(BaseModel):
+    timezone: str
+    effective_start_date: date
+    effective_end_date: date
+    program_name: str
+    program_version_number: int
+    replaces_current: bool
+    replaces_upcoming: bool
+    workouts: list[ScheduledWorkoutOut]
+
+
+class TrainingAssignmentWorkspaceOut(BaseModel):
+    timezone: str
+    local_today: date
+    current_assignment: TrainingAssignmentOut | None
+    upcoming_assignment: TrainingAssignmentOut | None
+    assignment_history: list[TrainingAssignmentOut]
+    history_events: list[AssignmentHistoryOut]
+    scheduled_workouts: list[ScheduledWorkoutOut]
 
 
 class ErrorDetail(BaseModel):

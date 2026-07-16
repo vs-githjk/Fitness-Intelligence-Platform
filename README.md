@@ -24,8 +24,8 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 
 - [Design system and interaction rules](docs/design-system.md)
 - [Desktop and mobile visual verification](docs/screenshots)
-- Trainee routes: Today, atomic daily check-in, Progress, onboarding, and submitted-assessment review
-- Coach routes: roster overview, private trainee invitations, daily completion/readiness review, longitudinal trainee detail, baseline context, and a Programming workspace for versioned exercises, workout templates, and multi-week programs
+- Trainee routes: Today, atomic daily check-in, Progress, onboarding, submitted-assessment review, and a read-only assigned Program calendar
+- Coach routes: roster overview, private trainee invitations, longitudinal trainee review, Programming authoring, and date-only Program assignment
 - Public demo: backend-issued, short-lived coach or trainee sessions over a deterministic synthetic workspace; demo users are read-only
 
 ## Documentation
@@ -41,6 +41,7 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 - [Exercise library](docs/exercise-library.md)
 - [Workout templates](docs/workout-templates.md)
 - [Training programs](docs/training-programs.md)
+- [Program assignment and scheduling](docs/training-assignments.md)
 - [Security and compliance notes](docs/security.md)
 - [Design system](docs/design-system.md)
 - [User-manual screenshot index](docs/screenshots/manual/README.md)
@@ -183,6 +184,7 @@ docker compose up --wait
 - Daily intelligence: current score, bounded score history, and gap-aware trends under `/api/v1/daily-scores`
 - Coach: private invitation creation/list/revocation, roster summaries, assignment-protected check-ins/scores/trends, baseline alerts, and daily alerts
 - Coach programming: owned exercise, workout-template, and training-program draft/publish/revise/archive endpoints under `/api/v1/coach`
+- Training assignment: coach preview/create/history/cancel-future APIs and the trainee read-only Program schedule
 
 When API documentation is enabled, FastAPI publishes the exact OpenAPI contract at `/docs`. Coach endpoints enforce both role and active assignment; possession of a trainee UUID is insufficient. Operational probes are available at `/health/live` and `/health/ready`, with `/health` retained for compatibility.
 

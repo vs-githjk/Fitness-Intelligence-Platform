@@ -141,7 +141,7 @@ No. It means no check-in exists for that trainee's current local date. The inter
 ### Are workouts, meal plans, messages, or wearables available?
 
 Coaches can author versioned exercise-library content, reusable workout templates, and
-multi-week programs. Program assignment, scheduling, trainee workout execution, meal planning, wearables, notifications,
+multi-week programs, then assign a published Program version on a trainee-local date. Trainee workout execution, meal planning, wearables, notifications,
 messaging, exports, clinical reporting, and external AI narration remain deferred.
 
 ### Is there a native mobile application?
@@ -152,8 +152,8 @@ No. The current product is a responsive web application. It adapts its navigatio
 
 Coaches can create reusable workout templates from published system or private exercises and
 assemble them into 1–12 week programs. Programs pin exact published template versions and can
-mark required, optional, rest, and coach-authored deload context. Coaches cannot yet assign or
-schedule programs, record trainee sessions, or create meal plans. Trainee health records remain
+mark required, optional, rest, and coach-authored deload context. Coaches can preview and create
+date-only Program schedules, but cannot record trainee sessions or create meal plans. Trainee health records remain
 read-only to coaches.
 
 ### Can I close Docker?

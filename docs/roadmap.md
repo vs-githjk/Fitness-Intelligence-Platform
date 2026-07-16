@@ -105,12 +105,13 @@ No real-data beta begins until the applicable [production-readiness gates](deplo
 ## Milestone 3 — Workout Intelligence foundations in progress
 
 The repository now includes the owned, immutable exercise library, coach workout-template
-authoring workspace, and versioned multi-week program builder. System/private ownership,
+authoring workspace, versioned multi-week program builder, and date-only Program assignment.
+System/private ownership,
 deterministic seed content, exact version pinning, complete-graph draft replacement, conflict
-detection, coach-authored deload context, and demo read-only enforcement are implemented.
+detection, coach-authored deload context, exact schedule pinning, future supersession, and demo read-only enforcement are implemented.
 
-Assignments, scheduling, trainee execution, set logging, safety reports, load and adherence
-analytics, and readiness context remain future slices. The items below are candidates,
+Trainee execution, set logging, safety reports, load and adherence analytics, and readiness
+context remain future slices. The items below are candidates,
 not enabled routes or commitments unless explicitly marked implemented.
 
 ### Coach workflow operations
@@ -138,12 +139,14 @@ Implemented foundation:
 - Coach-created, versioned exercises and reusable workout templates.
 - Coach-created 1–12 week programs with exact template-version pins, ordered weekday slots,
   required/optional context, explicit rest days, coach-authored deloads, and trainee preview.
-- Trainee-facing template and program previews without assignment or execution.
+- One current and one optional future primary Program assignment per trainee.
+- Trainee-local, date-only scheduled workouts with exact Program and Workout Template version pins.
+- Trainee Program calendar and workout details without execution.
 
 Potential next outcomes:
 
-- Program and ad-hoc workout assignment to trainees.
-- Scheduled sessions, completion, and coaching review.
+- Ad-hoc workout assignment.
+- Session execution, completion, and coaching review.
 
 Dependencies and gates:
 

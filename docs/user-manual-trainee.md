@@ -510,9 +510,20 @@ The coach detail screen currently displays your overall baseline and full compon
 
 The service also authorizes the assigned coach to retrieve the underlying date-bounded check-in records, including the optional note. The current coach screen does not display every raw field or the note, but you should still write a **Short note** as information shared within the assigned coaching relationship. Avoid unnecessary medical or highly sensitive details.
 
-Coaches have read-only daily endpoints in the current implementation. They cannot edit your check-ins, change your submitted assessment, write a note into your record, resolve alerts through the interface, assign a workout, or send a message.
+Coaches have read-only daily endpoints in the current implementation. They cannot edit your check-ins, change your submitted assessment, write a note into your record, resolve alerts through the interface, or send a message. They can assign a published Program version, which creates a read-only date schedule for you.
 
 Authentication currently stores an expiring access token in browser local storage. This current-milestone design may be used only with synthetic data in staging and requires further security hardening for production use. The repository does not claim HIPAA, GDPR, or other legal compliance. See [Security and compliance notes](security.md) for the implemented controls and known production gaps.
+
+## 12A. View My Program
+
+Open **Program** to see the exact published Program version assigned by your coach. Dates use your
+profile timezone. The page identifies your current week, today's scheduled workout or rest day,
+future weeks, required and optional workouts, and coach-authored deload weeks.
+
+Select **View workout details** for the effective duration, target RPE, exercise count, and
+trainee instructions. This schedule is read-only: workouts cannot be started or completed and
+sets cannot be logged yet. If a future replacement exists, the page shows its effective date;
+past schedule history is not rewritten.
 
 ## 13. Sign out and handle session expiry
 

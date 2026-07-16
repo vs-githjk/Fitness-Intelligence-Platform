@@ -38,8 +38,8 @@ Coach navigation contains **Overview**, **Programming**, and **Invitations**.
 - Use the sign-out icon beside your identity to end the local browser session.
 - On a trainee record, use **Back to overview** to return to the roster.
 
-Program assignment, trainee workout execution, messages, reports, nutrition plans, settings, and
-an alerts-management page are not implemented.
+Trainee workout execution, messages, reports, nutrition plans, settings, and an alerts-management
+page are not implemented.
 
 ## Read the coach overview
 
@@ -244,8 +244,18 @@ trainee instructions and confirm that coach notes are excluded.
 Save before publishing. Publication freezes the complete program graph and its pinned template
 versions. Choose **Create revision** for later changes, or **Archive** to remove the program from
 future active selection while keeping its history readable. A draft-conflict dialog preserves
-local edits until you explicitly reload the latest server version. Programs cannot yet be
-assigned or scheduled for trainees.
+local edits until you explicitly reload the latest server version.
+
+### Assign a Program
+
+Open **Assignments**, choose an assigned trainee, an exact published Program version, and an
+effective trainee-local date. Preview the Monday–Sunday workout calendar before confirming.
+The first Program week begins on the first Monday on or after the effective date.
+
+One Program is current at a time. A future replacement preserves earlier schedule history and
+marks only displaced future workouts as superseded. The page shows the current assignment,
+future replacement, and immutable assignment history. A future replacement can be cancelled;
+the current assignment cannot be cancelled through this milestone. Demo controls remain disabled.
 
 A coach cannot:
 
