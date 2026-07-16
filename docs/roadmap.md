@@ -105,13 +105,14 @@ No real-data beta begins until the applicable [production-readiness gates](deplo
 ## Milestone 3 — Workout Intelligence foundations in progress
 
 The repository now includes the owned, immutable exercise library, coach workout-template
-authoring workspace, versioned multi-week program builder, and date-only Program assignment.
+authoring workspace, versioned multi-week program builder, date-only Program assignment, and
+resumable trainee workout execution.
 System/private ownership,
 deterministic seed content, exact version pinning, complete-graph draft replacement, conflict
 detection, coach-authored deload context, exact schedule pinning, future supersession, and demo read-only enforcement are implemented.
 
-Trainee execution, set logging, safety reports, load and adherence analytics, and readiness
-context remain future slices. The items below are candidates,
+Workout safety reports, coach execution review, load and adherence analytics, readiness context,
+and post-completion corrections remain future slices. The items below are candidates,
 not enabled routes or commitments unless explicitly marked implemented.
 
 ### Coach workflow operations
@@ -141,12 +142,13 @@ Implemented foundation:
   required/optional context, explicit rest days, coach-authored deloads, and trainee preview.
 - One current and one optional future primary Program assignment per trainee.
 - Trainee-local, date-only scheduled workouts with exact Program and Workout Template version pins.
-- Trainee Program calendar and workout details without execution.
+- Trainee Program calendar plus immutable execution snapshots, explicit set logging, resume,
+  skipping, completion, and intentional incomplete ending.
 
 Potential next outcomes:
 
 - Ad-hoc workout assignment.
-- Session execution, completion, and coaching review.
+- Coach session review and approved post-completion correction workflows.
 
 Dependencies and gates:
 

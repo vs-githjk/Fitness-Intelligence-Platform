@@ -32,8 +32,10 @@ date; preview the generated weeks; confirm replacement warnings; inspect current
 review history; and cancel a future replacement. Foreign trainees and Program versions remain
 inaccessible. Every mutation enforces demo read-only protection.
 
-**Program** gives a trainee a read-only current Program, current week, today workout/rest context,
-future weeks, rest days, deload labels, Required/Optional status, and workout details. The only
-workout states in this phase are `scheduled`, `cancelled`, and `superseded`. Starting, completing,
-partially completing, or missing a workout, along with set logging, adherence, readiness capture,
-training load, and safety reports, remain deferred.
+**Program** gives a trainee a current Program, current week, today workout/rest context, future
+weeks, rest days, deload labels, Required/Optional status, and workout details. Eligible scheduled
+workouts can be opened for execution. Their lifecycle extends through `in_progress`, `completed`,
+or `partial`; `cancelled` and `superseded` entries remain historical and cannot start. Session
+execution never changes the pinned Program, template version, scheduled local date, or assignment
+timezone snapshot. Adherence, readiness capture, training load, missed-state automation, and
+safety reports remain deferred. See [Workout execution](workout-execution.md).

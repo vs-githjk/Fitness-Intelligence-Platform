@@ -3,7 +3,7 @@ import { appConfig } from './env'
 const API_URL = appConfig.apiUrl
 
 export class ApiError extends Error {
-  constructor(public status: number, public details: { code?: string; message?: string; fields?: Record<string, string> }) {
+  constructor(public status: number, public details: { code?: string; message?: string; fields?: Record<string, string>; current_revision?: number }) {
     super(details.message ?? 'The request could not be completed')
   }
 }

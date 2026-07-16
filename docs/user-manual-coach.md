@@ -38,8 +38,9 @@ Coach navigation contains **Overview**, **Programming**, and **Invitations**.
 - Use the sign-out icon beside your identity to end the local browser session.
 - On a trainee record, use **Back to overview** to return to the roster.
 
-Trainee workout execution, messages, reports, nutrition plans, settings, and an alerts-management
-page are not implemented.
+Trainees can execute assigned workouts, but coach execution review, corrections, safety reports,
+messages, analytics reports, nutrition plans, settings, and an alerts-management page are not
+implemented.
 
 ## Read the coach overview
 
@@ -257,6 +258,12 @@ marks only displaced future workouts as superseded. The page shows the current a
 future replacement, and immutable assignment history. A future replacement can be cancelled;
 the current assignment cannot be cancelled through this milestone. Demo controls remain disabled.
 
+Once a trainee starts a scheduled workout, its schedule status becomes **In progress**; normal
+completion becomes **Completed**, while an intentional early ending becomes **Partial**. These
+states are visible in the trainee's Program calendar and never rewrite the assigned Program or
+pinned workout-template version. This phase does not expose the trainee's set log or session-event
+history to coaches and does not let a coach reopen or correct an execution.
+
 A coach cannot:
 
 - Create or edit trainee check-ins or onboarding responses
@@ -265,7 +272,7 @@ A coach cannot:
 - Search, filter, sort, or create a custom attention queue
 - Add coach notes
 - Send messages or notifications
-- Assign or schedule workouts, or create nutrition plans
+- Record, reopen, or correct a trainee workout execution, or create nutrition plans
 - Create, remove, or change assignments
 - Export or delete trainee data
 

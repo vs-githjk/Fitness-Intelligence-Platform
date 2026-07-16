@@ -19,6 +19,11 @@ from app.models import (
     TrainingAssignmentStatus,
     TrainingProgramStatus,
     WeightUnit,
+    WorkoutSessionEventType,
+    WorkoutSessionExerciseStatus,
+    WorkoutSessionStatus,
+    WorkoutSetLogSource,
+    WorkoutSetLogStatus,
     WorkoutSetType,
     WorkoutTemplateSection,
     WorkoutTemplateStatus,
@@ -853,6 +858,7 @@ class TrainingAssignmentPreviewRequest(TrainingAssignmentCreateRequest):
 
 class ScheduledWorkoutOut(BaseModel):
     id: uuid.UUID | None = None
+    workout_session_id: uuid.UUID | None = None
     training_assignment_id: uuid.UUID | None = None
     workout_template_version_id: uuid.UUID
     scheduled_date: date
@@ -917,6 +923,179 @@ class TrainingAssignmentWorkspaceOut(BaseModel):
     assignment_history: list[TrainingAssignmentOut]
     history_events: list[AssignmentHistoryOut]
     scheduled_workouts: list[ScheduledWorkoutOut]
+
+
+class WorkoutSetActualData(BaseModel):
+    actual_repetitions: int | None = Field(default=None, ge=1, le=10000)
+    actual_load_original_value: Decimal | None = Field(default=None, ge=0, max_digits=12)
+    actual_load_original_unit: WeightUnit | None = None
+    actual_assistance_original_value: Decimal | None = Field(default=None, ge=0, max_digits=12)
+    actual_assistance_original_unit: WeightUnit | None = None
+    actual_duration_seconds: int | None = Field(default=None, ge=1, le=86400)
+    actual_distance_value: Decimal | None = Field(default=None, gt=0, max_digits=12)
+    actual_distance_unit: DistanceUnit | None = None
+    actual_rpe: Decimal | None = Field(default=None, ge=0, le=10, decimal_places=1)
+    actual_rir: Decimal | None = Field(default=None, ge=0, le=10, decimal_places=1)
+
+    @model_validator(mode="after")
+    def validate_measurement_pairs(self) -> "WorkoutSetActualData":
+        for value, unit, label in (
+            (self.actual_load_original_value, self.actual_load_original_unit, "load"),
+            (
+                self.actual_assistance_original_value,
+                self.actual_assistance_original_unit,
+                "assistance",
+            ),
+            (self.actual_distance_value, self.actual_distance_unit, "distance"),
+        ):
+            if (value is None) != (unit is None):
+                raise ValueError(f"Both actual {label} fields must be supplied together")
+        return self
+
+
+class WorkoutSetUpdateRequest(WorkoutSetActualData):
+    expected_session_revision: int = Field(ge=1)
+    status: Literal["planned", "completed", "skipped"]
+
+
+class WorkoutSetAddRequest(WorkoutSetActualData):
+    expected_session_revision: int = Field(ge=1)
+    idempotency_key: str = Field(min_length=8, max_length=100)
+    workout_session_exercise_id: uuid.UUID
+    set_type: WorkoutSetType = WorkoutSetType.WORKING
+    status: Literal["planned", "completed"] = "planned"
+
+    @field_validator("idempotency_key")
+    @classmethod
+    def clean_idempotency_key(cls, value: str) -> str:
+        return value.strip()
+
+
+ExerciseSkipReason = Literal[
+    "time_constraint",
+    "equipment_unavailable",
+    "recovery_concern",
+    "discomfort",
+    "coach_instruction",
+    "other",
+]
+WorkoutEndReason = Literal[
+    "time_constraint",
+    "recovery_concern",
+    "discomfort",
+    "equipment_issue",
+    "other",
+]
+
+
+class WorkoutExerciseSkipRequest(BaseModel):
+    expected_session_revision: int = Field(ge=1)
+    reason: ExerciseSkipReason
+    note: str | None = Field(default=None, max_length=500)
+
+    @field_validator("note")
+    @classmethod
+    def clean_note(cls, value: str | None) -> str | None:
+        return value.strip() or None if value else None
+
+
+class WorkoutSessionCompleteRequest(BaseModel):
+    expected_session_revision: int = Field(ge=1)
+    actual_duration_minutes: int = Field(ge=1, le=1440)
+    session_rpe: Decimal = Field(ge=0, le=10, decimal_places=1)
+    trainee_note: str | None = Field(default=None, max_length=2000)
+    confirmed: Literal[True]
+
+
+class WorkoutSessionEndIncompleteRequest(BaseModel):
+    expected_session_revision: int = Field(ge=1)
+    reason: WorkoutEndReason
+    note: str | None = Field(default=None, max_length=500)
+
+
+class WorkoutSetLogOut(BaseModel):
+    id: uuid.UUID
+    source_prescription_id: uuid.UUID | None
+    source: WorkoutSetLogSource
+    set_number: int
+    set_type: WorkoutSetType
+    tracking_mode: ExerciseTrackingMode
+    planned_repetitions_min: int | None
+    planned_repetitions_max: int | None
+    planned_duration_seconds: int | None
+    planned_distance_value: Decimal | None
+    planned_distance_unit: DistanceUnit | None
+    planned_load_original_value: Decimal | None
+    planned_load_original_unit: WeightUnit | None
+    planned_assistance_original_value: Decimal | None
+    planned_assistance_original_unit: WeightUnit | None
+    planned_rpe: Decimal | None
+    planned_rir: Decimal | None
+    planned_rest_seconds: int | None
+    planned_tempo: str | None
+    planned_instructions: str | None
+    actual_repetitions: int | None
+    actual_load_original_value: Decimal | None
+    actual_load_original_unit: WeightUnit | None
+    actual_load_canonical_kg: Decimal | None
+    actual_assistance_original_value: Decimal | None
+    actual_assistance_original_unit: WeightUnit | None
+    actual_assistance_canonical_kg: Decimal | None
+    actual_duration_seconds: int | None
+    actual_distance_value: Decimal | None
+    actual_distance_unit: DistanceUnit | None
+    actual_rpe: Decimal | None
+    actual_rir: Decimal | None
+    status: WorkoutSetLogStatus
+    completed_at: datetime | None
+    revision: int
+
+
+class WorkoutSessionExerciseOut(BaseModel):
+    id: uuid.UUID
+    source_workout_template_exercise_id: uuid.UUID
+    exercise_version_id: uuid.UUID
+    exercise_name: str
+    tracking_mode: ExerciseTrackingMode
+    safety_cues: list[str]
+    section: WorkoutTemplateSection
+    display_order: int
+    trainee_instructions: str | None
+    prescription_snapshot: dict[str, Any]
+    status: WorkoutSessionExerciseStatus
+    skip_reason: str | None
+    skip_note: str | None
+    sets: list[WorkoutSetLogOut]
+
+
+class WorkoutSessionEventOut(BaseModel):
+    id: uuid.UUID
+    event_type: WorkoutSessionEventType
+    created_at: datetime
+
+
+class WorkoutSessionOut(BaseModel):
+    id: uuid.UUID
+    scheduled_workout_id: uuid.UUID
+    status: WorkoutSessionStatus
+    scheduled_workout_status: ScheduledWorkoutStatus
+    workout_name: str
+    program_name: str
+    program_version_number: int
+    scheduled_date: date
+    estimated_duration_minutes: int | None
+    target_session_rpe: float | None
+    trainee_instructions: str | None
+    started_at: datetime
+    last_activity_at: datetime
+    completed_at: datetime | None
+    ended_at: datetime | None
+    actual_duration_minutes: int | None
+    session_rpe: Decimal | None
+    trainee_note: str | None
+    revision: int
+    exercises: list[WorkoutSessionExerciseOut]
+    events: list[WorkoutSessionEventOut]
 
 
 class ErrorDetail(BaseModel):

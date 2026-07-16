@@ -9,7 +9,7 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [['line'], ['junit', { outputFile: '.playwright/results.xml' }]] : 'line',
-  testIgnore: isHostedRun ? [/assignments\.spec\.ts/, /daily\.spec\.ts/, /manual-docs\.spec\.ts/, /programming\.spec\.ts/, /programs\.spec\.ts/, /visual\.spec\.ts/] : /hosted-smoke\.spec\.ts/,
+  testIgnore: isHostedRun ? [/assignments\.spec\.ts/, /daily\.spec\.ts/, /manual-docs\.spec\.ts/, /programming\.spec\.ts/, /programs\.spec\.ts/, /visual\.spec\.ts/, /workout-execution\.spec\.ts/] : /hosted-smoke\.spec\.ts/,
   use: {
     baseURL: appUrl,
     channel: process.env.PLAYWRIGHT_CHANNEL || (process.env.CI ? undefined : 'chrome'),

@@ -22,6 +22,8 @@ from app.models import (
     ExerciseVersionStatus,
     OnboardingAssessment,
     Role,
+    ScheduledWorkout,
+    ScheduledWorkoutStatus,
     TraineeProfile,
     TrainingAssignment,
     TrainingAssignmentStatus,
@@ -29,6 +31,7 @@ from app.models import (
     TrainingProgramVersion,
     TrainingProgramVersionStatus,
     User,
+    WorkoutSessionStatus,
     WorkoutTemplate,
     WorkoutTemplateVersion,
     utcnow,
@@ -38,6 +41,11 @@ from app.schemas import (
     AssessmentData,
     TrainingAssignmentCreateRequest,
     TrainingProgramCreateRequest,
+    WorkoutExerciseSkipRequest,
+    WorkoutSessionCompleteRequest,
+    WorkoutSessionEndIncompleteRequest,
+    WorkoutSetAddRequest,
+    WorkoutSetUpdateRequest,
     WorkoutTemplateCreateRequest,
 )
 from app.security import hash_password
@@ -46,6 +54,15 @@ from app.training_assignment_services import create_training_assignment
 from app.training_program_services import (
     create_training_program,
     publish_training_program_draft,
+)
+from app.workout_session_services import (
+    add_set,
+    complete_session,
+    end_session_incomplete,
+    get_session,
+    skip_exercise,
+    start_workout,
+    update_set,
 )
 from app.workout_template_services import (
     create_workout_template,
@@ -745,6 +762,126 @@ def seed_training_assignments(
             )
 
 
+def seed_workout_execution(db, trainee: User) -> None:
+    """Idempotently seed synthetic resumable, completed, and partial executions."""
+    workouts = list(
+        db.scalars(
+            select(ScheduledWorkout)
+            .where(
+                ScheduledWorkout.trainee_id == trainee.id,
+                ScheduledWorkout.status.notin_(
+                    [ScheduledWorkoutStatus.CANCELLED, ScheduledWorkoutStatus.SUPERSEDED]
+                ),
+            )
+            .order_by(ScheduledWorkout.scheduled_date, ScheduledWorkout.display_order)
+        ).all()
+    )
+    if len(workouts) < 4:
+        return
+
+    active = (
+        get_session(db, trainee, workouts[0].workout_session.id)
+        if workouts[0].workout_session
+        else start_workout(db, trainee, workouts[0].id)
+    )
+    if active["revision"] == 1:
+        exercises = active["exercises"]
+        load_exercise = next(
+            (item for item in exercises if item["tracking_mode"] == "repetitions_and_load"),
+            exercises[0],
+        )
+        load_set = load_exercise["sets"][0]
+        if load_set["tracking_mode"] == "repetitions_and_load":
+            active = update_set(
+                db,
+                trainee,
+                active["id"],
+                load_set["id"],
+                WorkoutSetUpdateRequest(
+                    expected_session_revision=active["revision"],
+                    status="completed",
+                    actual_repetitions=9,
+                    actual_load_original_value=35,
+                    actual_load_original_unit="lb",
+                    actual_rpe=7,
+                ),
+            )
+            active = add_set(
+                db,
+                trainee,
+                active["id"],
+                WorkoutSetAddRequest(
+                    expected_session_revision=active["revision"],
+                    idempotency_key="seed-added-set-kg",
+                    workout_session_exercise_id=load_exercise["id"],
+                    set_type="back_off",
+                    status="completed",
+                    actual_repetitions=10,
+                    actual_load_original_value=12,
+                    actual_load_original_unit="kg",
+                    actual_rpe=6,
+                ),
+            )
+        skip_target = exercises[-1]
+        skip_exercise(
+            db,
+            trainee,
+            active["id"],
+            skip_target["id"],
+            WorkoutExerciseSkipRequest(
+                expected_session_revision=active["revision"],
+                reason="equipment_unavailable",
+                note="Synthetic seed example.",
+            ),
+        )
+
+    completed = (
+        get_session(db, trainee, workouts[1].workout_session.id)
+        if workouts[1].workout_session
+        else start_workout(db, trainee, workouts[1].id)
+    )
+    if completed["status"] == WorkoutSessionStatus.IN_PROGRESS.value:
+        for exercise in completed["exercises"]:
+            completed = skip_exercise(
+                db,
+                trainee,
+                completed["id"],
+                exercise["id"],
+                WorkoutExerciseSkipRequest(
+                    expected_session_revision=completed["revision"],
+                    reason="coach_instruction",
+                    note="Synthetic completed-session example.",
+                ),
+            )
+        complete_session(
+            db,
+            trainee,
+            completed["id"],
+            WorkoutSessionCompleteRequest(
+                expected_session_revision=completed["revision"],
+                actual_duration_minutes=28,
+                session_rpe=5,
+                trainee_note="Synthetic completed execution.",
+                confirmed=True,
+            ),
+        )
+
+    partial = (
+        get_session(db, trainee, workouts[2].workout_session.id)
+        if workouts[2].workout_session
+        else start_workout(db, trainee, workouts[2].id)
+    )
+    if partial["status"] == WorkoutSessionStatus.IN_PROGRESS.value:
+        end_session_incomplete(
+            db,
+            trainee,
+            partial["id"],
+            WorkoutSessionEndIncompleteRequest(
+                expected_session_revision=partial["revision"],
+                reason="time_constraint",
+                note="Synthetic partial execution.",
+            ),
+        )
 def ensure_seed_allowed(config: Settings = settings) -> None:
     if not config.seed_demo_data:
         raise RuntimeError("Demo seeding is disabled; set SEED_DEMO_DATA=true explicitly")
@@ -978,6 +1115,7 @@ def seed_public_demo_workspace(
     seed_training_assignments(
         db, coach, demo_trainees[:3], demo_today, include_future=True
     )
+    seed_workout_execution(db, demo_trainees[0])
 
 
 def seed() -> None:
@@ -1059,6 +1197,7 @@ def seed() -> None:
         seed_training_assignments(
             db, coach, [trainee], local_date, include_future=False
         )
+        seed_workout_execution(db, trainee)
 
         submitted = db.scalar(
             select(OnboardingAssessment).where(

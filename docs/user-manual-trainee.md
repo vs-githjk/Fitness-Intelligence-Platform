@@ -8,7 +8,10 @@ New to the platform? Read [Getting started](getting-started.md) and the [Product
 
 ## Public demo access
 
-From sign-in, select **Explore Demo**, then **View as Trainee**. The demo opens a fictional completed onboarding baseline, current daily scores, recommendations, alerts, and gap-aware progress history. You can navigate and interact with local controls, but profile, assessment, and check-in changes cannot be saved. A persistent banner identifies the workspace as synthetic and read-only; select **Exit demo** to leave.
+From sign-in, select **Explore Demo**, then **View as Trainee**. The demo opens fictional baseline,
+daily, Program, and workout-execution examples. You can inspect scheduled, active, completed, and
+partial workouts, but all persistent changes are disabled and rejected by the backend. A persistent
+banner identifies the workspace as synthetic and read-only; select **Exit demo** to leave.
 
 This does not change normal trainee enrollment: an ordinary trainee account still requires a private, single-use invitation from its coach.
 
@@ -520,10 +523,31 @@ Open **Program** to see the exact published Program version assigned by your coa
 profile timezone. The page identifies your current week, today's scheduled workout or rest day,
 future weeks, required and optional workouts, and coach-authored deload weeks.
 
-Select **View workout details** for the effective duration, target RPE, exercise count, and
-trainee instructions. This schedule is read-only: workouts cannot be started or completed and
-sets cannot be logged yet. If a future replacement exists, the page shows its effective date;
-past schedule history is not rewritten.
+Select **Open workout** for duration, target RPE, exercise count, instructions, and execution.
+For an eligible scheduled workout, select **Start workout**. The system copies the exact published
+exercise order and prescriptions into a session; later template revisions do not alter it.
+
+During an active workout:
+
+1. Review the planned values and safety cues for the current exercise.
+2. Enter only the actual fields shown for its tracking mode. External load and optional assistance
+   accept kg or lb; assistance is not resistance load.
+3. Select **Save completed set**, or **Skip set**. The status text moves through unsaved, saving,
+   saved, or error states; typing alone does not save.
+4. Use **Add set** for an extra set without changing the coach's prescription.
+5. Use **Skip exercise** with a reason when appropriate; its remaining planned sets become skipped.
+6. Move with **Previous** and **Next**. You may leave or refresh after a successful save and reopen
+   the same workout to resume it; a second session is not created.
+
+If another tab saves first, the page preserves your typed values and shows **Workout updated
+elsewhere**. Select **Reload latest session** only when ready to load the current server revision;
+changes are not merged automatically.
+
+To finish normally, resolve every exercise by completing or explicitly skipping it, enter actual
+duration and session RPE, confirm, and select **Complete workout**. To stop before that, choose a
+bounded reason and **End workout incomplete**. Both outcomes preserve a summary and are immutable;
+there is no reopen or correction workflow. Cancelled and superseded entries cannot start. If a
+future replacement exists, the page shows its effective date and does not rewrite past history.
 
 ## 13. Sign out and handle session expiry
 
@@ -645,7 +669,8 @@ The trainee experience currently does not provide:
 - custom trend ranges, visible rolling averages, exports, or reports;
 - coach selection or assignment management;
 - coach invitations through the trainee interface;
-- workout-program building or nutrition-plan creation;
+- workout-program building, post-completion workout correction, or nutrition-plan creation;
+- workout safety reports, readiness capture, load analytics, or adherence analytics;
 - messaging, coach notes, reminders, or notifications;
 - wearable or device connections;
 - AI-generated narration;

@@ -14,6 +14,21 @@ from app.models import Role, User
 ALGORITHM = "HS256"
 bearer = HTTPBearer(auto_error=False)
 
+# Central inventory used to keep every workout-execution mutation visibly demo-protected.
+WORKOUT_EXECUTION_DEMO_MUTATIONS = frozenset(
+    {
+        ("POST", "/api/v1/trainee/workouts/{scheduled_workout_id}/start"),
+        ("PUT", "/api/v1/trainee/workout-sessions/{session_id}/sets/{set_id}"),
+        ("POST", "/api/v1/trainee/workout-sessions/{session_id}/sets"),
+        (
+            "POST",
+            "/api/v1/trainee/workout-sessions/{session_id}/exercises/{exercise_id}/skip",
+        ),
+        ("POST", "/api/v1/trainee/workout-sessions/{session_id}/complete"),
+        ("POST", "/api/v1/trainee/workout-sessions/{session_id}/end-incomplete"),
+    }
+)
+
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=12)).decode()

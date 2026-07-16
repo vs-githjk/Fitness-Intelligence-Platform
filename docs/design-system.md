@@ -148,6 +148,7 @@ The implementation supports viewports from 320px upward. Its active Tailwind bre
 - From 1024px, the persistent sidebar, coach roster table, onboarding step rail, and denser nutrition form layout become available.
 - From 1280px, portfolio metrics can occupy four columns and Health Index sections use asymmetric two-column layouts.
 - Program weeks use accessible disclosure sections. Weekdays and workout cards remain a vertical stream below 1280px, then may use a two-column weekday layout; the interface never forces seven columns onto a small screen. Builder and trainee-preview panels switch through labelled controls below 1024px.
+- Workout execution remains a single-column, touch-first flow from 320px upward. Set editors expose planned context beside mode-specific actual inputs, use explicit save/skip actions with at least 44px targets, and report dirty, saving, saved, error, and revision-conflict states through text and polite live regions. Previous/next exercise controls wrap without horizontal overflow.
 - The app content is capped at 1440px. Health Index grids use `minmax(0, ...)` and components use wrapping/min-width controls to limit overflow from long values and labels.
 - Authentication is a focused single column below 1024px and a split contextual/form layout from 1024px.
 - The onboarding step rail is hidden below 1024px and replaced by named percentage progress. Completed steps in the desktop rail can be revisited; future steps remain disabled.
@@ -167,6 +168,7 @@ The current implementation includes the following practices:
 - Related choice inputs use `fieldset` and `legend`; custom choice cards and chips expose `aria-pressed`.
 - Onboarding validates the current section before continuing, focuses the step heading after a step change, and focuses its alert summary when validation fails.
 - Saving is described through a polite live region. Assessment loading is represented by a polite status. Submit and save controls expose busy/disabled behavior.
+- Workout revision conflicts preserve local input state and provide an explicitly labelled reload action; demo workout inputs and mutation controls are disabled in addition to the persistent read-only notice.
 - Programming confirmations use modal dialogs with initial focus, Escape dismissal, focus containment, and focus return. Reordering controls have specific accessible names and do not require drag gestures.
 - Progress bars expose accessible labels and numeric progress values.
 - The coach roster table includes a caption, column-header scopes, a screen-reader action header, and specific accessible names for row actions.

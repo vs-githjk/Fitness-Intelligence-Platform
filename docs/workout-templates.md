@@ -72,7 +72,9 @@ wins the revision race, the conflict dialog preserves local changes until the co
 reloads the server draft. Publishing requires a review confirmation and locks the published
 graph; subsequent editing starts with **Create revision**. The trainee preview shows exactly
 the content a trainee schedule may consume and deliberately excludes coach notes. Assignment
-materializes exact versions into read-only scheduled workouts; workout execution is not implemented.
+materializes exact versions into scheduled workouts. Starting one creates a separate immutable
+execution snapshot; later template revisions do not alter its session or set logs. See
+[Workout execution](workout-execution.md).
 
 Program references never follow a template root's current version. Publishing a newer template
 therefore does not rewrite existing program history. Archived template roots remain readable

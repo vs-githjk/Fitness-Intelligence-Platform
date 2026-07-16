@@ -38,7 +38,7 @@ test('coach previews and assigns a future Program replacement', async ({ page })
   await expect(page.getByText('Assignment history')).toBeVisible()
 })
 
-test('trainee sees current Program, today context, calendar, and workout details', async ({ page }) => {
+test('trainee sees current Program, today context, calendar, and executable workout details', async ({ page }) => {
   await credentialSession(page, 'trainee@fitness.example.com')
   await page.goto('/trainee/program')
   await expect(page.getByText('Current Program')).toBeVisible()
@@ -47,8 +47,7 @@ test('trainee sees current Program, today context, calendar, and workout details
   const details = page.getByRole('button', { name: /View workout details/ }).first()
   if (await details.count()) {
     await details.click()
-    await expect(page.getByText('Read-only schedule')).toBeVisible()
-    await expect(page.getByRole('button', { name: /start workout/i })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: /open workout|resume workout|view workout summary/i })).toBeVisible()
   }
 })
 

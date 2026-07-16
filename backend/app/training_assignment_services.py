@@ -151,6 +151,9 @@ def _assignment_out(assignment: TrainingAssignment) -> dict:
 def _workout_out(workout: ScheduledWorkout) -> dict:
     return {
         "id": workout.id,
+        "workout_session_id": (
+            workout.workout_session.id if workout.workout_session is not None else None
+        ),
         "training_assignment_id": workout.training_assignment_id,
         "workout_template_version_id": workout.workout_template_version_id,
         "scheduled_date": workout.scheduled_date,
@@ -234,11 +237,16 @@ def _workspace(
     upcoming = next(
         (item for item in assignments if item.status == TrainingAssignmentStatus.SCHEDULED), None
     )
+    visible_assignment_ids = {
+        item.id for item in (current, upcoming) if item is not None
+    }
+    # Execution states must remain in the current Program payload so route refreshes can resume
+    # the existing session and terminal summaries remain reachable from the calendar.
     workouts = [
         workout
         for assignment in assignments
+        if assignment.id in visible_assignment_ids
         for workout in assignment.scheduled_workouts
-        if workout.status == ScheduledWorkoutStatus.SCHEDULED
     ]
     events = sorted(
         [event for assignment in assignments for event in assignment.history],

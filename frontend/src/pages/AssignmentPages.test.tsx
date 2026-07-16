@@ -45,8 +45,7 @@ it('renders the trainee current Program, today, calendar, deload, and read-only 
   expect(screen.getAllByText('Coach-authored deload').length).toBeGreaterThan(0)
   fireEvent.click(screen.getByRole('button', { name: 'View workout details' }))
   expect(screen.getByRole('dialog', { name: 'Full Body Strength' })).toBeVisible()
-  expect(screen.getByText('Read-only schedule')).toBeVisible()
-  expect(screen.queryByRole('button', { name: /start workout/i })).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Open workout' })).toHaveAttribute('href', '/trainee/workouts/workout-1')
 })
 
 it('keeps assignment controls disabled for demo coaches', async () => {

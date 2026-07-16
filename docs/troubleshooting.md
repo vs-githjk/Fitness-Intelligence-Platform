@@ -280,6 +280,27 @@ This is expected supersession behavior. Workouts before the replacement effectiv
 unchanged; displaced future rows retain history with `superseded` status. Cancelling a future
 assignment marks its rows `cancelled` instead of deleting them.
 
+### A workout says it was updated elsewhere
+
+Another tab or request saved the session first. Your typed values remain on the page, but the
+backend rejected the stale revision and did not merge it. Copy anything important if needed, then
+choose **Reload latest session** and re-enter the change against the current revision.
+
+### A completed set will not save
+
+Use only the fields shown for that tracking mode. Repetitions/load requires both repetitions and
+kg or lb load; duration requires seconds; distance/duration requires both values and a distance
+unit; bodyweight/assisted repetitions requires repetitions and allows optional kg/lb assistance.
+Skipped sets must not contain actual values. Saving is explicit, so wait for **Saved** before
+leaving the page.
+
+### A workout cannot be started or resumed
+
+Cancelled and superseded schedule entries cannot start. Completed and ended-incomplete sessions
+are immutable. If the workout is active, reopen it from **Program** to load its saved progress.
+Demo sessions can inspect seeded examples but every mutation is intentionally disabled and returns
+`403 demo_read_only` if called directly.
+
 ### An exercise is missing from the template picker
 
 The picker shows only active, published system exercises and active, published private

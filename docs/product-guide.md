@@ -190,6 +190,7 @@ Deterministic calculations are used so that score behavior is repeatable, testab
 - Submit or edit the current timezone-local date’s check-in.
 - View Recovery, Activity, Nutrition, Readiness, alerts, recommendations, and daily calculation explanations.
 - View gap-aware 7- or 30-day progress charts and accessible data tables.
+- Open an assigned scheduled workout, explicitly save or skip sets, resume it after navigation or refresh, and complete or intentionally end it incomplete.
 - Sign out.
 
 ### Coach capabilities
@@ -236,7 +237,7 @@ The following are not available in the current application:
 - coach editing of trainee data;
 - coach account self-registration or assignment management;
 - password reset, account recovery, refresh-token rotation, revocation controls, or MFA;
-- workout execution, set logging, completion/adherence, or readiness-based schedule changes;
+- coach workout-session review, post-completion corrections, safety reports, load/adherence analytics, readiness capture, or readiness-based schedule changes;
 - meal-plan or nutrition-plan creation;
 - wearables and external health-data integrations;
 - messaging, notifications, or reminders;
