@@ -118,12 +118,12 @@ Prefer composing these components over recreating local card, status, field, or 
 
 At 1024px and above, the coach sees a persistent 256px left sidebar with the product brand,
 Overview and Programming destinations, workspace context, user identity, and sign-out action.
-Programming contains accessible Exercises and Templates tabs; unavailable future modules are
-not shown.
+Programming contains accessible Exercises, Workout Templates, and Programs tabs; unavailable
+future modules are not shown.
 
 Below 1024px, the sidebar becomes a sticky compact header. A fixed three-item bottom
 navigation exposes Overview, Programming, and Invitations; Programming's internal tabs
-expose Exercises and Templates. Trainee detail pages add a small
+expose Exercises, Workout Templates, and Programs. Trainee detail pages add a small
 `Trainee record` context label above the page content and an explicit link back to the overview.
 
 ### Trainee
@@ -143,6 +143,7 @@ The implementation supports viewports from 320px upward. Its active Tailwind bre
 - Below 1024px, both role sidebars are replaced by the compact header and fixed bottom navigation. The coach roster renders structured cards instead of compressing a table.
 - From 1024px, the persistent sidebar, coach roster table, onboarding step rail, and denser nutrition form layout become available.
 - From 1280px, portfolio metrics can occupy four columns and Health Index sections use asymmetric two-column layouts.
+- Program weeks use accessible disclosure sections. Weekdays and workout cards remain a vertical stream below 1280px, then may use a two-column weekday layout; the interface never forces seven columns onto a small screen. Builder and trainee-preview panels switch through labelled controls below 1024px.
 - The app content is capped at 1440px. Health Index grids use `minmax(0, ...)` and components use wrapping/min-width controls to limit overflow from long values and labels.
 - Authentication is a focused single column below 1024px and a split contextual/form layout from 1024px.
 - The onboarding step rail is hidden below 1024px and replaced by named percentage progress. Completed steps in the desktop rail can be revisited; future steps remain disabled.

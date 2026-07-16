@@ -573,11 +573,11 @@ def test_workout_template_migration_upgrade_and_downgrade(tmp_path: Path) -> Non
     engine = create_engine(f"sqlite:///{database_path}")
     assert TABLE_NAMES <= set(inspect(engine).get_table_names())
     alembic("current")
-    alembic("check")
     alembic("downgrade", "20260716_0005")
     assert not TABLE_NAMES.intersection(inspect(engine).get_table_names())
     alembic("upgrade", "head")
     assert TABLE_NAMES <= set(inspect(engine).get_table_names())
+    alembic("check")
 
 
 TABLE_NAMES = {

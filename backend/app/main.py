@@ -22,6 +22,7 @@ from app.api import (
     health,
     invites,
     trainee,
+    training_programs,
     workout_templates,
 )
 from app.config import settings
@@ -168,6 +169,7 @@ for router in (
     coach.router,
     exercises.router,
     workout_templates.router,
+    training_programs.router,
     invites.router,
 ):
     app.include_router(router, prefix="/api/v1")

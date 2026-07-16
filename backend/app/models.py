@@ -86,6 +86,26 @@ class WorkoutSetType(str, enum.Enum):
     DROP_SET = "drop_set"
 
 
+class TrainingProgramStatus(str, enum.Enum):
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
+class TrainingProgramVersionStatus(str, enum.Enum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+
+
+class ProgramWeekday(str, enum.Enum):
+    MONDAY = "monday"
+    TUESDAY = "tuesday"
+    WEDNESDAY = "wednesday"
+    THURSDAY = "thursday"
+    FRIDAY = "friday"
+    SATURDAY = "saturday"
+    SUNDAY = "sunday"
+
+
 class WeightUnit(str, enum.Enum):
     KG = "kg"
     LB = "lb"
@@ -514,6 +534,165 @@ class WorkoutSetPrescription(Base):
     workout_template_exercise: Mapped[WorkoutTemplateExercise] = relationship(
         back_populates="sets"
     )
+
+
+class TrainingProgram(Base):
+    __tablename__ = "training_programs"
+    __table_args__ = (Index("ix_training_programs_owner_status", "owner_coach_id", "status"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    owner_coach_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    status: Mapped[TrainingProgramStatus] = mapped_column(
+        Enum(TrainingProgramStatus, native_enum=False, values_callable=enum_values),
+        default=TrainingProgramStatus.ACTIVE,
+    )
+    current_published_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "training_program_versions.id",
+            name="fk_training_programs_current_published_version",
+            ondelete="RESTRICT",
+            use_alter=True,
+        ),
+        nullable=True,
+        index=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    versions: Mapped[list["TrainingProgramVersion"]] = relationship(
+        back_populates="training_program",
+        cascade="all, delete-orphan",
+        foreign_keys="TrainingProgramVersion.training_program_id",
+    )
+
+
+class TrainingProgramVersion(Base):
+    __tablename__ = "training_program_versions"
+    __table_args__ = (
+        UniqueConstraint(
+            "training_program_id", "version_number", name="uq_training_program_version_number"
+        ),
+        CheckConstraint("version_number > 0", name="ck_training_program_versions_positive_version"),
+        CheckConstraint("draft_revision > 0", name="ck_training_program_versions_positive_draft_revision"),
+        CheckConstraint("duration_weeks >= 1 AND duration_weeks <= 12", name="ck_training_program_versions_duration"),
+        CheckConstraint(
+            "(version_status = 'draft' AND published_at IS NULL AND content_hash IS NULL) OR "
+            "(version_status = 'published' AND published_at IS NOT NULL AND content_hash IS NOT NULL)",
+            name="ck_training_program_versions_publication_state",
+        ),
+        Index("ix_training_program_versions_program_status", "training_program_id", "version_status"),
+        Index(
+            "uq_training_program_versions_one_draft",
+            "training_program_id",
+            unique=True,
+            sqlite_where=text("version_status = 'draft'"),
+            postgresql_where=text("version_status = 'draft'"),
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    training_program_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("training_programs.id", ondelete="CASCADE"), index=True
+    )
+    version_number: Mapped[int] = mapped_column(Integer)
+    version_status: Mapped[TrainingProgramVersionStatus] = mapped_column(
+        Enum(TrainingProgramVersionStatus, native_enum=False, values_callable=enum_values)
+    )
+    draft_revision: Mapped[int] = mapped_column(Integer, default=1)
+    name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str | None] = mapped_column(Text)
+    goal_tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    duration_weeks: Mapped[int] = mapped_column(Integer)
+    coach_notes: Mapped[str | None] = mapped_column(Text)
+    trainee_instructions: Mapped[str | None] = mapped_column(Text)
+    content_hash: Mapped[str | None] = mapped_column(String(64))
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    training_program: Mapped[TrainingProgram] = relationship(
+        back_populates="versions", foreign_keys=[training_program_id]
+    )
+    weeks: Mapped[list["ProgramWeek"]] = relationship(
+        back_populates="training_program_version",
+        cascade="all, delete-orphan",
+        order_by="ProgramWeek.week_number",
+    )
+
+
+class ProgramWeek(Base):
+    __tablename__ = "program_weeks"
+    __table_args__ = (
+        UniqueConstraint(
+            "training_program_version_id", "week_number", name="uq_program_week_number"
+        ),
+        CheckConstraint("week_number > 0 AND week_number <= 12", name="ck_program_weeks_number"),
+        Index("ix_program_weeks_version_number", "training_program_version_id", "week_number"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    training_program_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("training_program_versions.id", ondelete="CASCADE"), index=True
+    )
+    week_number: Mapped[int] = mapped_column(Integer)
+    label: Mapped[str | None] = mapped_column(String(120))
+    coach_notes: Mapped[str | None] = mapped_column(Text)
+    is_deload: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    training_program_version: Mapped[TrainingProgramVersion] = relationship(
+        back_populates="weeks"
+    )
+    sessions: Mapped[list["ProgramSession"]] = relationship(
+        back_populates="program_week",
+        cascade="all, delete-orphan",
+        order_by="ProgramSession.display_order",
+    )
+
+
+class ProgramSession(Base):
+    __tablename__ = "program_sessions"
+    __table_args__ = (
+        UniqueConstraint(
+            "program_week_id", "weekday", "display_order", name="uq_program_session_day_order"
+        ),
+        CheckConstraint("display_order > 0 AND display_order <= 14", name="ck_program_sessions_order"),
+        CheckConstraint(
+            "planned_duration_override_minutes IS NULL OR "
+            "(planned_duration_override_minutes >= 1 AND planned_duration_override_minutes <= 1440)",
+            name="ck_program_sessions_duration_override",
+        ),
+        CheckConstraint(
+            "target_session_rpe_override IS NULL OR "
+            "(target_session_rpe_override >= 0 AND target_session_rpe_override <= 10)",
+            name="ck_program_sessions_rpe_override",
+        ),
+        Index("ix_program_sessions_week_day_order", "program_week_id", "weekday", "display_order"),
+        Index("ix_program_sessions_template_version", "workout_template_version_id"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    program_week_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("program_weeks.id", ondelete="CASCADE"), index=True
+    )
+    workout_template_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workout_template_versions.id", ondelete="RESTRICT"), index=True
+    )
+    weekday: Mapped[ProgramWeekday] = mapped_column(
+        Enum(ProgramWeekday, native_enum=False, values_callable=enum_values)
+    )
+    display_order: Mapped[int] = mapped_column(Integer)
+    required: Mapped[bool] = mapped_column(Boolean, default=True)
+    planned_duration_override_minutes: Mapped[int | None] = mapped_column(Integer)
+    target_session_rpe_override: Mapped[float | None] = mapped_column(Float)
+    coach_notes: Mapped[str | None] = mapped_column(Text)
+    trainee_instructions: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    program_week: Mapped[ProgramWeek] = relationship(back_populates="sessions")
+    workout_template_version: Mapped[WorkoutTemplateVersion] = relationship()
 
 
 class OnboardingAssessment(Base):

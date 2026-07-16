@@ -188,3 +188,17 @@ export interface WorkoutTemplateDetail {
   archived_at: string | null; draft_version: WorkoutTemplateVersion | null
   published_version: WorkoutTemplateVersion | null; versions: WorkoutTemplateVersionSummary[]
 }
+
+export type TrainingProgramStatus = 'active' | 'archived'
+export type ProgramWeekday = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
+export interface ProgramTemplateVersionSummary { id: string; workout_template_id: string; version_number: number; name: string; goal_tags: string[]; estimated_duration_minutes: number | null; target_session_rpe: number | null; exercise_count: number }
+export interface ProgramSessionData { workout_template_version_id: string; weekday: ProgramWeekday; display_order: number; required: boolean; planned_duration_override_minutes: number | null; target_session_rpe_override: number | null; coach_notes: string | null; trainee_instructions: string | null }
+export interface ProgramSession extends ProgramSessionData { id: string; workout_template_version: ProgramTemplateVersionSummary; created_at: string }
+export interface ProgramWeekData { week_number: number; label: string | null; coach_notes: string | null; is_deload: boolean; sessions: ProgramSessionData[] }
+export interface ProgramWeek extends Omit<ProgramWeekData, 'sessions'> { id: string; created_at: string; sessions: ProgramSession[] }
+export interface TrainingProgramDraftData { name: string; description: string | null; goal_tags: string[]; duration_weeks: number; coach_notes: string | null; trainee_instructions: string | null; weeks: ProgramWeekData[] }
+export interface TrainingProgramVersion extends Omit<TrainingProgramDraftData, 'weeks'> { id: string; training_program_id: string; version_number: number; version_status: 'draft' | 'published'; draft_revision: number; content_hash: string | null; created_by_user_id: string | null; created_at: string; updated_at: string; published_at: string | null; weeks: ProgramWeek[] }
+export interface TrainingProgramVersionSummary { id: string; version_number: number; version_status: 'draft' | 'published'; draft_revision: number; name: string; content_hash: string | null; updated_at: string; published_at: string | null }
+export interface TrainingProgramSummary { id: string; status: TrainingProgramStatus; name: string; goal_tags: string[]; duration_weeks: number; workout_slot_count: number; deload_week_count: number; current_published_version_number: number | null; published_at: string | null; has_draft: boolean; created_at: string; updated_at: string; archived_at: string | null }
+export interface TrainingProgramList { items: TrainingProgramSummary[]; page: number; per_page: number; total: number }
+export interface TrainingProgramDetail { id: string; owner_coach_id: string; status: TrainingProgramStatus; current_published_version_id: string | null; created_at: string; updated_at: string; archived_at: string | null; draft_version: TrainingProgramVersion | null; published_version: TrainingProgramVersion | null; versions: TrainingProgramVersionSummary[] }

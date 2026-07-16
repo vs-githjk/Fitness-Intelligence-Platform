@@ -31,14 +31,15 @@ After sign-in, open **Invitations**. You can optionally restrict an invitation t
 
 ## Navigation
 
-Coach navigation contains **Overview** and **Invitations**.
+Coach navigation contains **Overview**, **Programming**, and **Invitations**.
 
 - On desktop, **Overview** is in the persistent left sidebar.
 - On smaller screens, **Overview** is in the bottom navigation.
 - Use the sign-out icon beside your identity to end the local browser session.
 - On a trainee record, use **Back to overview** to return to the roster.
 
-Programs, messages, reports, workouts, nutrition plans, settings, and an alerts-management page are not implemented.
+Program assignment, trainee workout execution, messages, reports, nutrition plans, settings, and
+an alerts-management page are not implemented.
 
 ## Read the coach overview
 
@@ -227,6 +228,24 @@ reorder sets. The available prescription fields follow each exercise's tracking 
 the trainee preview before saving and publishing; coach notes never appear in that preview.
 If a conflict reports that another tab saved first, keep the local form open until you decide
 whether to reload the server draft.
+
+### Build a training program
+
+Use **Programming → Programs → New program** to create a reusable 1–12 week structure. Each
+program contains fixed Monday–Sunday weeks. An empty weekday is a rest day; add more than one
+workout to a day when needed and use the labelled up/down controls to set its order. Every
+workout pins the exact published workout-template version selected at authoring time.
+
+Mark workouts **Required** or **Optional**, add duration or target-RPE overrides when needed,
+and mark deload weeks explicitly. A deload label records the coach's intent; the platform does
+not reduce volume, intensity, or workouts automatically. Review the trainee preview to verify
+trainee instructions and confirm that coach notes are excluded.
+
+Save before publishing. Publication freezes the complete program graph and its pinned template
+versions. Choose **Create revision** for later changes, or **Archive** to remove the program from
+future active selection while keeping its history readable. A draft-conflict dialog preserves
+local edits until you explicitly reload the latest server version. Programs cannot yet be
+assigned or scheduled for trainees.
 
 A coach cannot:
 

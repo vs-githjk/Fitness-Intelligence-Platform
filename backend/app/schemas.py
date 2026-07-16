@@ -12,7 +12,9 @@ from app.models import (
     ExerciseScope,
     ExerciseStatus,
     ExerciseTrackingMode,
+    ProgramWeekday,
     Role,
+    TrainingProgramStatus,
     WeightUnit,
     WorkoutSetType,
     WorkoutTemplateSection,
@@ -658,6 +660,183 @@ class WorkoutTemplateDetailOut(BaseModel):
     draft_version: WorkoutTemplateVersionOut | None
     published_version: WorkoutTemplateVersionOut | None
     versions: list[WorkoutTemplateVersionSummaryOut]
+
+
+class ProgramSessionData(BaseModel):
+    workout_template_version_id: uuid.UUID
+    weekday: ProgramWeekday
+    display_order: int = Field(ge=1, le=14)
+    required: bool = True
+    planned_duration_override_minutes: int | None = Field(default=None, ge=1, le=1440)
+    target_session_rpe_override: float | None = Field(default=None, ge=0, le=10)
+    coach_notes: str | None = Field(default=None, max_length=5000)
+    trainee_instructions: str | None = Field(default=None, max_length=5000)
+
+    @field_validator("coach_notes", "trainee_instructions")
+    @classmethod
+    def clean_optional_text(cls, value: str | None) -> str | None:
+        cleaned = value.strip() if value else None
+        return cleaned or None
+
+
+class ProgramWeekData(BaseModel):
+    week_number: int = Field(ge=1, le=12)
+    label: str | None = Field(default=None, max_length=120)
+    coach_notes: str | None = Field(default=None, max_length=5000)
+    is_deload: bool = False
+    sessions: list[ProgramSessionData] = Field(default_factory=list, max_length=14)
+
+    @field_validator("label", "coach_notes")
+    @classmethod
+    def clean_optional_text(cls, value: str | None) -> str | None:
+        cleaned = value.strip() if value else None
+        return cleaned or None
+
+
+class TrainingProgramDraftData(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=2000)
+    goal_tags: list[str] = Field(default_factory=list, max_length=20)
+    duration_weeks: int = Field(ge=1, le=12)
+    coach_notes: str | None = Field(default=None, max_length=5000)
+    trainee_instructions: str | None = Field(default=None, max_length=5000)
+    weeks: list[ProgramWeekData] = Field(min_length=1, max_length=12)
+
+    @field_validator("name", "description", "coach_notes", "trainee_instructions")
+    @classmethod
+    def clean_text(cls, value: str | None) -> str | None:
+        cleaned = value.strip() if value else None
+        if value is not None and not cleaned:
+            raise ValueError("Value must not be blank")
+        return cleaned
+
+    @field_validator("goal_tags")
+    @classmethod
+    def clean_goal_tags(cls, value: list[str]) -> list[str]:
+        cleaned = sorted({item.strip().lower() for item in value if item.strip()})
+        if any(len(item) > 50 for item in cleaned):
+            raise ValueError("Goal tags must be 50 characters or fewer")
+        return cleaned
+
+    @model_validator(mode="after")
+    def validate_week_graph(self) -> "TrainingProgramDraftData":
+        numbers = sorted(week.week_number for week in self.weeks)
+        if numbers != list(range(1, self.duration_weeks + 1)):
+            raise ValueError("Weeks must be unique and contiguous through duration_weeks")
+        total = 0
+        for week in self.weeks:
+            total += len(week.sessions)
+            by_day: dict[ProgramWeekday, list[int]] = {}
+            for session in week.sessions:
+                by_day.setdefault(session.weekday, []).append(session.display_order)
+            for orders in by_day.values():
+                if sorted(orders) != list(range(1, len(orders) + 1)):
+                    raise ValueError("Session order must be contiguous within each weekday")
+        if total > 168:
+            raise ValueError("A program may contain at most 168 workout slots")
+        return self
+
+
+class TrainingProgramCreateRequest(TrainingProgramDraftData):
+    pass
+
+
+class TrainingProgramDraftReplaceRequest(TrainingProgramDraftData):
+    expected_draft_revision: int = Field(ge=1)
+
+
+class ProgramTemplateVersionSummaryOut(BaseModel):
+    id: uuid.UUID
+    workout_template_id: uuid.UUID
+    version_number: int
+    name: str
+    goal_tags: list[str]
+    estimated_duration_minutes: int | None
+    target_session_rpe: float | None
+    exercise_count: int
+
+
+class ProgramSessionOut(ProgramSessionData):
+    id: uuid.UUID
+    workout_template_version: ProgramTemplateVersionSummaryOut
+    created_at: datetime
+
+
+class ProgramWeekOut(BaseModel):
+    id: uuid.UUID
+    week_number: int
+    label: str | None
+    coach_notes: str | None
+    is_deload: bool
+    created_at: datetime
+    sessions: list[ProgramSessionOut]
+
+
+class TrainingProgramVersionOut(BaseModel):
+    id: uuid.UUID
+    training_program_id: uuid.UUID
+    version_number: int
+    version_status: Literal["draft", "published"]
+    draft_revision: int
+    name: str
+    description: str | None
+    goal_tags: list[str]
+    duration_weeks: int
+    coach_notes: str | None
+    trainee_instructions: str | None
+    content_hash: str | None
+    created_by_user_id: uuid.UUID | None
+    created_at: datetime
+    updated_at: datetime
+    published_at: datetime | None
+    weeks: list[ProgramWeekOut]
+
+
+class TrainingProgramVersionSummaryOut(BaseModel):
+    id: uuid.UUID
+    version_number: int
+    version_status: Literal["draft", "published"]
+    draft_revision: int
+    name: str
+    content_hash: str | None
+    updated_at: datetime
+    published_at: datetime | None
+
+
+class TrainingProgramSummaryOut(BaseModel):
+    id: uuid.UUID
+    status: TrainingProgramStatus
+    name: str
+    goal_tags: list[str]
+    duration_weeks: int
+    workout_slot_count: int
+    deload_week_count: int
+    current_published_version_number: int | None
+    published_at: datetime | None
+    has_draft: bool
+    created_at: datetime
+    updated_at: datetime
+    archived_at: datetime | None
+
+
+class TrainingProgramListOut(BaseModel):
+    items: list[TrainingProgramSummaryOut]
+    page: int
+    per_page: int
+    total: int
+
+
+class TrainingProgramDetailOut(BaseModel):
+    id: uuid.UUID
+    owner_coach_id: uuid.UUID
+    status: TrainingProgramStatus
+    current_published_version_id: uuid.UUID | None
+    created_at: datetime
+    updated_at: datetime
+    archived_at: datetime | None
+    draft_version: TrainingProgramVersionOut | None
+    published_version: TrainingProgramVersionOut | None
+    versions: list[TrainingProgramVersionSummaryOut]
 
 
 class ErrorDetail(BaseModel):

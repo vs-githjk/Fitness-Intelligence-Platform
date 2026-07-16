@@ -249,6 +249,19 @@ your local graph intact. Review or copy any important local changes, then choose
 reload action to replace them with the latest server draft. Publishing is disabled while the
 local draft is dirty.
 
+### A training program reports a draft conflict
+
+Another tab or request saved the same program draft revision first. The program builder keeps
+your local metadata, weeks, and workout slots intact and does not merge automatically. Copy any
+important local changes if needed, then choose **Reload server version** only when you intend to
+replace the local graph with the latest server draft. Save again after reviewing it.
+
+### A workout template is missing from the program picker
+
+The picker includes only published versions whose active template root belongs to the signed-in
+coach. Publish the template and confirm it is not archived. A program that already pins an
+archived template version remains readable, but that version cannot be selected for a new draft.
+
 ### An exercise is missing from the template picker
 
 The picker shows only active, published system exercises and active, published private

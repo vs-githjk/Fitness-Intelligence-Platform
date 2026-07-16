@@ -23,15 +23,25 @@ from app.models import (
     OnboardingAssessment,
     Role,
     TraineeProfile,
+    TrainingProgram,
+    TrainingProgramVersion,
     User,
     WorkoutTemplate,
     WorkoutTemplateVersion,
     utcnow,
 )
 from app.repositories.exercises import ExerciseRepository
-from app.schemas import AssessmentData, WorkoutTemplateCreateRequest
+from app.schemas import (
+    AssessmentData,
+    TrainingProgramCreateRequest,
+    WorkoutTemplateCreateRequest,
+)
 from app.security import hash_password
 from app.services import save_assessment, submit_assessment
+from app.training_program_services import (
+    create_training_program,
+    publish_training_program_draft,
+)
 from app.workout_template_services import (
     create_workout_template,
     publish_workout_template_draft,
@@ -509,6 +519,133 @@ def seed_workout_templates(db, coach: User) -> None:
             publish_workout_template_draft(db, coach, created["id"])
 
 
+def _published_template_version(db, coach: User, name: str) -> WorkoutTemplateVersion:
+    version = db.scalar(
+        select(WorkoutTemplateVersion)
+        .join(
+            WorkoutTemplate,
+            WorkoutTemplate.id == WorkoutTemplateVersion.workout_template_id,
+        )
+        .where(
+            WorkoutTemplate.owner_coach_id == coach.id,
+            WorkoutTemplateVersion.name == name,
+            WorkoutTemplateVersion.version_status == "published",
+        )
+    )
+    if version is None:
+        raise RuntimeError(f"Seed workout template version is missing: {name}")
+    return version
+
+
+def _program_payloads(db, coach: User) -> tuple[tuple[dict[str, Any], bool], ...]:
+    strength = _published_template_version(db, coach, "Full Body Strength")
+    recovery = _published_template_version(db, coach, "Recovery and Mobility")
+    weeks = []
+    for week_number in range(1, 5):
+        sessions = [
+            {
+                "workout_template_version_id": str(strength.id),
+                "weekday": "monday",
+                "display_order": 1,
+                "required": True,
+                "planned_duration_override_minutes": None,
+                "target_session_rpe_override": 6 if week_number == 4 else 7,
+                "coach_notes": "Coach-authored lower-intensity context." if week_number == 4 else None,
+                "trainee_instructions": "Prioritize controlled technique.",
+            },
+            {
+                "workout_template_version_id": str(recovery.id),
+                "weekday": "thursday",
+                "display_order": 1,
+                "required": True,
+                "planned_duration_override_minutes": None,
+                "target_session_rpe_override": None,
+                "coach_notes": None,
+                "trainee_instructions": "Keep the effort conversational.",
+            },
+        ]
+        if week_number == 2:
+            sessions.append(
+                {
+                    "workout_template_version_id": str(recovery.id),
+                    "weekday": "thursday",
+                    "display_order": 2,
+                    "required": False,
+                    "planned_duration_override_minutes": 20,
+                    "target_session_rpe_override": 4,
+                    "coach_notes": None,
+                    "trainee_instructions": "Optional mobility extension.",
+                }
+            )
+        weeks.append(
+            {
+                "week_number": week_number,
+                "label": "Coach-authored deload" if week_number == 4 else f"Build week {week_number}",
+                "coach_notes": "No automatic reductions are applied." if week_number == 4 else None,
+                "is_deload": week_number == 4,
+                "sessions": sessions,
+            }
+        )
+    published = {
+        "name": "Four Week Strength Foundation",
+        "description": "Synthetic four-week reusable program with exact template versions.",
+        "goal_tags": ["strength", "general_health"],
+        "duration_weeks": 4,
+        "coach_notes": "Synthetic coach-only program context.",
+        "trainee_instructions": "Complete required workouts before optional sessions.",
+        "weeks": weeks,
+    }
+    draft = {
+        "name": "Endurance Foundation Draft",
+        "description": "Synthetic unpublished multi-week program draft.",
+        "goal_tags": ["endurance"],
+        "duration_weeks": 2,
+        "coach_notes": "Draft content only.",
+        "trainee_instructions": None,
+        "weeks": [
+            {
+                "week_number": number,
+                "label": f"Foundation week {number}",
+                "coach_notes": None,
+                "is_deload": False,
+                "sessions": [
+                    {
+                        "workout_template_version_id": str(recovery.id),
+                        "weekday": "tuesday",
+                        "display_order": 1,
+                        "required": True,
+                    }
+                ],
+            }
+            for number in range(1, 3)
+        ],
+    }
+    return ((published, True), (draft, False))
+
+
+def seed_training_programs(db, coach: User) -> None:
+    """Idempotently seed synthetic program graphs after published templates exist."""
+    for payload, should_publish in _program_payloads(db, coach):
+        exists = db.scalar(
+            select(TrainingProgram.id)
+            .join(
+                TrainingProgramVersion,
+                TrainingProgramVersion.training_program_id == TrainingProgram.id,
+            )
+            .where(
+                TrainingProgram.owner_coach_id == coach.id,
+                TrainingProgramVersion.name == payload["name"],
+            )
+        )
+        if exists is not None:
+            continue
+        created = create_training_program(
+            db, coach, TrainingProgramCreateRequest.model_validate(payload)
+        )
+        if should_publish:
+            publish_training_program_draft(db, coach, created["id"])
+
+
 def ensure_seed_allowed(config: Settings = settings) -> None:
     if not config.seed_demo_data:
         raise RuntimeError("Demo seeding is disabled; set SEED_DEMO_DATA=true explicitly")
@@ -659,6 +796,7 @@ def seed_public_demo_workspace(
         )
     seed_exercise_library(db, coach)
     seed_workout_templates(db, coach)
+    seed_training_programs(db, coach)
 
     for scenario in DEMO_SCENARIOS:
         email = (
@@ -811,6 +949,7 @@ def seed() -> None:
 
         seed_exercise_library(db, coach)
         seed_workout_templates(db, coach)
+        seed_training_programs(db, coach)
 
         submitted = db.scalar(
             select(OnboardingAssessment).where(
