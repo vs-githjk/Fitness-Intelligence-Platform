@@ -24,11 +24,16 @@ test('real coach roster never survives sign-out into the coach demo', async ({ p
 })
 
 test('visitor explores read-only trainee and coach demo workspaces', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 })
   await page.goto('/login')
+  await expect(page).toHaveTitle('FitIntel 360')
+  await expect(page.getByAltText('FitIntel 360').first()).toHaveAttribute('src', '/brand/fitintel360-logo.png')
   await page.getByRole('link', { name: 'Explore Demo' }).click()
   await expect(page.getByRole('heading', { name: 'Explore the public demo' })).toBeVisible()
   await page.getByRole('button', { name: 'View as Trainee' }).click()
   await expect(page).toHaveURL(/\/trainee\/today$/)
+  await expect(page.locator('img[src="/brand/fitintel360-mark.png"]:visible')).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1)
   await expect(page.getByRole('status', { name: 'Demo workspace' })).toContainText('changes are disabled')
   await expect(page.getByText('Training readiness', { exact: true })).toBeVisible()
   await page.goto('/trainee/progress')
