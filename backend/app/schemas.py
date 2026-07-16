@@ -1,12 +1,23 @@
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any, Literal
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
-from app.models import ExerciseScope, ExerciseStatus, ExerciseTrackingMode, Role
+from app.models import (
+    DistanceUnit,
+    ExerciseScope,
+    ExerciseStatus,
+    ExerciseTrackingMode,
+    Role,
+    WeightUnit,
+    WorkoutSetType,
+    WorkoutTemplateSection,
+    WorkoutTemplateStatus,
+)
 
 Goal = Literal[
     "fat_loss", "muscle_gain", "strength", "endurance", "general_health", "athletic_performance"
@@ -458,6 +469,191 @@ class ExerciseSummaryOut(BaseModel):
 
 class ExerciseDetailOut(ExerciseSummaryOut):
     versions: list[ExerciseVersionOut]
+
+
+class WorkoutSetPrescriptionData(BaseModel):
+    set_number: int = Field(ge=1, le=100)
+    set_type: WorkoutSetType = WorkoutSetType.WORKING
+    repetitions_min: int | None = Field(default=None, ge=1, le=1000)
+    repetitions_max: int | None = Field(default=None, ge=1, le=1000)
+    target_duration_seconds: int | None = Field(default=None, ge=1, le=86400)
+    target_distance_value: Decimal | None = Field(default=None, gt=0, max_digits=12)
+    target_distance_unit: DistanceUnit | None = None
+    target_load_original_value: Decimal | None = Field(default=None, ge=0, max_digits=12)
+    target_load_original_unit: WeightUnit | None = None
+    target_assistance_original_value: Decimal | None = Field(default=None, ge=0, max_digits=12)
+    target_assistance_original_unit: WeightUnit | None = None
+    target_rpe: Decimal | None = Field(default=None, ge=0, le=10, decimal_places=1)
+    target_rir: Decimal | None = Field(default=None, ge=0, le=10, decimal_places=1)
+    rest_seconds: int | None = Field(default=None, ge=0, le=86400)
+    tempo: str | None = Field(default=None, max_length=30)
+    instructions: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("tempo", "instructions")
+    @classmethod
+    def clean_optional_text(cls, value: str | None) -> str | None:
+        cleaned = value.strip() if value else None
+        return cleaned or None
+
+    @model_validator(mode="after")
+    def validate_measurement_pairs(self) -> "WorkoutSetPrescriptionData":
+        pairs = (
+            (self.repetitions_min, self.repetitions_max, "repetition range"),
+            (self.target_distance_value, self.target_distance_unit, "distance"),
+            (
+                self.target_load_original_value,
+                self.target_load_original_unit,
+                "external load",
+            ),
+            (
+                self.target_assistance_original_value,
+                self.target_assistance_original_unit,
+                "assistance",
+            ),
+        )
+        for value, unit_or_maximum, label in pairs:
+            if (value is None) != (unit_or_maximum is None):
+                raise ValueError(f"Both {label} fields must be supplied together")
+        if (
+            self.repetitions_min is not None
+            and self.repetitions_max is not None
+            and self.repetitions_max < self.repetitions_min
+        ):
+            raise ValueError("repetitions_max must be at least repetitions_min")
+        return self
+
+
+class WorkoutTemplateExerciseData(BaseModel):
+    exercise_version_id: uuid.UUID
+    section: WorkoutTemplateSection
+    display_order: int = Field(ge=1, le=500)
+    coach_notes: str | None = Field(default=None, max_length=5000)
+    trainee_instructions: str | None = Field(default=None, max_length=5000)
+    sets: list[WorkoutSetPrescriptionData] = Field(min_length=1, max_length=100)
+
+    @field_validator("coach_notes", "trainee_instructions")
+    @classmethod
+    def clean_optional_text(cls, value: str | None) -> str | None:
+        cleaned = value.strip() if value else None
+        return cleaned or None
+
+
+class WorkoutTemplateDraftData(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=2000)
+    goal_tags: list[str] = Field(default_factory=list, max_length=20)
+    estimated_duration_minutes: int | None = Field(default=None, ge=1, le=1440)
+    target_session_rpe: float | None = Field(default=None, ge=0, le=10)
+    coach_notes: str | None = Field(default=None, max_length=5000)
+    trainee_instructions: str | None = Field(default=None, max_length=5000)
+    exercises: list[WorkoutTemplateExerciseData] = Field(min_length=1, max_length=200)
+
+    @field_validator("name", "description", "coach_notes", "trainee_instructions")
+    @classmethod
+    def clean_text(cls, value: str | None) -> str | None:
+        cleaned = value.strip() if value else None
+        if value is not None and not cleaned:
+            raise ValueError("Value must not be blank")
+        return cleaned
+
+    @field_validator("goal_tags")
+    @classmethod
+    def clean_goal_tags(cls, value: list[str]) -> list[str]:
+        cleaned = sorted({item.strip().lower() for item in value if item.strip()})
+        if any(len(item) > 50 for item in cleaned):
+            raise ValueError("Goal tags must be 50 characters or fewer")
+        return cleaned
+
+
+class WorkoutTemplateCreateRequest(WorkoutTemplateDraftData):
+    pass
+
+
+class WorkoutTemplateDraftReplaceRequest(WorkoutTemplateDraftData):
+    expected_draft_revision: int = Field(ge=1)
+
+
+class WorkoutSetPrescriptionOut(WorkoutSetPrescriptionData):
+    id: uuid.UUID
+    target_load_canonical_kg: Decimal | None
+    target_assistance_canonical_kg: Decimal | None
+    created_at: datetime
+
+
+class WorkoutTemplateExerciseOut(BaseModel):
+    id: uuid.UUID
+    exercise_version_id: uuid.UUID
+    section: WorkoutTemplateSection
+    display_order: int
+    coach_notes: str | None
+    trainee_instructions: str | None
+    created_at: datetime
+    sets: list[WorkoutSetPrescriptionOut]
+
+
+class WorkoutTemplateVersionOut(BaseModel):
+    id: uuid.UUID
+    workout_template_id: uuid.UUID
+    version_number: int
+    version_status: Literal["draft", "published"]
+    draft_revision: int
+    name: str
+    description: str | None
+    goal_tags: list[str]
+    estimated_duration_minutes: int | None
+    target_session_rpe: float | None
+    coach_notes: str | None
+    trainee_instructions: str | None
+    content_hash: str | None
+    created_by_user_id: uuid.UUID | None
+    created_at: datetime
+    updated_at: datetime
+    published_at: datetime | None
+    exercises: list[WorkoutTemplateExerciseOut]
+
+
+class WorkoutTemplateVersionSummaryOut(BaseModel):
+    id: uuid.UUID
+    version_number: int
+    version_status: Literal["draft", "published"]
+    draft_revision: int
+    name: str
+    content_hash: str | None
+    updated_at: datetime
+    published_at: datetime | None
+
+
+class WorkoutTemplateSummaryOut(BaseModel):
+    id: uuid.UUID
+    status: WorkoutTemplateStatus
+    name: str
+    goal_tags: list[str]
+    estimated_duration_minutes: int | None
+    current_published_version_number: int | None
+    has_draft: bool
+    created_at: datetime
+    updated_at: datetime
+    archived_at: datetime | None
+
+
+class WorkoutTemplateListOut(BaseModel):
+    items: list[WorkoutTemplateSummaryOut]
+    page: int
+    per_page: int
+    total: int
+
+
+class WorkoutTemplateDetailOut(BaseModel):
+    id: uuid.UUID
+    owner_coach_id: uuid.UUID
+    status: WorkoutTemplateStatus
+    current_published_version_id: uuid.UUID | None
+    created_at: datetime
+    updated_at: datetime
+    archived_at: datetime | None
+    draft_version: WorkoutTemplateVersionOut | None
+    published_version: WorkoutTemplateVersionOut | None
+    versions: list[WorkoutTemplateVersionSummaryOut]
 
 
 class ErrorDetail(BaseModel):

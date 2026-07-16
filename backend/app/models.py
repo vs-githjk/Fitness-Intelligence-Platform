@@ -1,6 +1,7 @@
 import enum
 import uuid
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import (
@@ -14,6 +15,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -59,6 +61,40 @@ class ExerciseTrackingMode(str, enum.Enum):
     DURATION = "duration"
     DISTANCE_AND_DURATION = "distance_and_duration"
     BODYWEIGHT_OR_ASSISTED_REPETITIONS = "bodyweight_or_assisted_repetitions"
+
+
+class WorkoutTemplateStatus(str, enum.Enum):
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
+class WorkoutTemplateVersionStatus(str, enum.Enum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+
+
+class WorkoutTemplateSection(str, enum.Enum):
+    WARM_UP = "warm_up"
+    MAIN = "main"
+    COOL_DOWN = "cool_down"
+
+
+class WorkoutSetType(str, enum.Enum):
+    WARM_UP = "warm_up"
+    WORKING = "working"
+    BACK_OFF = "back_off"
+    DROP_SET = "drop_set"
+
+
+class WeightUnit(str, enum.Enum):
+    KG = "kg"
+    LB = "lb"
+
+
+class DistanceUnit(str, enum.Enum):
+    METERS = "meters"
+    KILOMETERS = "kilometers"
+    MILES = "miles"
 
 
 def enum_values(enum_class: type[enum.Enum]) -> list[str]:
@@ -252,6 +288,232 @@ class ExerciseVersion(Base):
     )
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     exercise: Mapped[Exercise] = relationship(back_populates="versions")
+
+
+class WorkoutTemplate(Base):
+    __tablename__ = "workout_templates"
+    __table_args__ = (
+        Index("ix_workout_templates_owner_status", "owner_coach_id", "status"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    owner_coach_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    status: Mapped[WorkoutTemplateStatus] = mapped_column(
+        Enum(WorkoutTemplateStatus, native_enum=False, values_callable=enum_values),
+        default=WorkoutTemplateStatus.ACTIVE,
+    )
+    current_published_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "workout_template_versions.id",
+            name="fk_workout_templates_current_published_version",
+            ondelete="RESTRICT",
+            use_alter=True,
+        ),
+        nullable=True,
+        index=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    versions: Mapped[list["WorkoutTemplateVersion"]] = relationship(
+        back_populates="workout_template",
+        cascade="all, delete-orphan",
+        foreign_keys="WorkoutTemplateVersion.workout_template_id",
+    )
+
+
+class WorkoutTemplateVersion(Base):
+    __tablename__ = "workout_template_versions"
+    __table_args__ = (
+        UniqueConstraint(
+            "workout_template_id",
+            "version_number",
+            name="uq_workout_template_version_number",
+        ),
+        CheckConstraint(
+            "version_number > 0", name="ck_workout_template_versions_positive_version"
+        ),
+        CheckConstraint(
+            "draft_revision > 0", name="ck_workout_template_versions_positive_draft_revision"
+        ),
+        CheckConstraint(
+            "(version_status = 'draft' AND published_at IS NULL AND content_hash IS NULL) OR "
+            "(version_status = 'published' AND published_at IS NOT NULL AND content_hash IS NOT NULL)",
+            name="ck_workout_template_versions_publication_state",
+        ),
+        Index(
+            "ix_workout_template_versions_template_status",
+            "workout_template_id",
+            "version_status",
+        ),
+        Index(
+            "uq_workout_template_versions_one_draft",
+            "workout_template_id",
+            unique=True,
+            sqlite_where=text("version_status = 'draft'"),
+            postgresql_where=text("version_status = 'draft'"),
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    workout_template_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workout_templates.id", ondelete="CASCADE"), index=True
+    )
+    version_number: Mapped[int] = mapped_column(Integer)
+    version_status: Mapped[WorkoutTemplateVersionStatus] = mapped_column(
+        Enum(
+            WorkoutTemplateVersionStatus,
+            native_enum=False,
+            values_callable=enum_values,
+        )
+    )
+    draft_revision: Mapped[int] = mapped_column(Integer, default=1)
+    name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str | None] = mapped_column(Text)
+    goal_tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    estimated_duration_minutes: Mapped[int | None] = mapped_column(Integer)
+    target_session_rpe: Mapped[float | None] = mapped_column(Float)
+    coach_notes: Mapped[str | None] = mapped_column(Text)
+    trainee_instructions: Mapped[str | None] = mapped_column(Text)
+    content_hash: Mapped[str | None] = mapped_column(String(64))
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    workout_template: Mapped[WorkoutTemplate] = relationship(
+        back_populates="versions",
+        foreign_keys=[workout_template_id],
+    )
+    exercises: Mapped[list["WorkoutTemplateExercise"]] = relationship(
+        back_populates="workout_template_version",
+        cascade="all, delete-orphan",
+        order_by="WorkoutTemplateExercise.display_order",
+    )
+
+
+class WorkoutTemplateExercise(Base):
+    __tablename__ = "workout_template_exercises"
+    __table_args__ = (
+        UniqueConstraint(
+            "workout_template_version_id",
+            "section",
+            "display_order",
+            name="uq_workout_template_exercise_order",
+        ),
+        CheckConstraint(
+            "display_order > 0", name="ck_workout_template_exercises_positive_order"
+        ),
+        Index(
+            "ix_workout_template_exercises_version_section_order",
+            "workout_template_version_id",
+            "section",
+            "display_order",
+        ),
+        Index(
+            "ix_workout_template_exercises_exercise_version",
+            "exercise_version_id",
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    workout_template_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workout_template_versions.id", ondelete="CASCADE"), index=True
+    )
+    exercise_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("exercise_versions.id", ondelete="RESTRICT"), index=True
+    )
+    section: Mapped[WorkoutTemplateSection] = mapped_column(
+        Enum(WorkoutTemplateSection, native_enum=False, values_callable=enum_values)
+    )
+    display_order: Mapped[int] = mapped_column(Integer)
+    coach_notes: Mapped[str | None] = mapped_column(Text)
+    trainee_instructions: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    workout_template_version: Mapped[WorkoutTemplateVersion] = relationship(
+        back_populates="exercises"
+    )
+    exercise_version: Mapped[ExerciseVersion] = relationship()
+    sets: Mapped[list["WorkoutSetPrescription"]] = relationship(
+        back_populates="workout_template_exercise",
+        cascade="all, delete-orphan",
+        order_by="WorkoutSetPrescription.set_number",
+    )
+
+
+class WorkoutSetPrescription(Base):
+    __tablename__ = "workout_set_prescriptions"
+    __table_args__ = (
+        UniqueConstraint(
+            "workout_template_exercise_id",
+            "set_number",
+            name="uq_workout_set_prescription_number",
+        ),
+        CheckConstraint("set_number > 0", name="ck_workout_set_prescriptions_positive_number"),
+        CheckConstraint(
+            "(repetitions_min IS NULL AND repetitions_max IS NULL) OR "
+            "(repetitions_min > 0 AND repetitions_max >= repetitions_min)",
+            name="ck_workout_set_prescriptions_repetitions",
+        ),
+        CheckConstraint(
+            "target_duration_seconds IS NULL OR target_duration_seconds > 0",
+            name="ck_workout_set_prescriptions_duration",
+        ),
+        CheckConstraint(
+            "target_rpe IS NULL OR (target_rpe >= 0 AND target_rpe <= 10)",
+            name="ck_workout_set_prescriptions_rpe",
+        ),
+        CheckConstraint(
+            "target_rir IS NULL OR (target_rir >= 0 AND target_rir <= 10)",
+            name="ck_workout_set_prescriptions_rir",
+        ),
+        CheckConstraint(
+            "rest_seconds IS NULL OR rest_seconds >= 0",
+            name="ck_workout_set_prescriptions_rest",
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    workout_template_exercise_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workout_template_exercises.id", ondelete="CASCADE"), index=True
+    )
+    set_number: Mapped[int] = mapped_column(Integer)
+    set_type: Mapped[WorkoutSetType] = mapped_column(
+        Enum(WorkoutSetType, native_enum=False, values_callable=enum_values)
+    )
+    repetitions_min: Mapped[int | None] = mapped_column(Integer)
+    repetitions_max: Mapped[int | None] = mapped_column(Integer)
+    target_duration_seconds: Mapped[int | None] = mapped_column(Integer)
+    target_distance_value: Mapped[Decimal | None] = mapped_column(Numeric(12, 3))
+    target_distance_unit: Mapped[DistanceUnit | None] = mapped_column(
+        Enum(DistanceUnit, native_enum=False, values_callable=enum_values)
+    )
+    target_load_original_value: Mapped[Decimal | None] = mapped_column(Numeric(12, 3))
+    target_load_original_unit: Mapped[WeightUnit | None] = mapped_column(
+        Enum(WeightUnit, native_enum=False, values_callable=enum_values)
+    )
+    target_load_canonical_kg: Mapped[Decimal | None] = mapped_column(Numeric(12, 3))
+    target_assistance_original_value: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 3)
+    )
+    target_assistance_original_unit: Mapped[WeightUnit | None] = mapped_column(
+        Enum(WeightUnit, native_enum=False, values_callable=enum_values)
+    )
+    target_assistance_canonical_kg: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 3)
+    )
+    target_rpe: Mapped[Decimal | None] = mapped_column(Numeric(4, 1))
+    target_rir: Mapped[Decimal | None] = mapped_column(Numeric(4, 1))
+    rest_seconds: Mapped[int | None] = mapped_column(Integer)
+    tempo: Mapped[str | None] = mapped_column(String(30))
+    instructions: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    workout_template_exercise: Mapped[WorkoutTemplateExercise] = relationship(
+        back_populates="sets"
+    )
 
 
 class OnboardingAssessment(Base):

@@ -24,12 +24,18 @@ from app.models import (
     Role,
     TraineeProfile,
     User,
+    WorkoutTemplate,
+    WorkoutTemplateVersion,
     utcnow,
 )
 from app.repositories.exercises import ExerciseRepository
-from app.schemas import AssessmentData
+from app.schemas import AssessmentData, WorkoutTemplateCreateRequest
 from app.security import hash_password
 from app.services import save_assessment, submit_assessment
+from app.workout_template_services import (
+    create_workout_template,
+    publish_workout_template_draft,
+)
 
 COACH_EMAIL = "coach@fitness.example.com"
 TRAINEE_EMAIL = "trainee@fitness.example.com"
@@ -298,6 +304,211 @@ def seed_exercise_library(db, coach: User | None = None) -> None:
     db.commit()
 
 
+def _published_exercise_version(db, coach: User, slug: str) -> ExerciseVersion:
+    version = db.scalar(
+        select(ExerciseVersion)
+        .join(Exercise, Exercise.id == ExerciseVersion.exercise_id)
+        .where(
+            Exercise.slug == slug,
+            ExerciseVersion.status == ExerciseVersionStatus.PUBLISHED,
+            (Exercise.owner_coach_id.is_(None) | (Exercise.owner_coach_id == coach.id)),
+        )
+        .order_by(ExerciseVersion.version_number.desc())
+    )
+    if version is None:
+        raise RuntimeError(f"Seed exercise version is missing: {slug}")
+    return version
+
+
+def _template_seed_payloads(db, coach: User) -> tuple[tuple[dict[str, Any], bool], ...]:
+    exercise_ids = {
+        slug: str(_published_exercise_version(db, coach, slug).id)
+        for slug in (
+            "dumbbell-goblet-squat",
+            "dead-bug",
+            "front-plank",
+            "treadmill-walk",
+            "assisted-pull-up",
+            "coach-tempo-split-squat",
+        )
+    }
+    full_body = {
+        "name": "Full Body Strength",
+        "description": "Synthetic strength template demonstrating immutable prescriptions.",
+        "goal_tags": ["strength", "general_health"],
+        "estimated_duration_minutes": 50,
+        "target_session_rpe": 7,
+        "coach_notes": "Seeded coach-only notes.",
+        "trainee_instructions": "Move with control and stop for unusual discomfort.",
+        "exercises": [
+            {
+                "exercise_version_id": exercise_ids["dead-bug"],
+                "section": "warm_up",
+                "display_order": 1,
+                "sets": [
+                    {
+                        "set_number": 1,
+                        "set_type": "warm_up",
+                        "repetitions_min": 8,
+                        "repetitions_max": 10,
+                        "target_rir": 3,
+                        "rest_seconds": 30,
+                        "tempo": "2-1-2",
+                    }
+                ],
+            },
+            {
+                "exercise_version_id": exercise_ids["dumbbell-goblet-squat"],
+                "section": "main",
+                "display_order": 1,
+                "sets": [
+                    {
+                        "set_number": number,
+                        "set_type": "working",
+                        "repetitions_min": 8,
+                        "repetitions_max": 10,
+                        "target_load_original_value": 35,
+                        "target_load_original_unit": "lb",
+                        "target_rpe": 7,
+                        "rest_seconds": 90,
+                        "tempo": "3-1-1",
+                    }
+                    for number in range(1, 4)
+                ],
+            },
+            {
+                "exercise_version_id": exercise_ids["coach-tempo-split-squat"],
+                "section": "main",
+                "display_order": 2,
+                "coach_notes": "Private coach exercise retained by exact version.",
+                "sets": [
+                    {
+                        "set_number": number,
+                        "set_type": "working",
+                        "repetitions_min": 6,
+                        "repetitions_max": 8,
+                        "target_rpe": 7,
+                        "target_rir": 2,
+                        "rest_seconds": 75,
+                        "tempo": "3-1-2",
+                    }
+                    for number in range(1, 3)
+                ],
+            },
+        ],
+    }
+    recovery = {
+        "name": "Recovery and Mobility",
+        "description": "Synthetic low-complexity recovery and conditioning template.",
+        "goal_tags": ["recovery", "endurance"],
+        "estimated_duration_minutes": 35,
+        "target_session_rpe": 5,
+        "coach_notes": None,
+        "trainee_instructions": "Keep every effort conversational and controlled.",
+        "exercises": [
+            {
+                "exercise_version_id": exercise_ids["front-plank"],
+                "section": "warm_up",
+                "display_order": 1,
+                "sets": [
+                    {
+                        "set_number": 1,
+                        "set_type": "warm_up",
+                        "target_duration_seconds": 30,
+                        "target_rpe": 4,
+                        "rest_seconds": 30,
+                    }
+                ],
+            },
+            {
+                "exercise_version_id": exercise_ids["treadmill-walk"],
+                "section": "main",
+                "display_order": 1,
+                "sets": [
+                    {
+                        "set_number": 1,
+                        "set_type": "working",
+                        "target_duration_seconds": 1200,
+                        "target_distance_value": 1.5,
+                        "target_distance_unit": "miles",
+                        "target_rpe": 5,
+                    }
+                ],
+            },
+            {
+                "exercise_version_id": exercise_ids["assisted-pull-up"],
+                "section": "cool_down",
+                "display_order": 1,
+                "sets": [
+                    {
+                        "set_number": 1,
+                        "set_type": "back_off",
+                        "repetitions_min": 5,
+                        "repetitions_max": 6,
+                        "target_assistance_original_value": 20,
+                        "target_assistance_original_unit": "kg",
+                        "target_rir": 3,
+                        "rest_seconds": 60,
+                        "tempo": "2-1-2",
+                    }
+                ],
+            },
+        ],
+    }
+    beginner_draft = {
+        "name": "Beginner Conditioning",
+        "description": "Synthetic unpublished template draft.",
+        "goal_tags": ["general_health"],
+        "estimated_duration_minutes": 25,
+        "target_session_rpe": 5,
+        "coach_notes": "Draft seed; not yet selectable for future assignment.",
+        "trainee_instructions": None,
+        "exercises": [
+            {
+                "exercise_version_id": exercise_ids["dumbbell-goblet-squat"],
+                "section": "main",
+                "display_order": 1,
+                "sets": [
+                    {
+                        "set_number": 1,
+                        "set_type": "working",
+                        "repetitions_min": 8,
+                        "repetitions_max": 12,
+                        "target_load_original_value": 10,
+                        "target_load_original_unit": "kg",
+                        "target_rpe": 5,
+                        "rest_seconds": 60,
+                    }
+                ],
+            }
+        ],
+    }
+    return ((full_body, True), (recovery, True), (beginner_draft, False))
+
+
+def seed_workout_templates(db, coach: User) -> None:
+    """Idempotently seed synthetic template graphs after their exercises exist."""
+    for payload, should_publish in _template_seed_payloads(db, coach):
+        exists = db.scalar(
+            select(WorkoutTemplate.id)
+            .join(
+                WorkoutTemplateVersion,
+                WorkoutTemplateVersion.workout_template_id == WorkoutTemplate.id,
+            )
+            .where(
+                WorkoutTemplate.owner_coach_id == coach.id,
+                WorkoutTemplateVersion.name == payload["name"],
+            )
+        )
+        if exists is not None:
+            continue
+        created = create_workout_template(
+            db, coach, WorkoutTemplateCreateRequest.model_validate(payload)
+        )
+        if should_publish:
+            publish_workout_template_draft(db, coach, created["id"])
+
+
 def ensure_seed_allowed(config: Settings = settings) -> None:
     if not config.seed_demo_data:
         raise RuntimeError("Demo seeding is disabled; set SEED_DEMO_DATA=true explicitly")
@@ -447,6 +658,7 @@ def seed_public_demo_workspace(
             )
         )
     seed_exercise_library(db, coach)
+    seed_workout_templates(db, coach)
 
     for scenario in DEMO_SCENARIOS:
         email = (
@@ -598,6 +810,7 @@ def seed() -> None:
         db.commit()
 
         seed_exercise_library(db, coach)
+        seed_workout_templates(db, coach)
 
         submitted = db.scalar(
             select(OnboardingAssessment).where(

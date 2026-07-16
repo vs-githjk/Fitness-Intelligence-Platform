@@ -22,6 +22,7 @@ from app.api import (
     health,
     invites,
     trainee,
+    workout_templates,
 )
 from app.config import settings
 from app.database import engine
@@ -166,6 +167,7 @@ for router in (
     daily_scores.router,
     coach.router,
     exercises.router,
+    workout_templates.router,
     invites.router,
 ):
     app.include_router(router, prefix="/api/v1")

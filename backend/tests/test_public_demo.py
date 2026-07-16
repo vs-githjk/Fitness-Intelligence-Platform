@@ -14,14 +14,21 @@ from app.models import (
     DailyScoreSnapshot,
     Exercise,
     ExerciseScope,
+    ExerciseVersionStatus,
     OnboardingAssessment,
     RiskAlert,
     Role,
     TraineeProfile,
     User,
+    WorkoutTemplate,
 )
 from app.security import ALGORITHM
-from scripts.seed import DEMO_SCENARIOS, seed_exercise_library, seed_public_demo_workspace
+from scripts.seed import (
+    DEMO_SCENARIOS,
+    seed_exercise_library,
+    seed_public_demo_workspace,
+    seed_workout_templates,
+)
 
 
 def _demo_users(db: Session) -> tuple[User, User]:
@@ -122,6 +129,7 @@ def test_demo_mutations_are_rejected_and_normal_mutations_still_work(
 ) -> None:
     demo_coach, _ = _demo_users(db)
     seed_exercise_library(db, demo_coach)
+    seed_workout_templates(db, demo_coach)
     monkeypatch.setattr(settings, "demo_mode_enabled", True)
     coach_token = _demo_session(client, "coach")["access_token"]
     trainee_token = _demo_session(client, "trainee")["access_token"]
@@ -200,6 +208,67 @@ def test_demo_mutations_are_rejected_and_normal_mutations_still_work(
         f"/api/v1/coach/exercises/{system_exercise.id}/archive",
         headers=_auth(coach_token),
     )
+    exercise_version = next(
+        version
+        for version in system_exercise.versions
+        if version.status == ExerciseVersionStatus.PUBLISHED
+    )
+    template = db.scalar(
+        select(WorkoutTemplate).where(
+            WorkoutTemplate.owner_coach_id == demo_coach.id
+        )
+    )
+    assert template is not None
+    template_payload = {
+        "name": "Blocked demo template",
+        "description": None,
+        "goal_tags": ["strength"],
+        "estimated_duration_minutes": 30,
+        "target_session_rpe": 6,
+        "coach_notes": None,
+        "trainee_instructions": None,
+        "exercises": [
+            {
+                "exercise_version_id": str(exercise_version.id),
+                "section": "main",
+                "display_order": 1,
+                "coach_notes": None,
+                "trainee_instructions": None,
+                "sets": [
+                    {
+                        "set_number": 1,
+                        "set_type": "working",
+                        "repetitions_min": 8,
+                        "repetitions_max": 10,
+                        "target_load_original_value": 10,
+                        "target_load_original_unit": "kg",
+                    }
+                ],
+            }
+        ],
+    }
+    template_create = client.post(
+        "/api/v1/coach/workout-templates",
+        headers=_auth(coach_token),
+        json=template_payload,
+    )
+    template_draft = client.put(
+        f"/api/v1/coach/workout-templates/{template.id}/draft",
+        headers=_auth(coach_token),
+        json={**template_payload, "expected_draft_revision": 1},
+    )
+    template_publish = client.post(
+        f"/api/v1/coach/workout-templates/{template.id}/publish",
+        headers=_auth(coach_token),
+    )
+    template_revision = client.post(
+        f"/api/v1/coach/workout-templates/{template.id}/revisions",
+        headers=_auth(coach_token),
+    )
+    template_archive = client.post(
+        f"/api/v1/coach/workout-templates/{template.id}/archive",
+        headers=_auth(coach_token),
+    )
     for response in (
         profile,
         assessment,
@@ -210,6 +279,11 @@ def test_demo_mutations_are_rejected_and_normal_mutations_still_work(
         exercise_publish,
         exercise_revision,
         exercise_archive,
+        template_create,
+        template_draft,
+        template_publish,
+        template_revision,
+        template_archive,
     ):
         assert response.status_code == 403
         assert response.json()["detail"] == {
