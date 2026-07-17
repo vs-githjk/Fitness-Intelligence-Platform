@@ -892,6 +892,95 @@ def seed_workout_execution(db, trainee: User) -> None:
         )
 
 
+def seed_workout_analytics_examples(db, trainee: User) -> None:
+    """Fully complete one resistance workout with real kg/lb sets.
+
+    Produces deterministic Workout Intelligence analytics for the demo:
+    completed session load, resistance volume, recorded bests, and kg/lb
+    examples. Idempotent — targets the first eligible resistance workout that
+    has no session yet and leaves everything else untouched.
+    """
+
+    workouts = list(
+        db.scalars(
+            select(ScheduledWorkout)
+            .where(
+                ScheduledWorkout.trainee_id == trainee.id,
+                ScheduledWorkout.status == ScheduledWorkoutStatus.SCHEDULED,
+            )
+            .order_by(ScheduledWorkout.scheduled_date, ScheduledWorkout.display_order)
+        ).all()
+    )
+    for target in workouts:
+        if target.workout_session is not None:
+            continue
+        session = start_workout(db, trainee, target.id)
+        load_exercise = next(
+            (item for item in session["exercises"] if item["tracking_mode"] == "repetitions_and_load"),
+            None,
+        )
+        if load_exercise is None:
+            # Not a resistance workout; end it cleanly and keep looking.
+            end_session_incomplete(
+                db,
+                trainee,
+                session["id"],
+                WorkoutSessionEndIncompleteRequest(
+                    expected_session_revision=session["revision"],
+                    reason="other",
+                    note="Synthetic non-resistance skip.",
+                ),
+            )
+            continue
+        for index, prescribed in enumerate(load_exercise["sets"]):
+            if prescribed["tracking_mode"] != "repetitions_and_load":
+                continue
+            # Alternate kg and lb so both original units appear in analytics.
+            unit = "kg" if index % 2 == 0 else "lb"
+            value = 50 if unit == "kg" else 95
+            session = update_set(
+                db,
+                trainee,
+                session["id"],
+                prescribed["id"],
+                WorkoutSetUpdateRequest(
+                    expected_session_revision=session["revision"],
+                    status="completed",
+                    actual_repetitions=8 + index,
+                    actual_load_original_value=value,
+                    actual_load_original_unit=unit,
+                    actual_rpe=8,
+                ),
+            )
+        for exercise in session["exercises"]:
+            if exercise["id"] == load_exercise["id"]:
+                continue
+            session = skip_exercise(
+                db,
+                trainee,
+                session["id"],
+                exercise["id"],
+                WorkoutExerciseSkipRequest(
+                    expected_session_revision=session["revision"],
+                    reason="time_constraint",
+                    note="Synthetic analytics example.",
+                ),
+            )
+        complete_session(
+            db,
+            trainee,
+            session["id"],
+            WorkoutSessionCompleteRequest(
+                expected_session_revision=session["revision"],
+                actual_duration_minutes=52,
+                session_rpe=8,
+                trainee_note="Synthetic completed execution with recorded bests.",
+                confirmed=True,
+            ),
+        )
+        return
+
+
 def _seed_safety_report(
     db,
     *,
@@ -1276,6 +1365,7 @@ def seed_public_demo_workspace(
         db, coach, demo_trainees[:6], demo_today, include_future=True
     )
     seed_workout_execution(db, demo_trainees[0])
+    seed_workout_analytics_examples(db, demo_trainees[2])
     seed_workout_safety_examples(db, coach, demo_trainees[0])
     seed_unavailable_readiness_example(db, demo_trainees[5])
 

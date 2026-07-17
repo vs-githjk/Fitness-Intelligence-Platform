@@ -26,8 +26,8 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 
 - [Design system and interaction rules](docs/design-system.md)
 - [Desktop and mobile visual verification](docs/screenshots)
-- Trainee routes: Today with current coach details, atomic daily check-in, Progress, onboarding, submitted-assessment review, assigned Program calendar, resumable workout execution, readiness context, and workout safety reporting
-- Coach routes: roster overview, private single-use trainee invitations, longitudinal trainee review, Programming authoring, and date-only Program assignment. FitIntel 360 does not deliver invitation emails; coaches copy and share the one-time code or link manually.
+- Trainee routes: Today with current coach details, atomic daily check-in, Progress, onboarding, submitted-assessment review, assigned Program calendar, resumable workout execution, readiness context, workout safety reporting, and a read-only Workouts page with deterministic training-load, adherence, and recorded-best analytics
+- Coach routes: roster overview, private single-use trainee invitations, longitudinal trainee review, read-only workout session review with training-load and adherence analytics, Programming authoring, and date-only Program assignment. FitIntel 360 does not deliver invitation emails; coaches copy and share the one-time code or link manually.
 - Public demo: backend-issued, short-lived coach or trainee sessions over a deterministic synthetic workspace; demo users are read-only
 
 ## Documentation
@@ -41,6 +41,10 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 - [Troubleshooting](docs/troubleshooting.md)
 - [Health Index v1 scoring](docs/scoring/health-index-v1.md)
 - [Daily Intelligence v1 scoring](docs/scoring/daily-intelligence-v1.md)
+- [Workout Load v1 analytics](docs/scoring/workout-load-v1.md)
+- [Workout adherence](docs/workout-adherence.md)
+- [Recorded bests](docs/recorded-bests.md)
+- [Coach workout review](docs/coach-workout-review.md)
 - [Exercise library](docs/exercise-library.md)
 - [Workout templates](docs/workout-templates.md)
 - [Training programs](docs/training-programs.md)

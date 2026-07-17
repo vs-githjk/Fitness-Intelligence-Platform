@@ -2,6 +2,7 @@ import {
   CalendarCheck,
   CalendarRange,
   ClipboardList,
+  Dumbbell,
   LayoutDashboard,
   LogOut,
   ShieldAlert,
@@ -27,6 +28,7 @@ const coachNav = [
 const traineeNav = [
   { to: '/trainee/today', label: 'Today', icon: CalendarCheck },
   { to: '/trainee/progress', label: 'Progress', icon: TrendingUp },
+  { to: '/trainee/workouts', label: 'Workouts', icon: Dumbbell },
   { to: '/trainee/program', label: 'Program', icon: CalendarRange },
   { to: '/onboarding', label: 'Assessment', icon: ClipboardList },
 ]

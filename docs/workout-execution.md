@@ -82,5 +82,9 @@ Scheduled occurrence remains a date in the assignment's trainee timezone snapsho
 not add a local clock time. Session/activity/event timestamps are UTC instants. Changing a profile
 timezone later does not reinterpret the pinned scheduled date.
 
-There are no load or adherence summaries, coach completed-session analytics, missed-workout
-automation, offline sync, automatic conflict merge, or post-completion edits.
+Deterministic, read-only load and adherence analytics, coach completed-session review, and recorded
+bests are derived from this execution data by the `workout-load-v1` engine; see
+[Workout Load v1](scoring/workout-load-v1.md), [Workout adherence](workout-adherence.md),
+[Recorded bests](recorded-bests.md), and [Coach workout review](coach-workout-review.md). Analytics
+never modify execution data. There is no missed-workout mutation (missed is derived at read time),
+offline sync, automatic conflict merge, or post-completion edits.

@@ -258,3 +258,6 @@ Avoid diagnostic, shame-based, or absolute language such as “unhealthy,” “
 - Coach and trainee dashboards: `frontend/src/pages/DashboardPages.tsx`
 - Daily trainee experience: `frontend/src/pages/DailyPages.tsx`
 - Daily coach experience: `frontend/src/components/DailyCoach.tsx`
+- Workout Intelligence analytics and charts: `frontend/src/components/workouts/WorkoutAnalytics.tsx`, `frontend/src/pages/WorkoutProgressPage.tsx`
+
+Workout Intelligence charts follow the same rules as daily trends: each chart is responsive and usable at 320px, 390px, 768px, and desktop; every chart is paired with an accessible data table and an `aria-label`; status is communicated by text and value, never by color alone; missing periods are shown explicitly (for example "Unavailable" or "—") and are never interpolated or drawn as zero; and dual axes are avoided. Recorded-best copy uses only "Highest recorded load/repetitions/volume" under a "Recorded best" heading — never "PR", "personal record", "lifetime best", or "all-time best".

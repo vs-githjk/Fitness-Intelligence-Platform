@@ -387,3 +387,7 @@ npm run test:e2e
 ```
 
 The end-to-end suite creates test users, updates demo check-ins, and writes screenshots. Run it against disposable local demo data, not a shared or production database.
+
+### Workout analytics show "Unavailable" or empty charts
+
+Analytics are derived only from completed workouts and never invent data. Planned load is unavailable when a workout has neither a scheduled override nor a template default for duration or target RPE; completed load is unavailable until a terminal session records both duration and session RPE; adherence percentages are unavailable when the eligible denominator is zero; recorded bests and resistance volume require completed `repetitions_and_load` sets. These unavailable states are expected, not errors — missing data is never shown as zero. Ranges must be 7, 14, or 30 days, or the API returns `422 invalid_range`.

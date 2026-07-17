@@ -150,6 +150,26 @@ The trainee record shows compact persisted trend summaries for the first four av
 
 The onboarding Health Index is immutable and remains separate from daily intelligence. Daily check-ins do not overwrite or recalculate it. A low Health Index product band is not itself a medical finding.
 
+## Review workout intelligence
+
+The trainee record includes a read-only **Workout Intelligence** section for actively assigned
+trainees. Any open safety reports are surfaced first, before the analytics. It shows completion,
+prescribed-set, and exercise adherence; the neutral planned-versus-completed load comparison; weekly
+planned/completed load, status distribution, adherence trend, and resistance-volume charts; and
+recorded bests. Choose a 7-, 14-, or 30-day range.
+
+**Recent workout sessions** lists the trainee's sessions with their classification (completed,
+partial, ordinary skipped, safety-ended, missed). Expand a session to review its status, duration,
+session RPE, planned/completed load, resistance volume, the immutable readiness context (with source
+date and staleness), and any safety reports.
+
+This review is strictly read-only: you cannot edit logs, reopen sessions, alter immutable summaries
+or safety-report content, or change completed data. Training load summarizes workout duration and
+reported effort — it is not a medical measure — and analytics never modify the trainee's program,
+schedule, sets, loads, progression, readiness, or deload weeks. See
+[Coach workout review](coach-workout-review.md), [Workout adherence](workout-adherence.md), and
+[Recorded bests](recorded-bests.md).
+
 ## Common coach workflows
 
 ### Confirm who checked in today

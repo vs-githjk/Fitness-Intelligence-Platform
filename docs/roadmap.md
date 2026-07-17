@@ -112,8 +112,17 @@ deterministic seed content, exact version pinning, complete-graph draft replacem
 detection, coach-authored deload context, exact schedule pinning, future supersession, and demo read-only enforcement are implemented.
 
 Append-only trainee workout safety reporting, scoped coach acknowledgement/resolution, and
-immutable fresh/stale/unavailable workout readiness context are implemented. Coach completed-session
-analytics, load and adherence analytics, and post-completion corrections remain future slices. The items below are candidates,
+immutable fresh/stale/unavailable workout readiness context are implemented.
+
+Deterministic Workout Intelligence analytics (`workout-load-v1`) are now implemented: planned and
+completed session load, resistance-training volume, weekly planned/completed load, workout
+adherence, prescribed-set and exercise adherence, recorded bests, immutable per-session load
+summaries, read-only coach session review, trainee analytics, and accessible workout-specific
+charts. Formulas are documented in [scoring/workout-load-v1.md](scoring/workout-load-v1.md),
+[workout-adherence.md](workout-adherence.md), [recorded-bests.md](recorded-bests.md), and
+[coach-workout-review.md](coach-workout-review.md). Analytics never modify programs, schedules,
+sets, loads, progression, readiness, or deload weeks, and draw no medical conclusions.
+Post-completion corrections remain a deferred future slice. The items below are candidates,
 not enabled routes or commitments unless explicitly marked implemented.
 
 ### Coach workflow operations

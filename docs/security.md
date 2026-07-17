@@ -37,3 +37,7 @@ Trainee invitations use cryptographically random tokens. The database stores onl
 Current limitations remain significant: no application rate limiting, email verification, MFA, audit trail, invitation email delivery, or compromised-secret response workflow exists. These controls support synthetic staging evaluation and do not by themselves make the application ready for real health data.
 
 This repository does not claim HIPAA, GDPR, or other legal compliance. HIPAA readiness additionally depends on policies, workforce training, risk analysis, BAAs, vendor controls, administrative/physical safeguards, and operating practice. Applicability must be determined by qualified counsel and compliance professionals.
+
+## Workout Intelligence analytics authorization
+
+The Phase 7B analytics endpoints are all read-only GETs. Trainees can read only their own analytics; coaches can read only trainees with an active `CoachTraineeAssignment`. An inactive assignment is denied, and cross-coach session discovery returns `404` (indistinguishable from a missing object) rather than confirming existence. Every protected React Query key includes the account identity scope, so login, logout, and demo transitions never render another identity's analytics, and an in-flight response cannot repopulate a new identity's cache. Demo accounts may inspect analytics; all mutations remain blocked, and Phase 7B adds no new mutation route.

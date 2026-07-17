@@ -209,3 +209,11 @@ Docker and local Vite use the same frontend port, so run only one of them at a t
 ### Is the repository HIPAA or GDPR compliant?
 
 No compliance claim is made. Production readiness depends on technical, legal, organizational, vendor, and operational safeguards that are outside this local milestone. See [Security and compliance notes](security.md).
+
+### What is the Workouts page / training load?
+
+The Workouts page shows deterministic, read-only analytics from completed workouts: training load (`duration × reported effort`), completion, prescribed-set and exercise adherence, weekly planned-versus-completed load, and recorded bests. Training load summarizes workout duration and reported effort. It is not a medical measure, does not predict injury, and never changes your program, schedule, sets, or loads. Missing values are shown as unavailable and never treated as zero. See [Workout Load v1](scoring/workout-load-v1.md).
+
+### Does "recorded best" mean a personal record?
+
+No. Recorded bests are simply the highest load, repetitions, and volume you recorded within the selected 7-, 14-, or 30-day range from completed workouts. The product deliberately avoids "PR", "personal record", "lifetime best", and "all-time best" wording. See [Recorded bests](recorded-bests.md).

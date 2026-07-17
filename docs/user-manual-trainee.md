@@ -562,6 +562,26 @@ submitted report—there is no casual Continue action. Chest discomfort, breathi
 dizziness/faintness stops the workout in an immutable safety-ended state. Safety reports are not
 monitored continuously, and the platform does not diagnose medical conditions.
 
+## 12B. Workout progress and training load
+
+The **Workouts** page shows deterministic, read-only analytics from your completed workouts. Choose
+a 7-, 14-, or 30-day range. It reports:
+
+- **Completion adherence** — completed required workouts ÷ eligible required workouts. Optional
+  workouts and coach-cancelled or rescheduled workouts are excluded from the denominator; safety-ended
+  workouts stay in the denominator and are shown separately.
+- **Prescribed-set** and **exercise adherence** — trainee-added sets never increase these.
+- **Weekly planned vs completed load** — training load is `duration × reported effort (RPE)`.
+- **Workout status distribution**, **weekly adherence trend**, and, when you log resistance sets,
+  a **resistance-volume trend**.
+- **Recorded bests** — the highest load, repetitions, and volume you recorded in the range.
+
+Training load summarizes workout duration and reported effort. It is not a medical measure. Missing
+values are shown as unavailable and are never treated as zero. Every chart has an accessible data
+table, and analytics never change your program, schedule, sets, or loads. See
+[Workout Load v1](scoring/workout-load-v1.md), [Workout adherence](workout-adherence.md), and
+[Recorded bests](recorded-bests.md).
+
 ## 13. Sign out and handle session expiry
 
 ### Sign out
@@ -691,4 +711,4 @@ The trainee experience currently does not provide:
 - account recovery, password reset, or multi-factor authentication; or
 - a native mobile application. The responsive web interface can be used in a mobile browser.
 
-For product questions, see the [FAQ](faq.md). For errors and local-service problems, see [Troubleshooting](troubleshooting.md). Technical readers can consult [Health Index v1](scoring/health-index-v1.md), [Daily Intelligence v1](scoring/daily-intelligence-v1.md), and [Security and compliance notes](security.md).
+For product questions, see the [FAQ](faq.md). For errors and local-service problems, see [Troubleshooting](troubleshooting.md). Technical readers can consult [Health Index v1](scoring/health-index-v1.md), [Daily Intelligence v1](scoring/daily-intelligence-v1.md), [Workout Load v1](scoring/workout-load-v1.md), and [Security and compliance notes](security.md).

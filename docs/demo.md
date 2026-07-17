@@ -6,10 +6,16 @@ registration secret, or prebuilt token is exposed to the browser.
 
 The demo includes deterministic scheduled, resumable, completed, partial, paused-for-safety, and
 safety-ended workout examples; fresh, stale, and unavailable readiness; and open, acknowledged,
-and resolved reports. The coach can inspect the safety queue and append-only review history. These
-examples are for inspection only. Inputs and mutation controls are disabled, the page states
-**Demo workspace — changes are disabled**, and direct calls to every workout or safety mutation
-return `403 demo_read_only`.
+and resolved reports. One demo trainee has a fully completed resistance workout with kg and lb sets,
+producing recorded bests, resistance volume, and completed session load for the Workout Intelligence
+analytics. The demo therefore exercises completed, partial, skipped, safety-ended, missed, cancelled,
+superseded, and optional workout classifications, planned/completed and unavailable load, and
+adherence variation. Demo trainees and the demo coach can inspect all read-only Workout Intelligence
+analytics (training load, adherence, recorded bests, coach session review). The coach can inspect the
+safety queue and append-only review history. These examples are for inspection only. Inputs and
+mutation controls are disabled, the page states **Demo workspace — changes are disabled**, and direct
+calls to every workout or safety mutation return `403 demo_read_only`. Phase 7B adds no new mutation
+endpoints — every analytics route is a read-only GET.
 
 Normal startup never creates demo records. The explicit seed command remains environment-gated,
 idempotent, synthetic-only, and prohibited by production configuration. Frontend disabled states

@@ -968,6 +968,9 @@ class WorkoutSession(Base):
     safety_reports: Mapped[list["WorkoutSafetyReport"]] = relationship(
         back_populates="workout_session", order_by="WorkoutSafetyReport.created_at"
     )
+    load_summaries: Mapped[list["WorkoutLoadSummary"]] = relationship(
+        back_populates="workout_session", cascade="all, delete-orphan"
+    )
 
 
 class WorkoutSessionExercise(Base):
@@ -1276,6 +1279,54 @@ class WorkoutSafetyReview(Base):
     note: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     report: Mapped[WorkoutSafetyReport] = relationship(back_populates="reviews")
+
+
+class WorkoutLoadSummary(Base):
+    """Immutable per-session load summary produced by the ``workout-load-v1`` engine.
+
+    One row per terminal session per calculation version. Content is never
+    mutated after creation; recalculation for an unchanged terminal session is
+    idempotent (the existing row is returned as-is).
+    """
+
+    __tablename__ = "workout_load_summaries"
+    __table_args__ = (
+        UniqueConstraint(
+            "workout_session_id",
+            "calculation_version",
+            name="uq_workout_load_summary_session_version",
+        ),
+        CheckConstraint(
+            "completed_repetitions >= 0 AND completed_working_sets >= 0 "
+            "AND completed_prescribed_sets >= 0 AND skipped_prescribed_sets >= 0 "
+            "AND completed_added_sets >= 0",
+            name="ck_workout_load_summary_non_negative_counts",
+        ),
+        Index(
+            "ix_workout_load_summaries_session_version",
+            "workout_session_id",
+            "calculation_version",
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    workout_session_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workout_sessions.id", ondelete="CASCADE"), index=True
+    )
+    calculation_version: Mapped[str] = mapped_column(String(50))
+    planned_session_load: Mapped[float | None] = mapped_column(Float)
+    completed_session_load: Mapped[float | None] = mapped_column(Float)
+    session_volume_kg: Mapped[Decimal | None] = mapped_column(Numeric(14, 3))
+    completed_repetitions: Mapped[int] = mapped_column(Integer, default=0)
+    completed_working_sets: Mapped[int] = mapped_column(Integer, default=0)
+    completed_prescribed_sets: Mapped[int] = mapped_column(Integer, default=0)
+    skipped_prescribed_sets: Mapped[int] = mapped_column(Integer, default=0)
+    completed_added_sets: Mapped[int] = mapped_column(Integer, default=0)
+    completed_exercises: Mapped[int] = mapped_column(Integer, default=0)
+    total_duration_seconds: Mapped[int | None] = mapped_column(Integer)
+    total_distance_meters: Mapped[Decimal | None] = mapped_column(Numeric(14, 3))
+    calculation_payload: Mapped[dict[str, Any]] = mapped_column(JSON)
+    calculated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    workout_session: Mapped[WorkoutSession] = relationship(back_populates="load_summaries")
 
 
 class AssignmentHistory(Base):
