@@ -13,8 +13,15 @@ Only these labels are used, under the heading **Recorded best**:
 - Highest recorded volume
 
 The product never uses "PR", "personal record", "lifetime best", or
-"all-time best". Recorded bests are computed over the selected bounded
-reporting range (7 / 14 / 30 days), not over unbounded history.
+"all-time best".
+
+## Scope
+
+Recorded bests search **all available completed compatible workout history**
+for the authenticated trainee — they are not bounded to the 7/14/30-day range
+used by the load and adherence charts. The query uses an indexed `row_number()`
+window aggregation so the database selects one best row per exercise; no
+unbounded history is materialized in application memory.
 
 ## Rules
 

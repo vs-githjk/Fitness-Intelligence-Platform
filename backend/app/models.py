@@ -120,6 +120,12 @@ class ScheduledWorkoutStatus(str, enum.Enum):
     PARTIAL = "partial"
     CANCELLED = "cancelled"
     SUPERSEDED = "superseded"
+    SKIPPED = "skipped"
+
+
+class WorkoutSkipKind(str, enum.Enum):
+    ORDINARY = "ordinary"
+    SAFETY = "safety"
 
 
 class WorkoutSessionStatus(str, enum.Enum):
@@ -896,6 +902,12 @@ class ScheduledWorkout(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    skip_kind: Mapped[WorkoutSkipKind | None] = mapped_column(
+        Enum(WorkoutSkipKind, native_enum=False, values_callable=enum_values, length=10)
+    )
+    skip_reason: Mapped[str | None] = mapped_column(String(40))
+    skip_note: Mapped[str | None] = mapped_column(String(500))
+    skipped_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     assignment: Mapped[TrainingAssignment] = relationship(back_populates="scheduled_workouts")
     program_session: Mapped[ProgramSession] = relationship()
     workout_template_version: Mapped[WorkoutTemplateVersion] = relationship()

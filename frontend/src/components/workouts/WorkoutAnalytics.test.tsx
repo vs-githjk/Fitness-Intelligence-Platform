@@ -44,7 +44,7 @@ describe('Workout analytics charts', () => {
       />,
     )
     expect(screen.getByText('Completed')).toBeInTheDocument()
-    expect(screen.getByText('Safety-ended')).toBeInTheDocument()
+    expect(screen.getByText('Wellbeing skip')).toBeInTheDocument()
     expect(screen.getByText('Missed')).toBeInTheDocument()
   })
 
@@ -63,7 +63,8 @@ describe('Workout analytics charts', () => {
   })
 
   it('uses neutral recorded-best terminology, never PR wording', () => {
-    expect(classificationLabel('safety_skipped')).toBe('Safety-ended')
+    expect(classificationLabel('safety_skipped')).toBe('Wellbeing skip')
+    expect(classificationLabel('ordinary_skipped')).toBe('Skipped')
     expect(LOAD_DISCLAIMER).toMatch(/not a medical measure/i)
     // Guard against forbidden terminology sneaking into shared copy.
     expect(LOAD_DISCLAIMER.toLowerCase()).not.toContain('personal record')

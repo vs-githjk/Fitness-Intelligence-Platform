@@ -122,8 +122,11 @@ charts. Formulas are documented in [scoring/workout-load-v1.md](scoring/workout-
 [workout-adherence.md](workout-adherence.md), [recorded-bests.md](recorded-bests.md), and
 [coach-workout-review.md](coach-workout-review.md). Analytics never modify programs, schedules,
 sets, loads, progression, readiness, or deload weeks, and draw no medical conclusions.
-Post-completion corrections remain a deferred future slice. The items below are candidates,
-not enabled routes or commitments unless explicitly marked implemented.
+A corrective phase then added an explicit pre-start whole-workout skip (ordinary or wellbeing-related,
+with bounded reasons), corrected adherence so skipped comes only from an explicit skip and a
+started-and-ended session is always partial, and clarified recorded bests to search all available
+completed history. Post-completion corrections remain a deferred future slice. The items below are
+candidates, not enabled routes or commitments unless explicitly marked implemented.
 
 ### Coach workflow operations
 

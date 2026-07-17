@@ -158,10 +158,14 @@ prescribed-set, and exercise adherence; the neutral planned-versus-completed loa
 planned/completed load, status distribution, adherence trend, and resistance-volume charts; and
 recorded bests. Choose a 7-, 14-, or 30-day range.
 
-**Recent workout sessions** lists the trainee's sessions with their classification (completed,
-partial, ordinary skipped, safety-ended, missed). Expand a session to review its status, duration,
-session RPE, planned/completed load, resistance volume, the immutable readiness context (with source
-date and staleness), and any safety reports.
+**Recent workout sessions** lists the trainee's sessions and explicit pre-start skips with their
+classification (completed, partial, skipped, wellbeing skip, missed). Expand a session to review its
+status, duration, session RPE, planned/completed load, resistance volume, the immutable readiness
+context (with source date and staleness), and any safety reports. Expand a skipped entry to see the
+skip kind, bounded reason, optional trainee note, and timestamp. A wellbeing-related skip is shown
+with neutral wording — it is not a confirmed injury or illness, and it is separate from a submitted
+safety report. A started workout that ended early is shown as partial, never as skipped. Recorded
+bests reflect the trainee's full completed history.
 
 This review is strictly read-only: you cannot edit logs, reopen sessions, alter immutable summaries
 or safety-report content, or change completed data. Training load summarizes workout duration and

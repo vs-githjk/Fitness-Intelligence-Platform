@@ -14,20 +14,38 @@ captured IANA timezone (from its `TrainingAssignment.timezone`):
 | Classification | Rule |
 |---|---|
 | `completed` | Session explicitly completed |
-| `partial` | Session `ended_incomplete` with ≥1 completed set, or an active session whose completion window has elapsed |
-| `ordinary_skipped` | Session `ended_incomplete` with zero completed sets (opened but nothing logged) |
-| `safety_skipped` | Session `safety_ended` |
-| `missed` | No session and the grace window has elapsed |
-| `pending` | No session and still within the window, or an active session still inside the window |
+| `partial` | Session `ended_incomplete` **or** `safety_ended` (regardless of how much was logged), or an active session whose completion window has elapsed |
+| `ordinary_skipped` | Explicit pre-start whole-workout skip with `skip_kind = ordinary` |
+| `safety_skipped` | Explicit pre-start whole-workout skip with `skip_kind = safety` |
+| `missed` | No session, no explicit skip, and the grace window has elapsed |
+| `pending` | No session/skip and still within the window, or an active session still inside the window |
 | `coach_cancelled` | `ScheduledWorkout.status == cancelled` (excluded from denominator) |
 | `superseded_or_rescheduled` | `ScheduledWorkout.status == superseded` (excluded from denominator) |
 | `optional` | `ScheduledWorkout.required == false` (excluded from the required denominator, reported separately) |
 
-**Current-schema note.** The execution schema has no dedicated "declined before
-start" action, so `ordinary_skipped` is derived as a started session that was
-ended incomplete with zero logged sets. `safety_skipped` is derived from
-`safety_ended` sessions. This is derivation, not mutation, and is forward
-compatible with an explicit skip action.
+**Skipped is explicit only.** A workout is skipped only when the trainee
+explicitly skips it before starting (see the skip endpoint below). Skipped is
+**never** derived from zero completed sets, zero logged work, `ended_incomplete`
+status, session duration, or session-RPE availability. A started session that
+ends incomplete — including one where nothing was logged, and including a
+`safety_ended` session — is always **partial**.
+
+## Explicit whole-workout skip
+
+`POST /api/v1/trainee/workouts/{scheduled_workout_id}/skip` records a pre-start
+skip. Only a scheduled, not-started occurrence may be skipped (cancelled,
+superseded, completed, partial, already-skipped, and in-progress workouts are
+rejected with 409). It creates no `WorkoutSession` and persists `skip_kind`
+(`ordinary` / `safety`), a bounded `reason`, an optional note (≤500 chars), and
+a skipped timestamp. Repeating an identical skip is idempotent. The mutation is
+a trainee-only action that enforces ownership and backend demo protection; a
+coach cannot perform it.
+
+Bounded reasons — ordinary: `time_constraint`, `schedule_conflict`,
+`equipment_unavailable`, `travel`, `coach_instruction`, `other`. Safety-related:
+`recovery_concern`, `pain_or_discomfort`, `illness_or_unwell`,
+`other_safety_concern`. A safety-related skip is not a confirmed injury or
+illness and does not create a `WorkoutSafetyReport`.
 
 ## Completion window
 

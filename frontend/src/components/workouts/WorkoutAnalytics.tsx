@@ -83,7 +83,7 @@ const STATUS_ROWS: { key: keyof StatusCounts; label: string; tone: 'positive' | 
   { key: 'completed', label: 'Completed', tone: 'positive' },
   { key: 'partial', label: 'Partial', tone: 'attention' },
   { key: 'ordinary_skipped', label: 'Skipped', tone: 'attention' },
-  { key: 'safety_skipped', label: 'Safety-ended', tone: 'risk' },
+  { key: 'safety_skipped', label: 'Wellbeing skip', tone: 'risk' },
   { key: 'missed', label: 'Missed', tone: 'risk' },
   { key: 'pending', label: 'Pending', tone: 'primary' },
 ]
@@ -160,7 +160,7 @@ function statusCounts(adherence: WorkoutAdherenceResponse): StatusCounts {
 }
 
 export function classificationLabel(value: WorkoutClassification): string {
-  return ({ completed: 'Completed', partial: 'Partial', ordinary_skipped: 'Skipped', safety_skipped: 'Safety-ended', missed: 'Missed', pending: 'Pending', coach_cancelled: 'Cancelled', superseded_or_rescheduled: 'Rescheduled', optional: 'Optional' } as const)[value]
+  return ({ completed: 'Completed', partial: 'Partial', ordinary_skipped: 'Skipped', safety_skipped: 'Wellbeing skip', missed: 'Missed', pending: 'Pending', coach_cancelled: 'Cancelled', superseded_or_rescheduled: 'Rescheduled', optional: 'Optional' } as const)[value]
 }
 
 // --- Container: fetches and renders all Workout Intelligence for one identity ---
@@ -169,7 +169,8 @@ export function WorkoutIntelligencePanel({ basePath, keyPrefix }: { basePath: st
   const scope = useAccountQueryScope()
   const load = useQuery({ queryKey: [...scope, keyPrefix, 'load', basePath, days], queryFn: () => api<WorkoutLoadResponse>(`${basePath}/workout-load?days=${days}`) })
   const adherence = useQuery({ queryKey: [...scope, keyPrefix, 'adherence', basePath, days], queryFn: () => api<WorkoutAdherenceResponse>(`${basePath}/workout-adherence?days=${days}`) })
-  const bests = useQuery({ queryKey: [...scope, keyPrefix, 'bests', basePath, days], queryFn: () => api<RecordedBestsResponse>(`${basePath}/recorded-bests?days=${days}`) })
+  // Recorded bests search all available completed history, independent of the range toggle.
+  const bests = useQuery({ queryKey: [...scope, keyPrefix, 'bests', basePath], queryFn: () => api<RecordedBestsResponse>(`${basePath}/recorded-bests`) })
 
   if (load.isLoading || adherence.isLoading || bests.isLoading) return <LoadingState label="Loading workout intelligence" />
   const error = load.error ?? adherence.error ?? bests.error
@@ -200,7 +201,7 @@ export function WorkoutIntelligencePanel({ basePath, keyPrefix }: { basePath: st
         <Card><p className="text-sm text-muted">Planned vs completed load</p><p className="metric-number mt-1 text-3xl font-bold">{comparison.completed ?? '—'}</p><Badge tone={comparison.state === 'unavailable' ? 'neutral' : comparison.state === 'near_planned' ? 'positive' : 'info'} className="mt-1">{STATE_COPY[comparison.state]}</Badge></Card>
       </div>
 
-      {completion.safety_skipped_count > 0 && <StatusNotice tone="risk" title={`${completion.safety_skipped_count} safety-ended workout${completion.safety_skipped_count > 1 ? 's' : ''}`}>Safety-ended workouts remain in the adherence denominator and are reported separately from ordinary skips.</StatusNotice>}
+      {completion.safety_skipped_count > 0 && <StatusNotice tone="risk" title={`${completion.safety_skipped_count} wellbeing-related skip${completion.safety_skipped_count > 1 ? 's' : ''}`}>Wellbeing-related pre-start skips remain in the adherence denominator and are reported separately from ordinary skips. They are not confirmed injuries or safety reports.</StatusNotice>}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card><h3 className="font-semibold">Weekly planned vs completed load</h3><div className="mt-4"><WeeklyLoadChart weeks={loadData.weeks} /></div></Card>
@@ -211,7 +212,7 @@ export function WorkoutIntelligencePanel({ basePath, keyPrefix }: { basePath: st
 
       <Card>
         <h3 className="font-semibold">Recorded bests</h3>
-        <p className="mt-1 text-xs text-muted">Highest values recorded within the selected range, from completed workouts only.</p>
+        <p className="mt-1 text-xs text-muted">Highest values recorded across all of your completed workout history, from completed sets only.</p>
         {bestsData.exercises.length ? (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -237,10 +238,11 @@ export function WorkoutIntelligencePanel({ basePath, keyPrefix }: { basePath: st
 function CoachSessionRow({ session }: { session: CoachSessionSummary }) {
   const [open, setOpen] = useState(false)
   const scope = useAccountQueryScope()
+  const isSkip = session.workout_session_id == null
   const detail = useQuery({
     queryKey: [...scope, 'coach-workout-session', session.workout_session_id],
     queryFn: () => api<CoachSessionDetail>(`/coach/workout-sessions/${session.workout_session_id}`),
-    enabled: open,
+    enabled: open && !isSkip,
   })
   return (
     <div className="border-b last:border-0">
@@ -254,7 +256,18 @@ function CoachSessionRow({ session }: { session: CoachSessionSummary }) {
           <Badge tone={session.classification === 'completed' ? 'positive' : session.classification === 'safety_skipped' ? 'risk' : 'attention'}>{classificationLabel(session.classification)}</Badge>
         </span>
       </button>
-      {open && (
+      {open && isSkip && (
+        <div className="pb-4">
+          <div className="space-y-2 rounded-xl bg-elevated p-4 text-sm">
+            <p className="font-semibold">{session.classification === 'safety_skipped' ? 'Wellbeing-related skip' : 'Ordinary skip'}</p>
+            <p className="text-xs text-muted">The trainee skipped this workout before starting; no session was recorded. A wellbeing-related skip is not a confirmed injury or illness and is separate from a submitted safety report.</p>
+            {session.skip_reason && <p>Reason: {session.skip_reason.replaceAll('_', ' ')}</p>}
+            {session.skip_note && <p className="text-muted">Note: {session.skip_note}</p>}
+            {session.skipped_at && <p className="text-xs text-muted">Skipped at {new Date(session.skipped_at).toLocaleString()}</p>}
+          </div>
+        </div>
+      )}
+      {open && !isSkip && (
         <div className="pb-4">
           {detail.isLoading ? <LoadingState label="Loading session" /> : detail.error ? <ErrorState description={detail.error.message} onRetry={() => detail.refetch()} /> : detail.data ? (
             <div className="space-y-3 rounded-xl bg-elevated p-4 text-sm">
@@ -295,7 +308,7 @@ export function CoachWorkoutIntelligence({ traineeId }: { traineeId: string }) {
         <h3 className="font-semibold">Recent workout sessions</h3>
         <p className="mt-1 text-xs text-muted">Read-only execution review. Expand a session for load, readiness, and safety context.</p>
         {sessions.isLoading ? <div className="mt-4"><LoadingState label="Loading sessions" /></div> : sessions.error ? <div className="mt-4"><ErrorState description={sessions.error.message} onRetry={() => sessions.refetch()} /></div> : sessions.data?.sessions.length ? (
-          <div className="mt-3">{sessions.data.sessions.map(session => <CoachSessionRow key={session.workout_session_id} session={session} />)}</div>
+          <div className="mt-3">{sessions.data.sessions.map(session => <CoachSessionRow key={session.scheduled_workout_id} session={session} />)}</div>
         ) : <div className="mt-4"><EmptyChart label="No workout sessions in this range." /></div>}
       </Card>
     </div>

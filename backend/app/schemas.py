@@ -1035,6 +1035,35 @@ class WorkoutSessionEndIncompleteRequest(BaseModel):
     note: str | None = Field(default=None, max_length=500)
 
 
+ORDINARY_SKIP_REASONS = frozenset(
+    {"time_constraint", "schedule_conflict", "equipment_unavailable", "travel", "coach_instruction", "other"}
+)
+SAFETY_SKIP_REASONS = frozenset(
+    {"recovery_concern", "pain_or_discomfort", "illness_or_unwell", "other_safety_concern"}
+)
+
+
+class WorkoutScheduleSkipRequest(BaseModel):
+    skip_kind: Literal["ordinary", "safety"]
+    reason: str = Field(max_length=40)
+    note: str | None = Field(default=None, max_length=500)
+    idempotency_key: str | None = Field(default=None, max_length=100)
+
+    @field_validator("note")
+    @classmethod
+    def clean_skip_note(cls, value: str | None) -> str | None:
+        return value.strip() or None if value else None
+
+    @model_validator(mode="after")
+    def validate_reason(self) -> "WorkoutScheduleSkipRequest":
+        allowed = ORDINARY_SKIP_REASONS if self.skip_kind == "ordinary" else SAFETY_SKIP_REASONS
+        if self.reason not in allowed:
+            raise ValueError(
+                f"reason must be one of {sorted(allowed)} for a {self.skip_kind} skip"
+            )
+        return self
+
+
 class WorkoutSafetyReportCreateRequest(BaseModel):
     workout_session_exercise_id: uuid.UUID | None = None
     workout_set_log_id: uuid.UUID | None = None

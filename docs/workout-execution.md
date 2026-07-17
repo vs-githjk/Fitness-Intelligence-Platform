@@ -86,5 +86,8 @@ Deterministic, read-only load and adherence analytics, coach completed-session r
 bests are derived from this execution data by the `workout-load-v1` engine; see
 [Workout Load v1](scoring/workout-load-v1.md), [Workout adherence](workout-adherence.md),
 [Recorded bests](recorded-bests.md), and [Coach workout review](coach-workout-review.md). Analytics
-never modify execution data. There is no missed-workout mutation (missed is derived at read time),
-offline sync, automatic conflict merge, or post-completion edits.
+never modify execution data. A trainee can explicitly skip a scheduled, not-started workout
+(`POST /api/v1/trainee/workouts/{id}/skip`), which records the workout as skipped without creating a
+session; see [Workout adherence](workout-adherence.md). A started session that ends incomplete stays
+partial and is never reclassified as skipped. Missed is derived at read time. There is no
+offline sync, automatic conflict merge, or post-completion edit.

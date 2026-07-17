@@ -18,6 +18,7 @@ bearer = HTTPBearer(auto_error=False)
 WORKOUT_EXECUTION_DEMO_MUTATIONS = frozenset(
     {
         ("POST", "/api/v1/trainee/workouts/{scheduled_workout_id}/start"),
+        ("POST", "/api/v1/trainee/workouts/{scheduled_workout_id}/skip"),
         ("PUT", "/api/v1/trainee/workout-sessions/{session_id}/sets/{set_id}"),
         ("POST", "/api/v1/trainee/workout-sessions/{session_id}/sets"),
         (

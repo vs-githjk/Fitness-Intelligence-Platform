@@ -421,6 +421,11 @@ def test_execution_authorization_demo_inventory_and_event_history(
     mutations = [
         ("POST", f"/api/v1/trainee/workouts/{workouts[1].id}/start", None),
         (
+            "POST",
+            f"/api/v1/trainee/workouts/{workouts[2].id}/skip",
+            {"skip_kind": "ordinary", "reason": "time_constraint"},
+        ),
+        (
             "PUT",
             f"/api/v1/trainee/workout-sessions/{session['id']}/sets/{target_set['id']}",
             {
@@ -479,6 +484,7 @@ def test_execution_authorization_demo_inventory_and_event_history(
             "workout-sessions" in path
             or "safety-reports" in path
             or path.endswith("/start")
+            or path.endswith("/skip")
         )
     }
     assert documented == WORKOUT_EXECUTION_DEMO_MUTATIONS

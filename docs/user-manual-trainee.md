@@ -555,6 +555,13 @@ The workout detail, active execution, and historical summary show the captured r
 Stale, or Unavailable. It is contextual guidance only: it does not provide medical clearance,
 change the workout, or block starting.
 
+**Skip workout** is available on a scheduled workout that has not started (open the workout from Today
+or the calendar). Choose an everyday reason or a wellbeing/safety-related reason, pick a bounded
+reason, optionally add a note, and confirm. Skipping records the workout as skipped; you cannot start
+it afterward, but its details stay viewable. Wellbeing-related skips are reported separately in your
+adherence and are not medical advice. A started workout that you end early stays **partial** — it is
+never counted as skipped.
+
 **Report a safety concern** remains available during active execution without clearing typed set
 values. Select a category and severity, optionally add a note, and submit. Pain or unusual
 discomfort pauses the exercise and leaves **Skip exercise**, **End workout incomplete**, and the
@@ -574,7 +581,8 @@ a 7-, 14-, or 30-day range. It reports:
 - **Weekly planned vs completed load** — training load is `duration × reported effort (RPE)`.
 - **Workout status distribution**, **weekly adherence trend**, and, when you log resistance sets,
   a **resistance-volume trend**.
-- **Recorded bests** — the highest load, repetitions, and volume you recorded in the range.
+- **Recorded bests** — the highest load, repetitions, and volume from all of your completed workout
+  history (not limited to the selected range).
 
 Training load summarizes workout duration and reported effort. It is not a medical measure. Missing
 values are shown as unavailable and are never treated as zero. Every chart has an accessible data

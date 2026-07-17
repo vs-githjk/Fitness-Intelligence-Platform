@@ -49,6 +49,7 @@ from app.schemas import (
     WorkoutExerciseSkipRequest,
     WorkoutSafetyReportCreateRequest,
     WorkoutSafetyReviewRequest,
+    WorkoutScheduleSkipRequest,
     WorkoutSessionCompleteRequest,
     WorkoutSessionEndIncompleteRequest,
     WorkoutSetAddRequest,
@@ -69,6 +70,7 @@ from app.workout_session_services import (
     end_session_incomplete,
     get_session,
     skip_exercise,
+    skip_scheduled_workout,
     start_workout,
     update_set,
 )
@@ -981,6 +983,109 @@ def seed_workout_analytics_examples(db, trainee: User) -> None:
         return
 
 
+def seed_workout_skip_examples(db, trainee: User, demo_today: date) -> None:
+    """Seed explicit skips, a partial-with-work, a missed, and a cancelled example.
+
+    Proves that explicit skips require persisted skip state and that a started
+    session that ends incomplete stays partial regardless of logged work.
+    Idempotent — no-ops once its scheduled workouts have been consumed.
+    """
+
+    # Idempotency: once this trainee has an explicit skip, the examples exist.
+    already = db.scalar(
+        select(ScheduledWorkout.id).where(
+            ScheduledWorkout.trainee_id == trainee.id,
+            ScheduledWorkout.status == ScheduledWorkoutStatus.SKIPPED,
+        )
+    )
+    if already is not None:
+        return
+
+    scheduled = list(
+        db.scalars(
+            select(ScheduledWorkout)
+            .where(
+                ScheduledWorkout.trainee_id == trainee.id,
+                ScheduledWorkout.status == ScheduledWorkoutStatus.SCHEDULED,
+                ~ScheduledWorkout.workout_session.has(),
+            )
+            .order_by(ScheduledWorkout.scheduled_date, ScheduledWorkout.display_order)
+        ).all()
+    )
+    if len(scheduled) < 5:
+        return
+
+    ordinary, safety, worked, missed, cancelled = scheduled[:5]
+
+    # Backdate the skips into the recent reporting window so they are visible in
+    # the trainee's adherence and the coach's recent-session review.
+    ordinary.scheduled_date = demo_today - timedelta(days=3)
+    safety.scheduled_date = demo_today - timedelta(days=4)
+    db.flush()
+    skip_scheduled_workout(
+        db,
+        trainee,
+        ordinary.id,
+        WorkoutScheduleSkipRequest(
+            skip_kind="ordinary",
+            reason="schedule_conflict",
+            note="Synthetic ordinary pre-start skip.",
+        ),
+    )
+    skip_scheduled_workout(
+        db,
+        trainee,
+        safety.id,
+        WorkoutScheduleSkipRequest(
+            skip_kind="safety",
+            reason="recovery_concern",
+            note="Synthetic safety-related pre-start skip.",
+        ),
+    )
+
+    # Partial session with some completed work, then ended incomplete.
+    if worked.workout_session is None:
+        session = start_workout(db, trainee, worked.id)
+        load_exercise = next(
+            (item for item in session["exercises"] if item["tracking_mode"] == "repetitions_and_load"),
+            None,
+        )
+        if load_exercise is not None:
+            target = load_exercise["sets"][0]
+            session = update_set(
+                db,
+                trainee,
+                session["id"],
+                target["id"],
+                WorkoutSetUpdateRequest(
+                    expected_session_revision=session["revision"],
+                    status="completed",
+                    actual_repetitions=8,
+                    actual_load_original_value=40,
+                    actual_load_original_unit="kg",
+                    actual_rpe=7,
+                ),
+            )
+        end_session_incomplete(
+            db,
+            trainee,
+            session["id"],
+            WorkoutSessionEndIncompleteRequest(
+                expected_session_revision=session["revision"],
+                reason="time_constraint",
+                note="Synthetic partial with some completed work.",
+            ),
+        )
+
+    # Backdated required workout left untouched becomes a derived missed example.
+    missed.scheduled_date = demo_today - timedelta(days=5)
+
+    # Explicit cancellation example.
+    cancelled.status = ScheduledWorkoutStatus.CANCELLED
+    cancelled.cancelled_at = datetime.now(UTC)
+    db.commit()
+
+
 def _seed_safety_report(
     db,
     *,
@@ -1366,6 +1471,7 @@ def seed_public_demo_workspace(
     )
     seed_workout_execution(db, demo_trainees[0])
     seed_workout_analytics_examples(db, demo_trainees[2])
+    seed_workout_skip_examples(db, demo_trainees[4], demo_today)
     seed_workout_safety_examples(db, coach, demo_trainees[0])
     seed_unavailable_readiness_example(db, demo_trainees[5])
 

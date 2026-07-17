@@ -216,4 +216,8 @@ The Workouts page shows deterministic, read-only analytics from completed workou
 
 ### Does "recorded best" mean a personal record?
 
-No. Recorded bests are simply the highest load, repetitions, and volume you recorded within the selected 7-, 14-, or 30-day range from completed workouts. The product deliberately avoids "PR", "personal record", "lifetime best", and "all-time best" wording. See [Recorded bests](recorded-bests.md).
+No. Recorded bests are simply the highest load, repetitions, and volume you have recorded across all of your completed workout history. The product deliberately avoids "PR", "personal record", "lifetime best", and "all-time best" wording. See [Recorded bests](recorded-bests.md).
+
+### How do I skip a workout, and how is it different from a partial workout?
+
+Open a scheduled workout that has not started and choose **Skip workout**, then pick an everyday or wellbeing-related reason. Skipping records the workout as skipped before it starts. A **partial** workout is different: it is one you started and then ended early. A partial is never counted as skipped, even if you logged nothing. Wellbeing-related skips are reported separately in adherence and are not medical advice. See [Workout adherence](workout-adherence.md).

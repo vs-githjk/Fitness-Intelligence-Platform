@@ -8,9 +8,11 @@ The demo includes deterministic scheduled, resumable, completed, partial, paused
 safety-ended workout examples; fresh, stale, and unavailable readiness; and open, acknowledged,
 and resolved reports. One demo trainee has a fully completed resistance workout with kg and lb sets,
 producing recorded bests, resistance volume, and completed session load for the Workout Intelligence
-analytics. The demo therefore exercises completed, partial, skipped, safety-ended, missed, cancelled,
-superseded, and optional workout classifications, planned/completed and unavailable load, and
-adherence variation. Demo trainees and the demo coach can inspect all read-only Workout Intelligence
+analytics. The demo therefore exercises completed, partial (including a partial with zero completed sets and a
+partial with some completed work), explicit ordinary and wellbeing-related pre-start skips, missed,
+cancelled, superseded, and optional workout classifications, planned/completed and unavailable load,
+and adherence variation. The skip examples prove that skipped requires an explicit persisted skip
+state and that a started-and-ended session stays partial regardless of logged work. Demo trainees and the demo coach can inspect all read-only Workout Intelligence
 analytics (training load, adherence, recorded bests, coach session review). The coach can inspect the
 safety queue and append-only review history. These examples are for inspection only. Inputs and
 mutation controls are disabled, the page states **Demo workspace — changes are disabled**, and direct

@@ -60,13 +60,11 @@ def trainee_workout_adherence(
 
 @trainee_router.get("/recorded-bests")
 def trainee_recorded_bests(
-    days: int = Query(default=30),
-    end_date: date | None = Query(default=None),
     trainee: User = Depends(require_trainee),
     db: Session = Depends(get_db),
 ) -> dict:
-    start, end = _range(db, trainee.id, days, end_date)
-    return compute_recorded_bests(db, trainee.id, start, end)
+    # Recorded bests search all available completed history (not a bounded range).
+    return compute_recorded_bests(db, trainee.id)
 
 
 # --- coach read-only review (Part H) ------------------------------------
@@ -124,11 +122,9 @@ def coach_trainee_workout_adherence(
 @coach_router.get("/trainees/{trainee_id}/recorded-bests")
 def coach_trainee_recorded_bests(
     trainee_id: uuid.UUID,
-    days: int = Query(default=30),
-    end_date: date | None = Query(default=None),
     coach: User = Depends(require_coach),
     db: Session = Depends(get_db),
 ) -> dict:
     assert_assignment(db, coach.id, trainee_id)
-    start, end = _range(db, trainee_id, days, end_date)
-    return compute_recorded_bests(db, trainee_id, start, end)
+    # Recorded bests search all available completed history (not a bounded range).
+    return compute_recorded_bests(db, trainee_id)

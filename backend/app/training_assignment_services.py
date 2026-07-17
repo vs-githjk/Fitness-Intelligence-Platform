@@ -168,6 +168,10 @@ def _workout_out(db: Session, workout: ScheduledWorkout) -> dict:
         "target_session_rpe": workout.target_session_rpe,
         "trainee_instructions": workout.trainee_instructions,
         "status": workout.status,
+        "skip_kind": workout.skip_kind,
+        "skip_reason": workout.skip_reason,
+        "skip_note": workout.skip_note,
+        "skipped_at": workout.skipped_at,
         "readiness_context": readiness_preview(db, workout),
         "workout_template_version": _template_summary(workout.workout_template_version),
     }

@@ -27,6 +27,11 @@ OPTIONAL = "optional"
 # ScheduledWorkout.status values.
 SCHED_CANCELLED = "cancelled"
 SCHED_SUPERSEDED = "superseded"
+SCHED_SKIPPED = "skipped"
+
+# Explicit skip kinds.
+SKIP_ORDINARY = "ordinary"
+SKIP_SAFETY = "safety"
 
 # WorkoutSession.status values.
 SESSION_COMPLETED = "completed"
@@ -41,18 +46,28 @@ GRACE_DAYS = 2
 
 @dataclass(frozen=True)
 class WorkoutClassificationInput:
-    """Everything needed to classify one ScheduledWorkout, timezone-resolved."""
+    """Everything needed to classify one ScheduledWorkout, timezone-resolved.
+
+    ``skip_kind`` is the persisted explicit-skip kind ("ordinary"/"safety"),
+    present only when ``scheduled_status`` is "skipped".
+    """
 
     scheduled_local_date: date
     today_local_date: date
     required: bool
     scheduled_status: str
     session_status: str | None
-    completed_set_count: int
+    skip_kind: str | None = None
 
 
 def classify_workout(item: WorkoutClassificationInput) -> str:
-    """Return one classification label for a single scheduled workout."""
+    """Return one classification label for a single scheduled workout.
+
+    Skipped is derived only from an explicit persisted pre-start skip — never
+    from zero completed sets, ended-incomplete status, session duration, or
+    session RPE availability. A started session that ends incomplete (including
+    a safety-ended session) is always partial.
+    """
 
     if item.scheduled_status == SCHED_CANCELLED:
         return COACH_CANCELLED
@@ -61,18 +76,19 @@ def classify_workout(item: WorkoutClassificationInput) -> str:
     if not item.required:
         return OPTIONAL
 
+    if item.scheduled_status == SCHED_SKIPPED:
+        return SAFETY_SKIPPED if item.skip_kind == SKIP_SAFETY else ORDINARY_SKIPPED
+
     window_elapsed = item.today_local_date >= item.scheduled_local_date + timedelta(days=GRACE_DAYS)
 
     if item.session_status is None:
         return MISSED if window_elapsed else PENDING
     if item.session_status == SESSION_COMPLETED:
         return COMPLETED
-    if item.session_status == SESSION_SAFETY_ENDED:
-        return SAFETY_SKIPPED
-    if item.session_status == SESSION_ENDED_INCOMPLETE:
-        # A started session with no logged sets reads as an ordinary skip; any
-        # logged work makes it a genuine partial.
-        return PARTIAL if item.completed_set_count > 0 else ORDINARY_SKIPPED
+    if item.session_status in (SESSION_ENDED_INCOMPLETE, SESSION_SAFETY_ENDED):
+        # A started-and-ended session is always partial, regardless of how much
+        # (or how little) was logged.
+        return PARTIAL
     if item.session_status == SESSION_IN_PROGRESS:
         # An active session whose allowed completion window has elapsed is a
         # safely-derived partial; otherwise it is still pending.

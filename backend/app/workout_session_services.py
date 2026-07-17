@@ -19,11 +19,13 @@ from app.models import (
     WorkoutSetLog,
     WorkoutSetLogSource,
     WorkoutSetLogStatus,
+    WorkoutSkipKind,
     WorkoutTemplateSection,
 )
 from app.repositories.workout_sessions import WorkoutSessionRepository
 from app.schemas import (
     WorkoutExerciseSkipRequest,
+    WorkoutScheduleSkipRequest,
     WorkoutSessionCompleteRequest,
     WorkoutSessionEndIncompleteRequest,
     WorkoutSetActualData,
@@ -295,6 +297,56 @@ def start_workout(db: Session, trainee: User, scheduled_workout_id: uuid.UUID) -
     _event(db, session, trainee, WorkoutSessionEventType.SESSION_STARTED)
     db.commit()
     return session_out(repository.owned_session(trainee.id, session.id) or session)
+
+
+def scheduled_skip_out(workout) -> dict:
+    return {
+        "id": workout.id,
+        "scheduled_workout_id": workout.id,
+        "trainee_id": workout.trainee_id,
+        "status": workout.status,
+        "scheduled_date": workout.scheduled_date,
+        "required": workout.required,
+        "skip_kind": workout.skip_kind,
+        "skip_reason": workout.skip_reason,
+        "skip_note": workout.skip_note,
+        "skipped_at": workout.skipped_at,
+    }
+
+
+def skip_scheduled_workout(
+    db: Session, trainee: User, scheduled_workout_id: uuid.UUID, body: WorkoutScheduleSkipRequest
+) -> dict:
+    """Explicit pre-start whole-workout skip. Creates no WorkoutSession."""
+
+    repository = WorkoutSessionRepository(db)
+    scheduled = repository.owned_scheduled_workout(trainee.id, scheduled_workout_id, lock=True)
+    if scheduled is None:
+        raise _error(404, "scheduled_workout_not_found", "Scheduled workout not found")
+
+    kind = WorkoutSkipKind(body.skip_kind)
+
+    # Idempotent: an identical repeat of an existing skip is a no-op.
+    if scheduled.status == ScheduledWorkoutStatus.SKIPPED:
+        if scheduled.skip_kind == kind and scheduled.skip_reason == body.reason:
+            return scheduled_skip_out(scheduled)
+        raise _error(409, "workout_already_skipped", "This workout has already been skipped")
+
+    if scheduled.workout_session is not None or scheduled.status != ScheduledWorkoutStatus.SCHEDULED:
+        raise _error(
+            409,
+            "scheduled_workout_not_skippable",
+            "Only a scheduled, not-started workout can be skipped",
+        )
+
+    scheduled.status = ScheduledWorkoutStatus.SKIPPED
+    scheduled.skip_kind = kind
+    scheduled.skip_reason = body.reason
+    scheduled.skip_note = body.note
+    scheduled.skipped_at = datetime.now(UTC)
+    db.commit()
+    db.refresh(scheduled)
+    return scheduled_skip_out(scheduled)
 
 
 def get_session(db: Session, trainee: User, session_id: uuid.UUID) -> dict:

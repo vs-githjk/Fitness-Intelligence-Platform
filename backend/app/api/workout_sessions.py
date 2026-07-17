@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas import (
     WorkoutExerciseSkipRequest,
+    WorkoutScheduleSkipRequest,
     WorkoutSessionCompleteRequest,
     WorkoutSessionEndIncompleteRequest,
     WorkoutSessionOut,
@@ -21,6 +22,7 @@ from app.workout_session_services import (
     get_active_session,
     get_session,
     skip_exercise,
+    skip_scheduled_workout,
     start_workout,
     update_set,
 )
@@ -39,6 +41,17 @@ def start(
 ) -> dict:
     ensure_not_demo(trainee)
     return start_workout(db, trainee, scheduled_workout_id)
+
+
+@router.post("/trainee/workouts/{scheduled_workout_id}/skip")
+def skip_workout(
+    scheduled_workout_id: uuid.UUID,
+    body: WorkoutScheduleSkipRequest,
+    trainee: User = Depends(require_trainee),
+    db: Session = Depends(get_db),
+) -> dict:
+    ensure_not_demo(trainee)
+    return skip_scheduled_workout(db, trainee, scheduled_workout_id, body)
 
 
 @router.get(

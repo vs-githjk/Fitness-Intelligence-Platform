@@ -162,7 +162,7 @@ def _cls(**kw):
         required=True,
         scheduled_status="scheduled",
         session_status=None,
-        completed_set_count=0,
+        skip_kind=None,
     )
     defaults.update(kw)
     return classify_workout(WorkoutClassificationInput(**defaults))
@@ -172,13 +172,20 @@ def test_classify_completed():
     assert _cls(session_status="completed") == "completed"
 
 
-def test_classify_partial_and_ordinary_skipped():
-    assert _cls(session_status="ended_incomplete", completed_set_count=3) == "partial"
-    assert _cls(session_status="ended_incomplete", completed_set_count=0) == "ordinary_skipped"
+def test_classify_ended_incomplete_is_always_partial():
+    # Zero completed sets no longer downgrades to skipped — a started session
+    # that ends incomplete is always partial.
+    assert _cls(session_status="ended_incomplete") == "partial"
 
 
-def test_classify_safety_skipped():
-    assert _cls(session_status="safety_ended") == "safety_skipped"
+def test_classify_safety_ended_session_is_partial():
+    # A safety-ended session is partial, not safety_skipped.
+    assert _cls(session_status="safety_ended") == "partial"
+
+
+def test_classify_explicit_skip_kinds():
+    assert _cls(scheduled_status="skipped", skip_kind="ordinary") == "ordinary_skipped"
+    assert _cls(scheduled_status="skipped", skip_kind="safety") == "safety_skipped"
 
 
 def test_classify_missed_after_grace_and_pending_within_window():

@@ -48,6 +48,40 @@ it('renders the trainee current Program, today, calendar, deload, and read-only 
   expect(screen.getByRole('link', { name: 'Open workout' })).toHaveAttribute('href', '/trainee/workouts/workout-1')
 })
 
+it('lets a trainee explicitly skip a scheduled workout with a wellbeing reason', async () => {
+  setSession('trainee', false)
+  const calls: string[] = []
+  mockFetch((url, init) => {
+    calls.push(`${init?.method ?? 'GET'} ${url}`)
+    if (url.endsWith('/trainee/program')) return ok(workspace(true))
+    if (url.endsWith('/trainee/workouts/workout-1/skip')) return ok({ id: 'workout-1', scheduled_workout_id: 'workout-1', trainee_id: 'trainee-1', status: 'skipped', scheduled_date: '2026-07-16', required: true, skip_kind: 'safety', skip_reason: 'recovery_concern', skip_note: null, skipped_at: '2026-07-16T05:00:00Z' })
+    return ok({})
+  })
+  renderPage(<TraineeProgramPage />)
+  fireEvent.click(await screen.findByRole('button', { name: 'View workout details' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Skip workout' }))
+  expect(screen.getByRole('dialog', { name: 'Skip this workout' })).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Wellbeing / safety' }))
+  expect(screen.getByText(/seek appropriate\s+professional guidance/i)).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm skip' }))
+  await waitFor(() => expect(calls.some(v => v.startsWith('POST') && v.endsWith('/trainee/workouts/workout-1/skip'))).toBe(true))
+})
+
+it('does not offer skip after a workout has started', async () => {
+  setSession('trainee', false)
+  mockFetch(url => {
+    if (url.endsWith('/trainee/program')) {
+      const ws = workspace(true)
+      ws.scheduled_workouts = [{ ...workout(), status: 'in_progress' }]
+      return ok(ws)
+    }
+    return ok({})
+  })
+  renderPage(<TraineeProgramPage />)
+  fireEvent.click(await screen.findByRole('button', { name: 'View workout details' }))
+  expect(screen.queryByRole('button', { name: 'Skip workout' })).toBeNull()
+})
+
 it('keeps assignment controls disabled for demo coaches', async () => {
   setSession('coach', true); mockFetch(url => {
     if (url.endsWith('/coach/trainees')) return ok([{ trainee_id: 'trainee-1', name: 'Demo Trainee' }])

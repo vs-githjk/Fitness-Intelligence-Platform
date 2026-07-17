@@ -13,6 +13,13 @@ trainee-added sets, trainee notes, immutable readiness context (with source
 date and staleness), safety reports and their review status, the immutable load
 summary, and the neutral planned-versus-completed comparison.
 
+Explicitly skipped workouts appear in the session list with their classification
+(ordinary vs wellbeing-related), bounded reason, optional trainee note, and
+skipped timestamp; they have no session to open. A wellbeing-related skip is
+shown with neutral wording and is **not** represented as a confirmed injury or
+illness, and it is distinct from a submitted `WorkoutSafetyReport` (a pre-start
+skip never creates a safety report).
+
 Safety information is surfaced before less-urgent analytics.
 
 ## Endpoints

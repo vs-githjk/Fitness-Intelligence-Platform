@@ -13,7 +13,7 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.analytics import (
@@ -40,6 +40,7 @@ from app.analytics.weekly import (
 )
 from app.domain.units import canonical_meters
 from app.models import (
+    ExerciseVersion,
     ScheduledWorkout,
     TrainingAssignment,
     WorkoutLoadSummary,
@@ -304,17 +305,6 @@ def _summary_dict_from_result(
 # --- classification / adherence (Parts C, D) ----------------------------
 
 
-def _completed_set_count(session: WorkoutSession | None) -> int:
-    if session is None:
-        return 0
-    return sum(
-        1
-        for ex in session.exercises
-        for s in ex.sets
-        if s.status.value == "completed"
-    )
-
-
 def _classify(scheduled: ScheduledWorkout, now: datetime | None = None) -> str:
     tz = resolve_timezone(scheduled.assignment.timezone if scheduled.assignment else None)
     session = scheduled.workout_session
@@ -325,7 +315,7 @@ def _classify(scheduled: ScheduledWorkout, now: datetime | None = None) -> str:
             required=scheduled.required,
             scheduled_status=scheduled.status.value,
             session_status=session.status.value if session else None,
-            completed_set_count=_completed_set_count(session),
+            skip_kind=scheduled.skip_kind.value if scheduled.skip_kind else None,
         )
     )
 
@@ -379,11 +369,6 @@ def compute_adherence(
 
 
 # --- weekly load & planned-vs-completed (Parts E, F) --------------------
-
-
-def _volume_for_session(scheduled: ScheduledWorkout, session: WorkoutSession) -> Decimal | None:
-    result = compute_session_load(_session_load_input(scheduled, session))
-    return result.session_volume_kg
 
 
 def compute_weekly_load(
@@ -444,106 +429,148 @@ def compute_weekly_load(
 
 # --- recorded bests (Part G) --------------------------------------------
 
-_LOAD_MODES = {"repetitions_and_load"}
-_REP_MODES = {
+_LOAD_MODES = ("repetitions_and_load",)
+_REP_MODES = (
     "repetitions_and_load",
     "repetitions_only",
     "bodyweight_or_assisted_repetitions",
-}
+)
 
 
-def compute_recorded_bests(
-    db: Session, trainee_id: uuid.UUID, start: date, end: date
-) -> dict:
-    """Highest recorded load / repetitions / volume per stable Exercise root.
+def _completed_set_base_query(trainee_id: uuid.UUID):
+    """Completed sets in completed sessions for one trainee, with lineage joined.
 
-    Only completed sets in completed terminal sessions. Assistance is excluded;
-    comparison is by stable Exercise root within compatible tracking modes.
+    Uses the trainee/status/exercise indexes; the caller adds a window function
+    so the database — not the application — selects the best row per exercise.
     """
 
-    workouts = load_scheduled_workouts(db, trainee_id, start, end)
-    bests: dict[uuid.UUID, dict] = {}
+    return (
+        select(
+            ExerciseVersion.exercise_id.label("root_id"),
+            ExerciseVersion.name.label("exercise_name"),
+            ExerciseVersion.tracking_mode.label("tracking_mode"),
+            ExerciseVersion.id.label("exercise_version_id"),
+            WorkoutSetLog.set_number.label("set_number"),
+            WorkoutSetLog.actual_repetitions.label("actual_repetitions"),
+            WorkoutSetLog.actual_load_canonical_kg.label("actual_load_canonical_kg"),
+            WorkoutSetLog.actual_load_original_value.label("actual_load_original_value"),
+            WorkoutSetLog.actual_load_original_unit.label("actual_load_original_unit"),
+            WorkoutSession.id.label("workout_session_id"),
+            ScheduledWorkout.id.label("scheduled_workout_id"),
+            ScheduledWorkout.scheduled_date.label("source_date"),
+        )
+        .join(
+            WorkoutSessionExercise,
+            WorkoutSetLog.workout_session_exercise_id == WorkoutSessionExercise.id,
+        )
+        .join(WorkoutSession, WorkoutSessionExercise.workout_session_id == WorkoutSession.id)
+        .join(ScheduledWorkout, WorkoutSession.scheduled_workout_id == ScheduledWorkout.id)
+        .join(ExerciseVersion, WorkoutSessionExercise.exercise_version_id == ExerciseVersion.id)
+        .where(
+            WorkoutSession.trainee_id == trainee_id,
+            WorkoutSession.status == "completed",
+            WorkoutSetLog.status == "completed",
+        )
+    )
 
-    def _consider(root_id, name, mode, metric, value, entry):
-        record = bests.setdefault(
-            root_id,
+
+def _best_rows(db: Session, trainee_id: uuid.UUID, modes, value_col):
+    """One representative row per Exercise root maximizing ``value_col``.
+
+    The best row is chosen in SQL via ``row_number()`` (ties broken by earliest
+    date, then set number), so no unbounded history is materialized in memory.
+    """
+
+    ranked = (
+        _completed_set_base_query(trainee_id)
+        .add_columns(
+            func.row_number()
+            .over(
+                partition_by=ExerciseVersion.exercise_id,
+                order_by=(
+                    value_col.desc(),
+                    ScheduledWorkout.scheduled_date.asc(),
+                    WorkoutSetLog.set_number.asc(),
+                ),
+            )
+            .label("rn")
+        )
+        .where(
+            ExerciseVersion.tracking_mode.in_(modes),
+            value_col.is_not(None),
+        )
+        .subquery()
+    )
+    return db.execute(select(ranked).where(ranked.c.rn == 1)).mappings().all()
+
+
+def compute_recorded_bests(db: Session, trainee_id: uuid.UUID) -> dict:
+    """Highest recorded load / repetitions / volume per stable Exercise root.
+
+    Searches all available completed compatible workout history for the trainee
+    (not a bounded window). Only completed sets in completed sessions; assistance
+    is excluded; comparison is by stable Exercise root within compatible tracking
+    modes; demo data is isolated by the per-trainee filter.
+    """
+
+    volume_col = WorkoutSetLog.actual_repetitions * WorkoutSetLog.actual_load_canonical_kg
+    bests: dict = {}
+
+    def _record(row):
+        return bests.setdefault(
+            row["root_id"],
             {
-                "exercise_id": root_id,
-                "exercise_name": name,
-                "tracking_mode": mode,
+                "exercise_id": row["root_id"],
+                "exercise_name": row["exercise_name"],
+                "tracking_mode": row["tracking_mode"].value
+                if hasattr(row["tracking_mode"], "value")
+                else row["tracking_mode"],
                 "highest_recorded_load": None,
                 "highest_recorded_repetitions": None,
                 "highest_recorded_volume": None,
             },
         )
-        current = record[metric]
-        if current is None or value > current["value"]:
-            record[metric] = {"value": value, **entry}
 
-    for workout in workouts:
-        session = workout.workout_session
-        if session is None or session.status.value != "completed":
-            continue
-        source_date = workout.scheduled_date
-        for ex in session.exercises:
-            version = ex.exercise_version
-            root_id = version.exercise_id
-            mode = version.tracking_mode.value
-            for s in ex.sets:
-                if s.status.value != "completed":
-                    continue
-                base = {
-                    "source_date": source_date,
-                    "scheduled_workout_id": workout.id,
-                    "workout_session_id": session.id,
-                    "set_number": s.set_number,
-                    "exercise_version_id": version.id,
-                }
-                if (
-                    mode in _LOAD_MODES
-                    and s.actual_load_canonical_kg is not None
-                ):
-                    _consider(
-                        root_id, version.name, mode, "highest_recorded_load",
-                        float(s.actual_load_canonical_kg),
-                        {
-                            **base,
-                            "canonical_kg": str(s.actual_load_canonical_kg),
-                            "original_value": (
-                                str(s.actual_load_original_value)
-                                if s.actual_load_original_value is not None
-                                else None
-                            ),
-                            "original_unit": (
-                                s.actual_load_original_unit.value
-                                if s.actual_load_original_unit is not None
-                                else None
-                            ),
-                        },
-                    )
-                if mode in _REP_MODES and s.actual_repetitions is not None:
-                    _consider(
-                        root_id, version.name, mode, "highest_recorded_repetitions",
-                        s.actual_repetitions,
-                        {**base, "repetitions": s.actual_repetitions},
-                    )
-                if (
-                    mode in _LOAD_MODES
-                    and s.actual_repetitions is not None
-                    and s.actual_load_canonical_kg is not None
-                ):
-                    volume = float(Decimal(s.actual_repetitions) * s.actual_load_canonical_kg)
-                    _consider(
-                        root_id, version.name, mode, "highest_recorded_volume", volume,
-                        {
-                            **base,
-                            "repetitions": s.actual_repetitions,
-                            "canonical_kg": str(s.actual_load_canonical_kg),
-                        },
-                    )
+    def _base(row):
+        return {
+            "source_date": row["source_date"],
+            "scheduled_workout_id": row["scheduled_workout_id"],
+            "workout_session_id": row["workout_session_id"],
+            "set_number": row["set_number"],
+            "exercise_version_id": row["exercise_version_id"],
+        }
+
+    for row in _best_rows(db, trainee_id, _LOAD_MODES, WorkoutSetLog.actual_load_canonical_kg):
+        unit = row["actual_load_original_unit"]
+        _record(row)["highest_recorded_load"] = {
+            "value": float(row["actual_load_canonical_kg"]),
+            "canonical_kg": str(row["actual_load_canonical_kg"]),
+            "original_value": (
+                str(row["actual_load_original_value"])
+                if row["actual_load_original_value"] is not None
+                else None
+            ),
+            "original_unit": unit.value if hasattr(unit, "value") else unit,
+            **_base(row),
+        }
+
+    for row in _best_rows(db, trainee_id, _REP_MODES, WorkoutSetLog.actual_repetitions):
+        _record(row)["highest_recorded_repetitions"] = {
+            "value": row["actual_repetitions"],
+            "repetitions": row["actual_repetitions"],
+            **_base(row),
+        }
+
+    for row in _best_rows(db, trainee_id, _LOAD_MODES, volume_col):
+        _record(row)["highest_recorded_volume"] = {
+            "value": float(row["actual_repetitions"] * row["actual_load_canonical_kg"]),
+            "repetitions": row["actual_repetitions"],
+            "canonical_kg": str(row["actual_load_canonical_kg"]),
+            **_base(row),
+        }
 
     exercises = sorted(bests.values(), key=lambda item: item["exercise_name"])
-    return {"start_date": start, "end_date": end, "exercises": exercises}
+    return {"scope": "all_available_history", "exercises": exercises}
 
 
 # --- coach read-only session review (Part H) -----------------------------
@@ -575,6 +602,42 @@ def _session_summary(scheduled: ScheduledWorkout, session: WorkoutSession, now=N
         "open_safety_report_count": sum(
             1 for report in session.safety_reports if report.status.value == "open"
         ),
+        "skip_kind": None,
+        "skip_reason": None,
+        "skip_note": None,
+        "skipped_at": None,
+    }
+
+
+def _skip_summary(scheduled: ScheduledWorkout, now=None) -> dict:
+    """Read-only summary for an explicitly skipped workout (no session exists)."""
+
+    template = scheduled.workout_template_version
+    program = scheduled.assignment.program_version if scheduled.assignment else None
+    duration, rpe = _planned_inputs(scheduled)
+    planned = round(duration * rpe, 2) if duration is not None and rpe is not None else None
+    return {
+        "workout_session_id": None,
+        "scheduled_workout_id": scheduled.id,
+        "scheduled_date": scheduled.scheduled_date,
+        "workout_name": template.name if template else None,
+        "program_name": program.name if program else None,
+        "program_version_number": program.version_number if program else None,
+        "status": "skipped",
+        "classification": _classify(scheduled, now),
+        "started_at": None,
+        "completed_at": None,
+        "ended_at": None,
+        "actual_duration_minutes": None,
+        "session_rpe": None,
+        "planned_session_load": planned,
+        "completed_session_load": None,
+        "session_volume_kg": None,
+        "open_safety_report_count": 0,
+        "skip_kind": scheduled.skip_kind.value if scheduled.skip_kind else None,
+        "skip_reason": scheduled.skip_reason,
+        "skip_note": scheduled.skip_note,
+        "skipped_at": scheduled.skipped_at,
     }
 
 
@@ -586,17 +649,20 @@ def coach_session_list(
     status: str | None = None,
     now=None,
 ) -> dict:
-    """List a trainee's workout sessions in range for read-only coach review."""
+    """List a trainee's workout sessions and explicit skips for read-only review."""
 
     workouts = load_scheduled_workouts(db, trainee_id, start, end)
     sessions = []
     for workout in workouts:
         session = workout.workout_session
-        if session is None:
-            continue
-        if status is not None and session.status.value != status:
-            continue
-        sessions.append(_session_summary(workout, session, now))
+        if session is not None:
+            if status is not None and session.status.value != status:
+                continue
+            sessions.append(_session_summary(workout, session, now))
+        elif workout.status.value == "skipped":
+            if status is not None and status != "skipped":
+                continue
+            sessions.append(_skip_summary(workout, now))
     # Most recent first, with open safety reports surfaced by later sorting in the UI.
     sessions.sort(key=lambda item: item["scheduled_date"], reverse=True)
     return {"start_date": start, "end_date": end, "sessions": sessions}
