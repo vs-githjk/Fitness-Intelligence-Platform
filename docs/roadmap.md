@@ -45,7 +45,7 @@ Known current limits include local-storage JWTs, local/demo enrollment, no coach
 - Backend startup honors the provider port, with liveness and database-readiness probes.
 - Vercel single-page-app routing and a Render service/database Blueprint are defined.
 - CI covers backend, clean PostgreSQL migrations, frontend checks, and Compose builds.
-- Application/API/package metadata is aligned to `0.4.2`; backend health and OpenAPI metadata use the centralized `app.__version__` source.
+- Application/API/package metadata is aligned to `0.5.0`; backend health and OpenAPI metadata use the centralized `app.__version__` source.
 - Demo credentials and invite guidance are gated by client environment.
 - Role-aware registration, backend-protected coach bootstrap, and coach-specific single-use trainee invitations.
 - Requests carry `X-Request-ID` correlation and sanitized structured operational logs.

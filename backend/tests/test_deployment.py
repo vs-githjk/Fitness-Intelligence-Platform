@@ -36,7 +36,7 @@ def deployed_settings(**overrides: object) -> Settings:
 
 
 def test_release_version_is_centralized() -> None:
-    assert __version__ == "0.4.2"
+    assert __version__ == "0.5.0"
     assert app.version == __version__
     pyproject = (Path(__file__).parents[1] / "pyproject.toml").read_text()
     assert 'dynamic = ["version"]' in pyproject
@@ -108,13 +108,13 @@ def test_demo_mode_defaults_off_and_requires_distinct_accounts() -> None:
 def test_live_and_ready_health(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     live = client.get("/health/live")
     assert live.status_code == 200
-    assert live.json() == {"status": "healthy", "version": "0.4.2"}
+    assert live.json() == {"status": "healthy", "version": "0.5.0"}
     assert client.get("/health").json() == live.json()
 
     monkeypatch.setattr(main_module, "database_ready", lambda: None)
     ready = client.get("/health/ready")
     assert ready.status_code == 200
-    assert ready.json() == {"status": "ready", "version": "0.4.2"}
+    assert ready.json() == {"status": "ready", "version": "0.5.0"}
 
     def unavailable() -> None:
         raise ConnectionError("database host should not be exposed")
@@ -122,7 +122,7 @@ def test_live_and_ready_health(client: TestClient, monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(main_module, "database_ready", unavailable)
     unavailable_response = client.get("/health/ready")
     assert unavailable_response.status_code == 503
-    assert unavailable_response.json() == {"status": "unavailable", "version": "0.4.2"}
+    assert unavailable_response.json() == {"status": "unavailable", "version": "0.5.0"}
     assert "database host" not in unavailable_response.text
 
 

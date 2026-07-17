@@ -90,14 +90,14 @@ describe('account query identity scope', () => {
     const client = new QueryClient()
     const previousKey = [...accountQueryScope(previous), 'dashboard']
     client.setQueryData(previousKey, { private: previous.id })
-    client.setQueryData(['public', 'release'], '0.4.2')
+    client.setQueryData(['public', 'release'], '0.5.0')
 
     renderTransition(client, target)
     expect(screen.getByText(`Current identity: ${previous.id}`)).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(screen.getByText('Current identity: signed-out')).toBeVisible()
     expect(client.getQueryData(previousKey)).toBeUndefined()
-    expect(client.getQueryData(['public', 'release'])).toBe('0.4.2')
+    expect(client.getQueryData(['public', 'release'])).toBe('0.5.0')
 
     fireEvent.click(screen.getByRole('button', { name: 'Sign in target' }))
     expect(screen.getByText(`Current identity: ${target.id}`)).toBeVisible()
