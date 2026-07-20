@@ -1,0 +1,10 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security or privacy concern
+    url: https://github.com/vs-githjk/Fitness-Intelligence-Platform/blob/main/docs/testing/feedback-triage.md
+    about: >-
+      Do NOT open a public issue for a suspected security or privacy incident.
+      Use the "Security concern" template and follow the private handling notes.
+      A dedicated private reporting route still needs to be established for this
+      project; until then, report privately to a maintainer out of band and never
+      include secrets, credentials, tokens, or private health data.

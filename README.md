@@ -32,6 +32,18 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 
 ## Documentation
 
+Project guidance:
+
+- [Contributor and agent guidance (AGENTS.md)](AGENTS.md)
+- [Architecture overview](docs/architecture.md)
+- [Product principles and boundaries](docs/product-principles.md)
+- [Domain glossary](docs/domain-glossary.md)
+- [Decision log](docs/decisions/README.md)
+- [Deferred-feature register](docs/deferred-features.md)
+- [Release notes: v0.5.0](docs/releases/v0.5.0.md)
+
+Product and reference:
+
 - [Product guide](docs/product-guide.md)
 - [Getting started](docs/getting-started.md)
 - [Trainee invitations](docs/trainee-invitations.md)
@@ -58,7 +70,12 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 - [User-manual screenshot index](docs/screenshots/manual/README.md)
 - [Staging deployment runbook](docs/deployment/staging.md)
 - [Production-readiness checklist](docs/deployment/production-readiness.md)
+- [Release runbook](docs/operations/release-runbook.md)
+- [Deployment and recovery](docs/operations/deployment-and-recovery.md)
 - [Private-beta plan](docs/testing/private-beta-plan.md)
+- [Real-user testing guide](docs/testing/real-user-testing.md)
+- [Feedback and bug-triage process](docs/testing/feedback-triage.md)
+- [Milestone 4 planning — Profile and Media Foundation](docs/planning/milestone-4-profile-media-foundation.md)
 - [Roadmap](docs/roadmap.md)
 
 ## Start with Docker

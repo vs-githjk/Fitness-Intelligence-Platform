@@ -102,7 +102,12 @@ This phase takes priority over new product modules if real personal or health da
 
 No real-data beta begins until the applicable [production-readiness gates](deployment/production-readiness.md#go-live-gates) have named owners and approval evidence.
 
-## Milestone 3 — Workout Intelligence foundations in progress
+## Milestone 3 — Workout Intelligence — released as v0.5.0
+
+**Status: released (tag `v0.5.0`, "FitIntel 360 v0.5.0 — Workout Intelligence").**
+The Workout Intelligence milestone is complete and deployed. Release notes:
+[releases/v0.5.0.md](releases/v0.5.0.md). The subsections below record the
+delivered foundation and the candidate follow-ups that are **not** commitments.
 
 The repository now includes the owned, immutable exercise library, coach workout-template
 authoring workspace, versioned multi-week program builder, date-only Program assignment, and
@@ -239,6 +244,50 @@ Dependencies and gates:
 - Grounding exclusively in authorized structured data with source/version display.
 - Red-team testing for medical claims, prompt injection, leakage, bias, and unsafe reassurance.
 - Human review for coach-facing content where required.
+
+## Recommended future milestone sequence
+
+This is the recommended ordering after v0.5.0. Each milestone's scope must be
+approved before implementation, and no milestone automatically authorizes AI or
+medical functionality. Detailed planning lives under `docs/planning/`.
+
+### Milestone 4 — Profile and Media Foundation
+
+Coach and trainee profile pages, preferred display name and profile metadata, user
+unit and timezone preferences, an optional profile photo, a secure upload/storage
+abstraction, exercise instruction images, external exercise video links, and media
+authorization/deletion, with deterministic demo examples. Planning:
+[planning/milestone-4-profile-media-foundation.md](planning/milestone-4-profile-media-foundation.md).
+Out of scope: direct workout-video uploads, social feed, messaging, and any image
+analysis. Not yet approved for implementation.
+
+### Milestone 5 — Nutrition Intelligence
+
+Coach-entered nutrition targets or plan structures and trainee compliance context,
+with provenance and no fabricated calorie/macronutrient prescription. Subject to
+professional-scope and jurisdiction review. Not yet scoped or approved.
+
+### Milestone 6 — Wearable and Health Data Integrations
+
+User-authorized imports from selected providers with OAuth/token security,
+provenance, units/timezone/deduplication handling, explicit unavailable/stale
+states, and a scoring-version change before imported data affects any score. Not
+yet scoped or approved.
+
+### Milestone 7 — Adaptive Coaching and Progression Assistance
+
+Assistance for progression/deload decisions that keeps the coach in control. Any
+automated adjustment requires an approved, deterministic, clearly-communicated
+rule; nothing here authorizes autonomous or AI-driven changes by default. Not yet
+scoped or approved.
+
+### Continuous stabilization and tester-feedback track
+
+A stabilization and tester-feedback track runs continuously alongside milestone
+work. P0/P1 issues (see [testing/feedback-triage.md](testing/feedback-triage.md))
+may interrupt roadmap work. Release scope for each milestone must be approved
+before implementation, and no milestone automatically authorizes AI or medical
+functionality.
 
 ## Production and scale phase
 

@@ -38,6 +38,40 @@ Current limitations remain significant: no application rate limiting, email veri
 
 This repository does not claim HIPAA, GDPR, or other legal compliance. HIPAA readiness additionally depends on policies, workforce training, risk analysis, BAAs, vendor controls, administrative/physical safeguards, and operating practice. Applicability must be determined by qualified counsel and compliance professionals.
 
+## Real test accounts and test-data handling
+
+Controlled real-user testing now runs alongside development with one real coach
+test account and four real trainee test accounts. These are private test
+identities, distinct from the public demo accounts. Operational guidance is in
+[testing/real-user-testing.md](testing/real-user-testing.md); the privacy rules
+below are binding.
+
+- **Demo accounts are public synthetic accounts** (`is_demo`, read-only). **Real
+  test accounts are private test identities** that can perform normal mutations.
+  Do not conflate them.
+- **Use synthetic data whenever possible.** Collect only the information a specific
+  test requires; do not enter unnecessary sensitive health information.
+- **No secrets in screenshots or issues** — no passwords, tokens, invitation codes,
+  or the coach registration code. Redact private data before sharing any
+  screenshot or log.
+- **No test-user passwords in documentation.** Credentials are never committed.
+- **Do not share production/staging database exports with coding agents** or paste
+  them into issues.
+- **Role and assignment isolation apply to test users too:** a trainee sees only
+  their own data; a coach sees only trainees with an active assignment. Cross-
+  account visibility is a P0.
+- **Deletion and offboarding:** self-service export/deletion is a hardening-phase
+  item and does not yet exist. Offboarding disables sign-in; deletion is a manual
+  maintainer operation until a supported workflow ships. Record deletion requests
+  until then.
+- **Backups may contain test-entered content** and must be treated as sensitive.
+- **Logs avoid sensitive body content** (self-reported notes and raw health values
+  are not intentionally logged); keep it that way when adding endpoints.
+
+These practices support controlled testing with synthetic-first data. They do not,
+by themselves, make the application ready for real health data, and this
+repository still makes no HIPAA/GDPR/SOC 2/medical-device compliance claim.
+
 ## Workout Intelligence analytics authorization
 
 The Phase 7B analytics endpoints are all read-only GETs. Trainees can read only their own analytics; coaches can read only trainees with an active `CoachTraineeAssignment`. An inactive assignment is denied, and cross-coach session discovery returns `404` (indistinguishable from a missing object) rather than confirming existence. Every protected React Query key includes the account identity scope, so login, logout, and demo transitions never render another identity's analytics, and an in-flight response cannot repopulate a new identity's cache. Demo accounts may inspect analytics; all mutations remain blocked. The one Phase 7C mutation — the explicit trainee whole-workout skip (`POST /api/v1/trainee/workouts/{id}/skip`) — enforces trainee ownership, rejects the coach role, rejects non-scheduled/started statuses, calls backend demo protection (403 for demo), and is listed in the central workout-execution demo-mutation inventory.
