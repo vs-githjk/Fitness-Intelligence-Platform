@@ -1,5 +1,9 @@
 # Coach user manual
 
+> The single coach-facing guide to send to coaches is now the consolidated
+> [Coach manual](manuals/coach-manual.md). This page is retained as a detailed
+> reference for specific coach screens and behaviors.
+
 This guide describes the coach experience that is implemented in the current Fitness Intelligence Platform. The application provides read-only coaching intelligence from trainee onboarding assessments and daily check-ins. It supports coaching decisions; it does not diagnose, treat, provide medical clearance, or replace qualified medical care.
 
 For an introduction, see [Getting started](getting-started.md) and the [Product guide](product-guide.md). For scoring details, see [Health Index v1](scoring/health-index-v1.md) and [Daily Intelligence v1](scoring/daily-intelligence-v1.md). For setup problems, see [Troubleshooting](troubleshooting.md). Common product questions are answered in the [FAQ](faq.md).

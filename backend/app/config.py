@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     demo_trainee_email: str = "demo.trainee@fitness.example.com"
     demo_invite_code: str = LOCAL_INVITE_CODE
     coach_registration_code: str | None = None
+    media_storage_provider: str = "local"
+    media_local_root: str = "./media"
+    media_max_bytes: int = Field(default=5 * 1024 * 1024, ge=1024, le=52_428_800)
     log_level: str = "INFO"
     port: int = Field(default=8000, ge=1, le=65535)
 
@@ -133,6 +136,15 @@ class Settings(BaseSettings):
             errors.append("SEED_DEMO_DATA must be false in production")
         if self.app_env is AppEnvironment.PRODUCTION and self.demo_mode_enabled:
             errors.append("DEMO_MODE_ENABLED must be false in production")
+        if (
+            self.app_env is AppEnvironment.PRODUCTION
+            and self.media_storage_provider.strip().lower() == "local"
+        ):
+            # Local media lives on an ephemeral filesystem; production must use a
+            # durable object store. Staging may keep local media (synthetic, disposable).
+            errors.append(
+                "MEDIA_STORAGE_PROVIDER must be a durable provider in production"
+            )
         if self.demo_invite_code == LOCAL_INVITE_CODE:
             errors.append("DEMO_INVITE_CODE must not use the public local value")
         sslmode = self.database_sslmode or self._url_sslmode(self.database_url)

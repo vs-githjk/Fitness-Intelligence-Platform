@@ -30,6 +30,7 @@ def deployed_settings(**overrides: object) -> Settings:
         "api_docs_enabled": False,
         "seed_demo_data": False,
         "demo_invite_code": "deployment-specific-invite",
+        "media_storage_provider": "s3",
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)
@@ -78,6 +79,7 @@ def test_production_settings_are_explicit_and_normalized() -> None:
         {"seed_demo_data": True},
         {"demo_mode_enabled": True},
         {"database_sslmode": "prefer"},
+        {"media_storage_provider": "local"},
     ],
 )
 def test_production_settings_fail_closed(overrides: dict[str, object]) -> None:

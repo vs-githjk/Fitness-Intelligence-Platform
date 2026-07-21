@@ -3,6 +3,10 @@ export interface User { id: string; email: string; first_name: string; last_name
 export interface AuthResponse { access_token: string; token_type: string; user: User }
 export interface UserProfile { id: string; user_id: string; preferred_display_name: string | null; bio: string | null; created_at: string; updated_at: string }
 export interface UserPreferences { id: string; user_id: string; timezone: string; weight_unit: WeightUnit; distance_unit: DistanceUnit; locale: string; theme: string | null; privacy_settings: Record<string, unknown>; accessibility_settings: Record<string, unknown>; created_at: string; updated_at: string }
+export type MediaPurpose = 'generic' | 'avatar' | 'exercise_image' | 'exercise_gif' | 'document'
+export type MediaVisibility = 'private' | 'coach_trainee' | 'exercise'
+export type MediaLifecycleStatus = 'active' | 'replaced' | 'soft_deleted' | 'purged'
+export interface MediaAsset { id: string; owner_user_id: string; uploader_user_id: string | null; purpose: MediaPurpose; visibility: MediaVisibility; lifecycle_status: MediaLifecycleStatus; content_type: string; byte_size: number; checksum_sha256: string; original_filename: string | null; content_url: string; created_at: string; updated_at: string; deleted_at: string | null; replaced_at: string | null }
 export interface CoachInvite {
   id: string; intended_email: string | null; status: 'active' | 'used' | 'expired' | 'revoked'
   expires_at: string; used_at: string | null; used_by_user_id: string | null

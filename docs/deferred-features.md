@@ -20,6 +20,10 @@ and contributors do not implement them opportunistically.
 | Notifications | Consent, preferences, quiet hours, delivery semantics needed | No notifications exist |
 | PDF workout import | Parsing/provenance/authorization not designed | Out of scope |
 | Direct video upload | Storage, moderation, and safety concerns | Milestone 4 explicitly excludes workout-video uploads |
+| Media EXIF stripping / thumbnails | Chose narrower validation (ADR-0014) | Deferred to a later profile-media/hardening phase; not implemented |
+| Media malware scanning | Vendor/integration and cost review needed | Not implemented; signature+MIME checks are not a safety guarantee |
+| Cloud media provider (S3/R2/Azure) | Only the local provider is implemented (ADR-0013) | Contract reserved; factory rejects unimplemented providers; required before production media |
+| Media-consuming features (avatars, exercise media) | Milestone 4 later phases, not approved | Phase 2 built only the provider-independent media foundation |
 | Credential verification | Self-entered data is not verified (glossary) | Do not present self-reported data as verified |
 | Advanced medical or injury functionality | No diagnosis/clearance; safety not monitored | Hard product boundary |
 

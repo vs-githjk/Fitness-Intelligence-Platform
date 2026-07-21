@@ -209,3 +209,81 @@ its authoritative documentation.
   rejected as it would duplicate cross-role fields and couple identity to role;
   making preferences timezone the only source — rejected to avoid changing
   daily/workout local-date behavior in this phase.
+
+## ADR-0013 — Provider-independent media storage with authorized delivery
+
+- **Status:** accepted
+- **Date:** 2026-07-21
+- **Context:** Later Milestone 4 work (avatars, exercise media) and future features
+  (nutrition images, reports) need to store binary files. Coupling the app to a
+  specific backend (local disk, S3, R2, Azure) or to public static URLs would be
+  hard to change and hard to secure.
+- **Decision:** introduce a provider-independent media subsystem —
+  `routes → MediaService → StorageProvider protocol → provider implementation`.
+  Only provider implementation modules may import provider SDKs. `MediaAsset` stores
+  metadata only (never bytes) with an opaque, server-generated `storage_key` that is
+  never exposed through the API. Delivery is always authorized: content is streamed
+  through `GET /api/v1/media/{id}/content` after an ownership check; the local
+  storage root is never mounted as a public static route and no guessable permanent
+  URLs are issued. A `LocalStorageProvider` is fully implemented; a factory fails
+  fast for unimplemented providers.
+- **Consequences:** the app never depends on a cloud SDK; cloud providers (S3/R2 as
+  S3-compatible, Azure) are reserved and rejected until implemented. Uploads validate
+  size, a MIME allowlist, and magic-byte signatures, generate SHA-256 checksums, and
+  sanitize filenames. Cross-account access returns `404`; mutations are demo-protected
+  (`MEDIA_DEMO_MUTATIONS`). See [../architecture.md](../architecture.md).
+- **Alternatives considered:** mounting local media as `StaticFiles` — rejected as it
+  bypasses authorization and leaks storage layout; signed local URLs — deferred in
+  favor of the simpler, fully-authorized streaming route.
+
+## ADR-0014 — Media lifecycle, image-validation posture, and local-vs-hosted policy
+
+- **Status:** accepted
+- **Date:** 2026-07-21
+- **Context:** Media needs a safe lifecycle, an honest statement of what validation
+  does and does not guarantee, and a rule for where bytes may live in each
+  environment. Render's filesystem is ephemeral, so local storage is unsafe for
+  durable production media.
+- **Decision:**
+  - **Lifecycle:** `active → replaced → soft_deleted → purged`, enforced by the
+    service. A user-facing delete is a **soft delete** (bytes retained); physical
+    removal happens only via a service-level **purge** from `soft_deleted`. No
+    admin purge endpoint is exposed in this phase.
+  - **Image validation (Option B — narrower):** validate magic-byte signatures for a
+    small raster allowlist (JPEG/PNG/WEBP/GIF) and reject SVG and scriptable formats.
+    **Do not** introduce Pillow yet; server-side EXIF stripping and thumbnail
+    generation are explicitly deferred to a later hardening/profile-media phase.
+    Signature + MIME checks do not make a file "safe"; there is **no** malware
+    scanning.
+  - **Local-vs-hosted:** `local` is the only runtime-selectable provider. Production
+    startup **rejects** local media (ephemeral filesystem); staging may keep local
+    media because it is synthetic, disposable, and no media feature is user-exposed
+    yet. Phase 2 is locally complete and must not be deployed with local media on
+    ephemeral infrastructure once media-consuming features ship.
+- **Consequences:** deletes are reversible until purge; retention/cleanup jobs can
+  reclaim storage later; the validation limits are documented in
+  [../security.md](../security.md) and must not be overstated. Enabling a
+  media-consuming feature in production requires configuring a durable provider first.
+- **Alternatives considered:** hard delete on the API — rejected (irreversible, loses
+  audit trail); Pillow decode/normalize/EXIF-strip now — deferred to avoid a
+  dependency used only speculatively; failing staging on local media — rejected to
+  avoid breaking active synthetic testing.
+
+## ADR-0015 — Assignment empty-state clarifies the publish chain (P2)
+
+- **Status:** accepted
+- **Date:** 2026-07-21
+- **Context:** Real-user testing surfaced a P2 usability issue: the Assignments page
+  showed an empty "Published Program version" selector when a coach had no published
+  programs (for example, after creating only an Exercise). The behavior was correct —
+  only a published Program can be assigned — but looked broken.
+- **Decision:** distinguish loading, error, and two empty states — no Programs exist
+  vs. Programs exist but none are published — and explain the
+  `Exercise → Workout Template → Program → Assignment` chain with a link to
+  Programming. This is presentation only. Assignment business rules (publishing,
+  version eligibility, preview, effective dates, active-program replacement) are
+  unchanged.
+- **Consequences:** the empty selector is no longer mistaken for a failure; loading is
+  not shown as empty and API errors are not shown as "no programs". Recorded as a
+  resolved P2 usability finding, not a business-logic change. See
+  [../testing/feedback-triage.md](../testing/feedback-triage.md).

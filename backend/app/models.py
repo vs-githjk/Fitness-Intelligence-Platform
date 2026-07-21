@@ -217,6 +217,45 @@ class DistanceUnit(str, enum.Enum):
     MILES = "miles"
 
 
+class MediaPurpose(str, enum.Enum):
+    """What a stored media asset is for. Feature integrations arrive in later phases."""
+
+    GENERIC = "generic"
+    AVATAR = "avatar"
+    EXERCISE_IMAGE = "exercise_image"
+    EXERCISE_GIF = "exercise_gif"
+    DOCUMENT = "document"
+
+
+class MediaVisibility(str, enum.Enum):
+    """Who may read an asset. Enforced centrally by the media service, never the client."""
+
+    PRIVATE = "private"
+    COACH_TRAINEE = "coach_trainee"
+    EXERCISE = "exercise"
+
+
+class MediaLifecycleStatus(str, enum.Enum):
+    """Lifecycle of a stored asset. Transitions are guarded by the media service."""
+
+    ACTIVE = "active"
+    REPLACED = "replaced"
+    SOFT_DELETED = "soft_deleted"
+    PURGED = "purged"
+
+
+class MediaStorageProviderKind(str, enum.Enum):
+    """Storage backend that holds an asset's bytes.
+
+    ``local`` is the only runtime-selectable provider in this phase; ``s3`` is a
+    reserved forward-compatible value for an S3-compatible provider (S3/R2) that is
+    not yet implemented and is rejected by the provider factory until it exists.
+    """
+
+    LOCAL = "local"
+    S3 = "s3"
+
+
 def enum_values(enum_class: type[enum.Enum]) -> list[str]:
     return [str(item.value) for item in enum_class]
 
@@ -318,6 +357,62 @@ class UserPreferences(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
     )
+
+
+class MediaAsset(Base):
+    """Provider-independent record of one stored binary asset.
+
+    Bytes live in object storage behind a ``StorageProvider``; only metadata is kept
+    here. The opaque ``storage_key`` is generated server-side and is never exposed
+    through the API. Deletes are soft; bytes are removed only on an explicit purge.
+    """
+
+    __tablename__ = "media_assets"
+    __table_args__ = (
+        UniqueConstraint("storage_key", name="uq_media_assets_storage_key"),
+        CheckConstraint("byte_size >= 0", name="ck_media_assets_byte_size"),
+        Index("ix_media_assets_owner_lifecycle", "owner_user_id", "lifecycle_status"),
+        Index("ix_media_assets_purpose_lifecycle", "purpose", "lifecycle_status"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    uploader_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    purpose: Mapped[MediaPurpose] = mapped_column(
+        Enum(MediaPurpose, native_enum=False, values_callable=enum_values),
+        default=MediaPurpose.GENERIC,
+    )
+    visibility: Mapped[MediaVisibility] = mapped_column(
+        Enum(MediaVisibility, native_enum=False, values_callable=enum_values),
+        default=MediaVisibility.PRIVATE,
+    )
+    lifecycle_status: Mapped[MediaLifecycleStatus] = mapped_column(
+        Enum(MediaLifecycleStatus, native_enum=False, values_callable=enum_values),
+        default=MediaLifecycleStatus.ACTIVE,
+        index=True,
+    )
+    storage_provider: Mapped[MediaStorageProviderKind] = mapped_column(
+        Enum(MediaStorageProviderKind, native_enum=False, values_callable=enum_values),
+        default=MediaStorageProviderKind.LOCAL,
+    )
+    storage_key: Mapped[str] = mapped_column(String(500))
+    content_type: Mapped[str] = mapped_column(String(120))
+    byte_size: Mapped[int] = mapped_column(Integer)
+    checksum_sha256: Mapped[str] = mapped_column(String(64))
+    original_filename: Mapped[str | None] = mapped_column(String(255))
+    replaced_by_media_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("media_assets.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    replaced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    purged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class CoachTraineeAssignment(Base):

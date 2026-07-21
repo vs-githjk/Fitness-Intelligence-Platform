@@ -21,6 +21,7 @@ from app.api import (
     exercises,
     health,
     invites,
+    media,
     profile,
     trainee,
     training_assignments,
@@ -167,6 +168,7 @@ def readinesscheck() -> JSONResponse:
 for router in (
     auth.router,
     profile.router,
+    media.router,
     trainee.router,
     assessments.router,
     health.router,

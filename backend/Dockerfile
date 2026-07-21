@@ -15,6 +15,11 @@ COPY --chown=app:app alembic.ini .
 COPY --chown=app:app alembic ./alembic
 COPY --chown=app:app scripts ./scripts
 
+# Writable root for the local media provider (MEDIA_LOCAL_ROOT=./media). This
+# filesystem is ephemeral; production rejects local media and must use a durable
+# provider (see docs/security.md and ADR-0014).
+RUN mkdir -p /app/media && chown app:app /app/media
+
 USER app
 
 CMD ["python", "-m", "scripts.start"]

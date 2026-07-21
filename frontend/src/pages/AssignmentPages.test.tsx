@@ -94,6 +94,59 @@ it('keeps assignment controls disabled for demo coaches', async () => {
   expect(screen.getByLabelText('Trainee')).toBeDisabled()
 })
 
+it('shows a loading state for the Program selector instead of an empty one', async () => {
+  let resolveList: (value: Response) => void = () => {}
+  vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => {
+    const url = String(input)
+    if (url.endsWith('/coach/trainees')) return Promise.resolve(ok([{ trainee_id: 'trainee-1', name: 'Aarav Trainee' }]))
+    if (url.includes('/coach/training-programs?')) return new Promise<Response>(resolve => { resolveList = resolve })
+    if (url.endsWith('/training-assignment')) return Promise.resolve(ok(workspace()))
+    return Promise.resolve(ok({}))
+  }))
+  renderPage(<CoachAssignmentPage />)
+  expect(await screen.findByText('Loading published Programs…')).toBeVisible()
+  resolveList(ok({ items: [], page: 1, per_page: 100, total: 0 }))
+})
+
+it('shows an error state (not empty) when Programs fail to load', async () => {
+  mockFetch(url => {
+    if (url.endsWith('/coach/trainees')) return ok([{ trainee_id: 'trainee-1', name: 'Aarav Trainee' }])
+    if (url.includes('/coach/training-programs?')) return new Response(JSON.stringify({ detail: { message: 'boom' } }), { status: 500, headers: { 'Content-Type': 'application/json' } })
+    if (url.endsWith('/training-assignment')) return ok(workspace())
+    return ok({})
+  })
+  renderPage(<CoachAssignmentPage />)
+  expect(await screen.findByText('Programs unavailable.')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Retry' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Preview schedule' })).toBeDisabled()
+})
+
+it('explains the empty state and links to Programming when no Programs exist', async () => {
+  mockFetch(url => {
+    if (url.endsWith('/coach/trainees')) return ok([{ trainee_id: 'trainee-1', name: 'Aarav Trainee' }])
+    if (url.includes('/coach/training-programs?')) return ok({ items: [], page: 1, per_page: 100, total: 0 })
+    if (url.endsWith('/training-assignment')) return ok(workspace())
+    return ok({})
+  })
+  renderPage(<CoachAssignmentPage />)
+  expect(await screen.findByText('No programs yet.')).toBeVisible()
+  expect(screen.getByText('Exercise → Workout Template → Program → Assignment')).toBeVisible()
+  expect(screen.getByRole('link', { name: 'Go to Programming → Programs' })).toHaveAttribute('href', '/coach/programming/programs')
+  expect(screen.getByRole('button', { name: 'Preview schedule' })).toBeDisabled()
+})
+
+it('distinguishes Programs that exist but are not yet published', async () => {
+  mockFetch(url => {
+    if (url.endsWith('/coach/trainees')) return ok([{ trainee_id: 'trainee-1', name: 'Aarav Trainee' }])
+    if (url.includes('/coach/training-programs?')) return ok({ items: [{ id: 'program-1', current_published_version_number: null }], page: 1, per_page: 100, total: 1 })
+    if (url.endsWith('/training-assignment')) return ok(workspace())
+    return ok({})
+  })
+  renderPage(<CoachAssignmentPage />)
+  expect(await screen.findByText('No published programs available.')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Preview schedule' })).toBeDisabled()
+})
+
 function renderPage(element: React.ReactNode) { const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }); return render(<QueryClientProvider client={client}><MemoryRouter><AuthProvider>{element}</AuthProvider></MemoryRouter></QueryClientProvider>) }
 function setSession(role: 'coach' | 'trainee', demo: boolean) { const storage = new MemoryStorage(); storage.setItem('access_token', 'test-token'); storage.setItem('user', JSON.stringify({ id: `${role}-1`, email: `${role}@example.com`, first_name: demo ? 'Demo' : 'Test', last_name: role, role, is_demo: demo })); vi.stubGlobal('localStorage', storage) }
 function mockFetch(handler: (url: string, init?: RequestInit) => Response) { vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => Promise.resolve(handler(String(input), init)))) }

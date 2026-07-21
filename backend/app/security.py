@@ -41,6 +41,14 @@ IDENTITY_DEMO_MUTATIONS = frozenset(
     }
 )
 
+# Central inventory of media mutations that must stay demo-protected.
+MEDIA_DEMO_MUTATIONS = frozenset(
+    {
+        ("POST", "/api/v1/media"),
+        ("DELETE", "/api/v1/media/{media_id}"),
+    }
+)
+
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=12)).decode()

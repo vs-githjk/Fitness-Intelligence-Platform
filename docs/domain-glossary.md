@@ -31,6 +31,18 @@ these meanings — in code, UI copy, docs, and issues. See
   timezone, weight unit, distance unit, locale, and theme/privacy/accessibility
   placeholders. Preferences change presentation only; they never alter recorded
   data. `UserPreferences.timezone` is the canonical timezone preference.
+- **MediaAsset** — a metadata record for one stored binary object (image). Holds the
+  owner, uploader, purpose, visibility, lifecycle status, storage provider, opaque
+  storage key, content type, size, SHA-256 checksum, and sanitized filename. Bytes
+  live in a storage provider, never in the database or in an API response.
+- **StorageProvider** — the provider-independent contract (`write`, `open`, `exists`,
+  `delete`) behind which media bytes are stored. `LocalStorageProvider` is the only
+  implemented backend; cloud providers are reserved.
+- **Media lifecycle** — `active → replaced → soft_deleted → purged`. A user-facing
+  delete is a **soft delete**; bytes are removed only by a service-level **purge**.
+- **Media visibility** — who may read an asset (`private`, `coach_trainee`,
+  `exercise`). Enforced server-side by the media service; Phase 2 self-service
+  uploads are `private` and owner-only.
 
 ## Programming entities
 

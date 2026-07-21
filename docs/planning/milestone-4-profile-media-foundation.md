@@ -1,10 +1,21 @@
 # Milestone 4 — Profile and Media Foundation (planning)
 
-**Status: planning only. Not approved for implementation.** This document defines
-scope and open questions so a future, approved milestone can begin from a shared
-understanding. It does not authorize any code. Nothing here overrides
+**Status: planning document; later phases not yet approved.** This document defines
+scope and open questions so each approved phase can begin from a shared
+understanding. It does not authorize unapproved code. Nothing here overrides
 [../product-principles.md](../product-principles.md) or the
 [decision log](../decisions/README.md).
+
+## Delivery status
+
+- **Phase 1 — Identity Foundation: complete.** Shared `UserProfile`/`UserPreferences`,
+  `GET/PUT /api/v1/me/{profile,preferences}`, Profile and Settings pages. See ADR-0012.
+- **Phase 2 — Media Infrastructure: complete.** Provider-independent `MediaAsset` +
+  `MediaService` + `StorageProvider` (local), authorized upload/metadata/content/soft-
+  delete, and reusable frontend media client infrastructure (no media UI exposed).
+  Also resolved the P2 Assignments empty-state (ADR-0015). See ADR-0013/0014.
+- **Phase 3 and later (avatars, exercise media, coach/trainee media integration):**
+  **not approved.** Do not implement without an explicit approved decision.
 
 ## Problem statement
 

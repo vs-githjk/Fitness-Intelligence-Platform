@@ -13,6 +13,9 @@ from app.models import (
     ExerciseScope,
     ExerciseStatus,
     ExerciseTrackingMode,
+    MediaLifecycleStatus,
+    MediaPurpose,
+    MediaVisibility,
     ProgramWeekday,
     Role,
     SafetyCategory,
@@ -178,6 +181,47 @@ class UserPreferencesOut(UserPreferencesUpdate):
     user_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
+
+
+class MediaAssetOut(BaseModel):
+    """Safe media metadata. The opaque storage key is never included."""
+
+    id: uuid.UUID
+    owner_user_id: uuid.UUID
+    uploader_user_id: uuid.UUID | None
+    purpose: MediaPurpose
+    visibility: MediaVisibility
+    lifecycle_status: MediaLifecycleStatus
+    content_type: str
+    byte_size: int
+    checksum_sha256: str
+    original_filename: str | None
+    content_url: str
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: datetime | None
+    replaced_at: datetime | None
+
+    @classmethod
+    def from_asset(cls, asset: Any) -> "MediaAssetOut":
+        return cls(
+            id=asset.id,
+            owner_user_id=asset.owner_user_id,
+            uploader_user_id=asset.uploader_user_id,
+            purpose=asset.purpose,
+            visibility=asset.visibility,
+            lifecycle_status=asset.lifecycle_status,
+            content_type=asset.content_type,
+            byte_size=asset.byte_size,
+            checksum_sha256=asset.checksum_sha256,
+            original_filename=asset.original_filename,
+            # Authorized, relative to the API base; resolves through a protected route.
+            content_url=f"/media/{asset.id}/content",
+            created_at=asset.created_at,
+            updated_at=asset.updated_at,
+            deleted_at=asset.deleted_at,
+            replaced_at=asset.replaced_at,
+        )
 
 
 class AssessmentData(BaseModel):

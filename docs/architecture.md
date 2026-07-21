@@ -77,6 +77,34 @@ SQLAlchemy 2 ORM models live in `app/models.py`.
   daily/workout local-date behavior is unchanged. Changing a preference affects
   presentation only and never reinterprets stored records.
 
+## Media infrastructure
+
+- Media is a provider-independent subsystem. The dependency direction is
+  `routes → MediaService → StorageProvider protocol → provider implementation`.
+  Application and domain code never touch the filesystem or a cloud SDK directly;
+  only a provider implementation module may import a provider-specific SDK.
+- `MediaAsset` (`app/models.py`) holds metadata only — never file bytes. It records
+  owner/uploader, purpose, visibility, lifecycle status, storage provider kind, an
+  opaque server-generated `storage_key` (never exposed via the API), content type,
+  byte size, SHA-256 checksum, sanitized original filename, and lifecycle timestamps.
+- `MediaService` (`app/media_services.py`) owns all rules: validation (size, MIME
+  allowlist, magic-byte signature), filename sanitization, checksums, storage-key
+  generation, storage writes with cleanup on failure, authorization, and lifecycle
+  transitions (`active → replaced → soft_deleted → purged`). Deletes are soft;
+  bytes are removed only by a service-level purge. Routes stay thin.
+- `StorageProvider` (`app/storage/`) is a Protocol with a `LocalStorageProvider`
+  implementation (atomic temp-file-plus-rename writes, path-traversal-safe, root
+  confined). A factory maps configuration to a provider and fails fast for
+  unimplemented providers (S3/R2/Azure are reserved, not selectable yet).
+- Delivery is always authorized: `GET /api/v1/media/{id}/content` streams through a
+  protected route after an ownership check. The local storage directory is **never**
+  mounted as a public static route, and no guessable permanent URLs are issued.
+- Endpoints `POST /api/v1/media`, `GET /api/v1/media/{id}`,
+  `GET /api/v1/media/{id}/content`, `DELETE /api/v1/media/{id}` are authenticated and
+  owner-scoped; cross-account access returns `404`. Mutations are demo-protected
+  (`MEDIA_DEMO_MUTATIONS`) and identity-scoped in the frontend cache. No media UI is
+  exposed in this phase — only reusable client infrastructure. See ADR-0013/0014.
+
 ## Invitations
 
 - Coach registration is invitation-only, gated by a backend-only

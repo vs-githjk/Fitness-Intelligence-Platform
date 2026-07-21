@@ -24,7 +24,7 @@ or any other regulatory compliance.
 ## Current release
 
 - Application version: **0.5.0** (Workout Intelligence milestone, tag `v0.5.0`).
-- Alembic head: **20260716_0012**.
+- Alembic head: **20260721_0014** (Milestone 4 identity + media infrastructure).
 - Version sources: backend `backend/app/__init__.py` (`__version__`), consumed by
   FastAPI/OpenAPI and `/health*`; frontend `frontend/package.json` (mirrored in
   `package-lock.json`), surfaced through `frontend/src/env.ts`. Keep all version
@@ -54,6 +54,7 @@ independent and must not import each other.
 | --- | --- |
 | `backend/app/api/` | FastAPI routers (HTTP concerns only) |
 | `backend/app/*_services.py` | Application services: transactions + authorization |
+| `backend/app/storage/` | Provider-independent media storage (Protocol + local provider + factory) |
 | `backend/app/domain/` | Pure Health Index / Daily Intelligence scoring |
 | `backend/app/analytics/` | Pure Workout Intelligence engines (`workout-load-v1`) |
 | `backend/app/models.py` | SQLAlchemy ORM models |

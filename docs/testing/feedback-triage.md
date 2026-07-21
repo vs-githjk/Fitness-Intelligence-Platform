@@ -63,6 +63,17 @@ controlled real-user testing. Pairs with
 The continuous stabilization/tester-feedback track runs in parallel with roadmap
 milestones; P0/P1 issues may interrupt milestone work.
 
+## Resolved usability findings
+
+- **P2 — Assignments "Published Program version" selector looked broken when empty
+  (resolved 2026-07-21).** A coach with no published Program (for example, after
+  creating only an Exercise) saw an empty selector with no explanation. Classified as
+  a **usability** issue, not a business-logic bug — only a published Program can be
+  assigned. Fix: the page now distinguishes loading, error, and two empty states
+  (no Programs vs. Programs exist but none published), explains the
+  `Exercise → Workout Template → Program → Assignment` chain, and links to
+  Programming. Assignment business rules were unchanged. See ADR-0015.
+
 ## What feedback does not authorize
 
 - It does not authorize changing a scoring/analytics formula (that needs a new
