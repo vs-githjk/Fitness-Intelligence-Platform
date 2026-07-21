@@ -15,6 +15,8 @@ from app.models import (
     Role,
     TraineeProfile,
     User,
+    UserPreferences,
+    UserProfile,
 )
 from app.schemas import (
     CoachRegisterRequest,
@@ -71,6 +73,8 @@ def register_coach(body: CoachRegisterRequest, db: Session = Depends(get_db)) ->
                 credentials_text=None,
             )
         )
+        db.add(UserProfile(user_id=user.id))
+        db.add(UserPreferences(user_id=user.id))
         db.commit()
         db.refresh(user)
     except HTTPException:
@@ -112,6 +116,8 @@ def register_trainee(body: TraineeRegisterRequest, db: Session = Depends(get_db)
         db.add(user)
         db.flush()
         db.add(TraineeProfile(user_id=user.id))
+        db.add(UserProfile(user_id=user.id))
+        db.add(UserPreferences(user_id=user.id))
         db.add(
             CoachTraineeAssignment(
                 coach_id=coach.id,

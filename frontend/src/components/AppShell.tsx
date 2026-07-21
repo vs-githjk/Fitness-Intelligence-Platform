@@ -5,6 +5,7 @@ import {
   Dumbbell,
   LayoutDashboard,
   LogOut,
+  Settings,
   ShieldAlert,
   SquareCode,
   TrendingUp,
@@ -24,6 +25,8 @@ const coachNav = [
   { to: '/coach/assignments', label: 'Assignments', icon: CalendarRange },
   { to: '/coach/safety-reports', label: 'Safety', icon: ShieldAlert },
   { to: '/coach/invites', label: 'Invitations', icon: UserPlus },
+  { to: '/profile', label: 'Profile', icon: UserRound },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ]
 const traineeNav = [
   { to: '/trainee/today', label: 'Today', icon: CalendarCheck },
@@ -31,6 +34,8 @@ const traineeNav = [
   { to: '/trainee/workouts', label: 'Workouts', icon: Dumbbell },
   { to: '/trainee/program', label: 'Program', icon: CalendarRange },
   { to: '/onboarding', label: 'Assessment', icon: ClipboardList },
+  { to: '/profile', label: 'Profile', icon: UserRound },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
 function DesktopNav({ role }: { role: 'coach' | 'trainee' }) {

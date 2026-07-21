@@ -185,3 +185,27 @@ its authoritative documentation.
   [../demo.md](../demo.md) and [../security.md](../security.md).
 - **Alternatives considered:** frontend-only demo restrictions — rejected; the
   browser is not the security boundary.
+
+## ADR-0012 — Shared identity and preferences layer
+
+- **Status:** accepted
+- **Date:** 2026-07-21
+- **Context:** Milestone 4 needs a role-agnostic identity foundation that future
+  work (media, nutrition, wearables, reports) can reuse without redesign, without
+  disturbing the existing role-specific profiles or daily/workout behavior.
+- **Decision:** add one-to-one `UserProfile` (preferred display name, bio) and
+  `UserPreferences` (timezone, weight/distance units, locale, and
+  theme/privacy/accessibility placeholders) records with
+  `GET/PUT /api/v1/me/{profile,preferences}` scoped to the authenticated user.
+  `CoachProfile`/`TraineeProfile` are unchanged. `UserPreferences.timezone` is the
+  canonical timezone and is kept in sync with the retained `TraineeProfile.timezone`
+  for backward compatibility; preferences change presentation only.
+- **Consequences:** an additive migration backfills existing users; new mutations
+  are demo-protected and inventory-listed (`IDENTITY_DEMO_MUTATIONS`); values are
+  self-declared and never verified. This is the base for later Milestone 4 slices
+  (avatars, media). See [../architecture.md](../architecture.md) and
+  [../planning/milestone-4-profile-media-foundation.md](../planning/milestone-4-profile-media-foundation.md).
+- **Alternatives considered:** extending `CoachProfile`/`TraineeProfile` in place —
+  rejected as it would duplicate cross-role fields and couple identity to role;
+  making preferences timezone the only source — rejected to avoid changing
+  daily/workout local-date behavior in this phase.

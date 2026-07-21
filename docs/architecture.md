@@ -60,6 +60,23 @@ SQLAlchemy 2 ORM models live in `app/models.py`.
   hardening pass (see [security.md](security.md)) would move to a protected
   cookie/refresh design with rotation, revocation, MFA, and rate limiting.
 
+## Identity and preferences
+
+- A role-agnostic `UserProfile` (preferred display name, bio) and `UserPreferences`
+  (timezone, weight/distance units, locale, plus theme/privacy/accessibility
+  placeholders) are one-to-one with `User` and form the shared identity layer that
+  later milestones build on. They are distinct from the existing role-specific
+  `CoachProfile`/`TraineeProfile`, which are unchanged.
+- Endpoints `GET/PUT /api/v1/me/profile` and `GET/PUT /api/v1/me/preferences` are
+  scoped to the authenticated user (any role); a user only ever reads or writes
+  their own record. Mutations are demo-protected and identity-scoped in the
+  frontend cache.
+- All values are self-declared and never presented as verified.
+- `UserPreferences.timezone` is the canonical forward-looking timezone;
+  `TraineeProfile.timezone` is retained and kept in sync for trainees so existing
+  daily/workout local-date behavior is unchanged. Changing a preference affects
+  presentation only and never reinterprets stored records.
+
 ## Invitations
 
 - Coach registration is invitation-only, gated by a backend-only

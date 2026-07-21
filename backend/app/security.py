@@ -33,6 +33,14 @@ WORKOUT_EXECUTION_DEMO_MUTATIONS = frozenset(
     }
 )
 
+# Central inventory of shared identity mutations that must stay demo-protected.
+IDENTITY_DEMO_MUTATIONS = frozenset(
+    {
+        ("PUT", "/api/v1/me/profile"),
+        ("PUT", "/api/v1/me/preferences"),
+    }
+)
+
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=12)).decode()

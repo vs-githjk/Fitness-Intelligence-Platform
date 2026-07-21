@@ -269,6 +269,57 @@ class TraineeProfile(Base):
     )
 
 
+class UserProfile(Base):
+    """Role-agnostic identity record, one-to-one with a user.
+
+    Shared foundation for both roles. Existing CoachProfile/TraineeProfile records
+    are untouched; this holds cross-role display identity only.
+    """
+
+    __tablename__ = "user_profiles"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True
+    )
+    preferred_display_name: Mapped[str | None] = mapped_column(String(120))
+    bio: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
+class UserPreferences(Base):
+    """Role-agnostic preference record, one-to-one with a user.
+
+    Timezone here is the canonical forward-looking preference. TraineeProfile.timezone
+    is retained for backward compatibility and kept in sync for trainees.
+    """
+
+    __tablename__ = "user_preferences"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True
+    )
+    timezone: Mapped[str] = mapped_column(String(80), default="UTC")
+    weight_unit: Mapped[WeightUnit] = mapped_column(
+        Enum(WeightUnit, native_enum=False, values_callable=enum_values),
+        default=WeightUnit.KG,
+    )
+    distance_unit: Mapped[DistanceUnit] = mapped_column(
+        Enum(DistanceUnit, native_enum=False, values_callable=enum_values),
+        default=DistanceUnit.KILOMETERS,
+    )
+    locale: Mapped[str] = mapped_column(String(20), default="en")
+    theme: Mapped[str | None] = mapped_column(String(20))
+    privacy_settings: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    accessibility_settings: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
 class CoachTraineeAssignment(Base):
     __tablename__ = "coach_trainee_assignments"
     __table_args__ = (UniqueConstraint("coach_id", "trainee_id"),)

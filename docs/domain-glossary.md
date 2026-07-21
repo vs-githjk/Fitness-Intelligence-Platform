@@ -22,6 +22,16 @@ these meanings — in code, UI copy, docs, and issues. See
   users exist yet; real-health-data collection is gated by unmet
   security/privacy/legal requirements.
 
+## Identity records
+
+- **UserProfile** — a role-agnostic identity record, one-to-one with a user:
+  preferred display name and bio. Shared across roles; self-declared and never
+  verified. Distinct from `CoachProfile`/`TraineeProfile`.
+- **UserPreferences** — a role-agnostic preference record, one-to-one with a user:
+  timezone, weight unit, distance unit, locale, and theme/privacy/accessibility
+  placeholders. Preferences change presentation only; they never alter recorded
+  data. `UserPreferences.timezone` is the canonical timezone preference.
+
 ## Programming entities
 
 - **Exercise** — a coach-owned exercise root (stable lineage identity).

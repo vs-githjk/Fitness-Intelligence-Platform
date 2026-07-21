@@ -1,6 +1,8 @@
 export type Role = 'coach' | 'trainee'
 export interface User { id: string; email: string; first_name: string; last_name: string; role: Role; is_demo: boolean }
 export interface AuthResponse { access_token: string; token_type: string; user: User }
+export interface UserProfile { id: string; user_id: string; preferred_display_name: string | null; bio: string | null; created_at: string; updated_at: string }
+export interface UserPreferences { id: string; user_id: string; timezone: string; weight_unit: WeightUnit; distance_unit: DistanceUnit; locale: string; theme: string | null; privacy_settings: Record<string, unknown>; accessibility_settings: Record<string, unknown>; created_at: string; updated_at: string }
 export interface CoachInvite {
   id: string; intended_email: string | null; status: 'active' | 'used' | 'expired' | 'revoked'
   expires_at: string; used_at: string | null; used_by_user_id: string | null

@@ -126,6 +126,60 @@ class ProfileOut(ProfileUpdate):
     user_id: uuid.UUID
 
 
+def _validate_timezone(value: str) -> str:
+    try:
+        ZoneInfo(value)
+    except ZoneInfoNotFoundError as exc:
+        raise ValueError("Use a valid IANA timezone, such as Asia/Kolkata") from exc
+    return value
+
+
+class UserProfileUpdate(BaseModel):
+    preferred_display_name: str | None = Field(default=None, max_length=120)
+    bio: str | None = Field(default=None, max_length=1000)
+
+    @field_validator("preferred_display_name", "bio")
+    @classmethod
+    def blank_to_none(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None
+
+
+class UserProfileOut(UserProfileUpdate):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    user_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class UserPreferencesUpdate(BaseModel):
+    timezone: str = Field(default="UTC", max_length=80)
+    weight_unit: WeightUnit = WeightUnit.KG
+    distance_unit: DistanceUnit = DistanceUnit.KILOMETERS
+    locale: str = Field(
+        default="en", max_length=20, pattern=r"^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+    )
+    theme: str | None = Field(default=None, max_length=20)
+    privacy_settings: dict[str, Any] = Field(default_factory=dict)
+    accessibility_settings: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("timezone")
+    @classmethod
+    def valid_timezone(cls, value: str) -> str:
+        return _validate_timezone(value)
+
+
+class UserPreferencesOut(UserPreferencesUpdate):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    user_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+
 class AssessmentData(BaseModel):
     age: int | None = Field(default=None, ge=16, le=100)
     height_cm: float | None = Field(default=None, ge=100, le=250)
