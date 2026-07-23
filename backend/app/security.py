@@ -49,6 +49,13 @@ MEDIA_DEMO_MUTATIONS = frozenset(
     }
 )
 
+# Central inventory of starter-library mutations that must stay demo-protected.
+LIBRARY_DEMO_MUTATIONS = frozenset(
+    {
+        ("POST", "/api/v1/program-library/{program_id}/clone"),
+    }
+)
+
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=12)).decode()

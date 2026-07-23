@@ -270,6 +270,8 @@ class User(Base):
     role: Mapped[Role] = mapped_column(Enum(Role, native_enum=False), index=True)
     status: Mapped[str] = mapped_column(String(30), default="active")
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # The single non-login account that owns the read-only curated starter library.
+    is_system: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
@@ -579,6 +581,16 @@ class WorkoutTemplate(Base):
         nullable=True,
         index=True,
     )
+    # Independent snapshot attribution when this template was duplicated from a
+    # starter-library (system) template. Never implies ongoing synchronization.
+    cloned_from_template_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "workout_templates.id",
+            name="fk_workout_templates_cloned_from",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
@@ -802,6 +814,16 @@ class TrainingProgram(Base):
         ),
         nullable=True,
         index=True,
+    )
+    # Independent snapshot attribution when this program was cloned from a
+    # starter-library (system) program. Coach copies never re-sync with the source.
+    cloned_from_program_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "training_programs.id",
+            name="fk_training_programs_cloned_from",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(

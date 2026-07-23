@@ -941,12 +941,64 @@ class TrainingProgramDetailOut(BaseModel):
     owner_coach_id: uuid.UUID
     status: TrainingProgramStatus
     current_published_version_id: uuid.UUID | None
+    cloned_from_program_id: uuid.UUID | None = None
     created_at: datetime
     updated_at: datetime
     archived_at: datetime | None
     draft_version: TrainingProgramVersionOut | None
     published_version: TrainingProgramVersionOut | None
     versions: list[TrainingProgramVersionSummaryOut]
+
+
+class LibraryProgramSummaryOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: str | None
+    level: str
+    duration_weeks: int
+    sessions_per_week: int
+    goal_tags: list[str]
+    equipment_summary: list[str]
+    published_version_id: uuid.UUID
+
+
+class LibraryProgramListOut(BaseModel):
+    items: list[LibraryProgramSummaryOut]
+    disclaimer: str
+
+
+class LibraryExercisePreviewOut(BaseModel):
+    name: str
+    category: str
+    tracking_mode: ExerciseTrackingMode
+    set_count: int
+
+
+class LibraryTemplatePreviewOut(BaseModel):
+    name: str
+    estimated_duration_minutes: int | None
+    exercises: list[LibraryExercisePreviewOut]
+
+
+class LibrarySessionPreviewOut(BaseModel):
+    weekday: ProgramWeekday
+    display_order: int
+    required: bool
+    template: LibraryTemplatePreviewOut
+
+
+class LibraryWeekPreviewOut(BaseModel):
+    week_number: int
+    label: str | None
+    is_deload: bool
+    sessions: list[LibrarySessionPreviewOut]
+
+
+class LibraryProgramDetailOut(LibraryProgramSummaryOut):
+    coach_notes: str | None
+    trainee_instructions: str | None
+    weeks: list[LibraryWeekPreviewOut]
+    disclaimer: str
 
 
 class TrainingAssignmentCreateRequest(BaseModel):

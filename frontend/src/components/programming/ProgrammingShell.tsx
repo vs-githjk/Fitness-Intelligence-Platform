@@ -1,4 +1,4 @@
-import { CalendarRange, Dumbbell, LayoutTemplate } from 'lucide-react'
+import { CalendarRange, Dumbbell, LayoutTemplate, Library } from 'lucide-react'
 import { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AppShell } from '../AppShell'
@@ -8,6 +8,7 @@ const tabs = [
   { to: '/coach/programming/exercises', label: 'Exercises', icon: Dumbbell },
   { to: '/coach/programming/templates', label: 'Workout Templates', icon: LayoutTemplate },
   { to: '/coach/programming/programs', label: 'Programs', icon: CalendarRange },
+  { to: '/coach/programming/library', label: 'Starter Library', icon: Library },
 ]
 
 export function ProgrammingShell({ children, title, description, action }: { children: ReactNode; title: string; description: string; action?: ReactNode }) {

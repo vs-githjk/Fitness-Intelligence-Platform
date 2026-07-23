@@ -207,7 +207,14 @@ export interface TrainingProgramVersion extends Omit<TrainingProgramDraftData, '
 export interface TrainingProgramVersionSummary { id: string; version_number: number; version_status: 'draft' | 'published'; draft_revision: number; name: string; content_hash: string | null; updated_at: string; published_at: string | null }
 export interface TrainingProgramSummary { id: string; status: TrainingProgramStatus; name: string; goal_tags: string[]; duration_weeks: number; workout_slot_count: number; deload_week_count: number; current_published_version_number: number | null; published_at: string | null; has_draft: boolean; created_at: string; updated_at: string; archived_at: string | null }
 export interface TrainingProgramList { items: TrainingProgramSummary[]; page: number; per_page: number; total: number }
-export interface TrainingProgramDetail { id: string; owner_coach_id: string; status: TrainingProgramStatus; current_published_version_id: string | null; created_at: string; updated_at: string; archived_at: string | null; draft_version: TrainingProgramVersion | null; published_version: TrainingProgramVersion | null; versions: TrainingProgramVersionSummary[] }
+export interface TrainingProgramDetail { id: string; owner_coach_id: string; status: TrainingProgramStatus; current_published_version_id: string | null; cloned_from_program_id: string | null; created_at: string; updated_at: string; archived_at: string | null; draft_version: TrainingProgramVersion | null; published_version: TrainingProgramVersion | null; versions: TrainingProgramVersionSummary[] }
+export interface LibraryProgramSummary { id: string; name: string; description: string | null; level: string; duration_weeks: number; sessions_per_week: number; goal_tags: string[]; equipment_summary: string[]; published_version_id: string }
+export interface LibraryProgramList { items: LibraryProgramSummary[]; disclaimer: string }
+export interface LibraryExercisePreview { name: string; category: string; tracking_mode: ExerciseTrackingMode; set_count: number }
+export interface LibraryTemplatePreview { name: string; estimated_duration_minutes: number | null; exercises: LibraryExercisePreview[] }
+export interface LibrarySessionPreview { weekday: ProgramWeekday; display_order: number; required: boolean; template: LibraryTemplatePreview }
+export interface LibraryWeekPreview { week_number: number; label: string | null; is_deload: boolean; sessions: LibrarySessionPreview[] }
+export interface LibraryProgramDetail extends LibraryProgramSummary { coach_notes: string | null; trainee_instructions: string | null; weeks: LibraryWeekPreview[]; disclaimer: string }
 
 export type TrainingAssignmentStatus = 'active' | 'scheduled' | 'superseded' | 'cancelled'
 export type ScheduledWorkoutStatus = 'scheduled' | 'in_progress' | 'completed' | 'partial' | 'cancelled' | 'superseded' | 'skipped'

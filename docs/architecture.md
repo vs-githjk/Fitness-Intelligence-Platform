@@ -105,6 +105,27 @@ SQLAlchemy 2 ORM models live in `app/models.py`.
   (`MEDIA_DEMO_MUTATIONS`) and identity-scoped in the frontend cache. No media UI is
   exposed in this phase — only reusable client infrastructure. See ADR-0013/0014.
 
+## Starter library
+
+- A curated, read-only **starter library** of Programs (with Templates and Exercises)
+  lets coaches clone ready-made content into their own editable drafts. It reuses the
+  existing programming/publishing/assignment model — no parallel content model.
+- Starter Templates and Programs are owned by a single non-login `is_system` account;
+  starter Exercises keep `Exercise.scope = system`. Existing owner-scoping makes
+  system content read-only (a coach's `get_owned(...)` → `404`) and keeps it out of
+  the assignment selector (a coach can only assign programs they own).
+- The one mutation, `POST /api/v1/program-library/{id}/clone` (coach-only,
+  demo-protected, transactional), creates an independent coach-owned **draft** Program:
+  it duplicates each referenced system Template into a coach-owned published Template
+  and references the system Exercise versions directly. The source is never modified
+  and the copy never re-syncs. `cloned_from_program_id`/`cloned_from_template_id`
+  record attribution only.
+- Browse/preview via `GET /api/v1/program-library[/{id}]`. The library is installed by
+  an explicit, idempotent operator command (`python -m scripts.seed_library`), which
+  builds content through the normal services so it passes the same validation as
+  coach-created content. See [programming-starter-library.md](programming-starter-library.md)
+  and ADR-0016.
+
 ## Invitations
 
 - Coach registration is invitation-only, gated by a backend-only

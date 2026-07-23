@@ -44,6 +44,19 @@ these meanings — in code, UI copy, docs, and issues. See
   `exercise`). Enforced server-side by the media service; Phase 2 self-service
   uploads are `private` and owner-only.
 
+## Starter library
+
+- **Starter library** — a curated, read-only set of system-owned Programs (with their
+  Templates and Exercises) that coaches browse and clone. Not a marketplace or shared
+  coach library.
+- **System library account** — the single non-login `is_system` coach account that
+  owns starter Templates and Programs. Starter Exercises use `Exercise.scope = system`.
+- **Clone (starter)** — the coach action that creates an independent, coach-owned
+  **draft** Program from a starter Program, duplicating its Templates into coach-owned
+  published Templates and referencing the system Exercises. The source is never
+  changed and the copy never re-syncs (`cloned_from_program_id` /
+  `cloned_from_template_id` record attribution only).
+
 ## Programming entities
 
 - **Exercise** — a coach-owned exercise root (stable lineage identity).

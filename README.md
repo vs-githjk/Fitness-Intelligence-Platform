@@ -62,6 +62,7 @@ Product and reference:
 - [Workout templates](docs/workout-templates.md)
 - [Training programs](docs/training-programs.md)
 - [Program assignment and scheduling](docs/training-assignments.md)
+- [Curated starter library](docs/programming-starter-library.md)
 - [Workout execution](docs/workout-execution.md)
 - [Workout safety](docs/workout-safety.md)
 - [Workout readiness context](docs/workout-readiness-context.md)

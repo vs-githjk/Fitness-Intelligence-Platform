@@ -252,6 +252,7 @@ def training_program_detail_out(program: TrainingProgram) -> dict:
         "owner_coach_id": program.owner_coach_id,
         "status": program.status,
         "current_published_version_id": program.current_published_version_id,
+        "cloned_from_program_id": program.cloned_from_program_id,
         "created_at": program.created_at,
         "updated_at": program.updated_at,
         "archived_at": program.archived_at,

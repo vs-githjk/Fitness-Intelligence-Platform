@@ -53,7 +53,7 @@ password.
 - Make sure you are using the exact web address you were given.
 - If you were just invited as a coach, confirm your account was created (you register
   with a private coach code — see §4).
-- If it still fails, report it (see §18). Never share your password in a message or
+- If it still fails, report it (see §19). Never share your password in a message or
   screenshot.
 
 ---
@@ -161,7 +161,7 @@ Once assigned, the trainee sees their scheduled workouts on their calendar.
 > **The single most common confusion:** creating just an *Exercise* is **not** enough
 > to assign anything. Until you have a **published Program** (which needs a published
 > Template, which needs published Exercises), the assignment screen has nothing to
-> offer. See §11 and §15.
+> offer. See §11, §12, and §16.
 
 ---
 
@@ -234,7 +234,7 @@ calendar.
 program is still a draft — there is nothing to assign yet, and the app now shows a
 short explanation with a link straight to **Programming → Programs**. Creating an
 Exercise alone never fills this selector; you must build and **publish** the full
-chain in §7. See §15 for the step-by-step fix.
+chain in §7. See §16 for the step-by-step fix.
 
 Business rules that never change: you can only assign a **published Program version**
 (never a lone exercise or template); publishing rules, version eligibility, schedule
@@ -243,7 +243,52 @@ before — the empty-state text is only a clearer explanation, not a rule change
 
 ---
 
-## 12. Workout completion and coach review
+## 12. Starter Library — the fastest way to start
+
+Building your first program from scratch takes time. The **Starter Library** gives you
+ready-made starter programs you can copy and make your own.
+
+**What it is.** A small, curated set of general starter programs (with their workout
+templates and exercises), open to every coach. It is **read-only**: you cannot edit,
+delete, or assign the starter content directly, and it is not a marketplace or a shared
+library of other coaches' work. Think of it as a set of well-organized examples you can
+copy.
+
+**How to browse.** Open **Programming → Starter Library**. Each card shows the program's
+level, length in weeks, sessions per week, and a short equipment summary. Choose **View
+details** to preview the full weekly layout, the workout for each day, and the exercises
+inside — all read-only.
+
+**How to use one.** On a starter program, choose **Use this program**. This creates
+**your own editable draft copy** in **Programming → Programs**. Two things to know:
+
+- The copy is **yours** — you can rename it, change weeks, swap exercises, and adjust
+  sets and targets, exactly like a program you built yourself.
+- The copy is **independent**. Changing your copy never changes the original starter
+  program, and if the starter library is updated later, **your copy is not changed**.
+
+**Then follow the normal steps.** A copied program starts as a **draft**. It is not
+published and not assigned automatically. To use it with a trainee:
+
+1. Review and edit the draft as needed.
+2. **Publish** it (this creates a fixed, dependable version).
+3. **Assign** the published program to a trainee (see §11).
+
+A program copied from the Starter Library shows a small **"Based on Starter Library"**
+label so you can tell where it came from.
+
+**Quick workflow.**
+
+```
+Starter Library  →  Use this program  →  Review / edit draft  →  Publish  →  Assign to trainee
+```
+
+You never have to use the Starter Library — you can still build everything from scratch
+in Programming. It is simply a faster starting point.
+
+---
+
+## 13. Workout completion and coach review
 
 When a trainee runs a workout, each session ends in one of these states:
 
@@ -271,7 +316,7 @@ signal to check in with the person, not just a data point.
 
 ---
 
-## 13. Demo mode
+## 14. Demo mode
 
 Demo mode (**Explore Demo**) is a synthetic, **read-only** workspace:
 
@@ -285,13 +330,16 @@ personal or health information into demo.**
 
 ---
 
-## 14. Common mistakes
+## 15. Common mistakes
 
 - **Exercise left as a draft** — publish it, or templates can't use it.
 - **Template left as a draft** — publish it, or programs can't use it.
 - **Program left as a draft** — publish it, or you can't assign it.
 - **Empty "Published Program version" selector** — you don't yet have a published
-  program; build and publish the chain (§7, §15).
+  program; build and publish the chain (§7, §16), or start from the Starter Library (§12).
+- **Expecting to edit a starter program** — you can't; starter content is read-only.
+  Choose **Use this program** to get your own editable draft, then edit that (§12).
+- **A copied program stays a draft** — that's expected; publish it before assigning.
 - **Trainee hasn't finished onboarding** — some scores won't appear until they do.
 - **Missing daily check-ins** — a blank readiness is "no data", not a problem to act
   on.
@@ -303,7 +351,7 @@ personal or health information into demo.**
 
 ---
 
-## 15. Troubleshooting
+## 16. Troubleshooting
 
 **Symptom → likely cause → action.**
 
@@ -314,7 +362,7 @@ personal or health information into demo.**
 - *Action:* follow the chain **Exercise → Template → Program → Assignment** and make
   sure **each required layer is published**. Use the **Go to Programming → Programs**
   link in the empty state. If you expected a published program, refresh and retry. If
-  a genuinely published program still doesn't appear, report it (§18).
+  a genuinely published program still doesn't appear, report it (§19).
 
 **A trainee doesn't appear on my roster.**
 - *Likely cause:* the invitation wasn't redeemed, expired, or was already used.
@@ -330,11 +378,37 @@ personal or health information into demo.**
   entry above.
 
 **Something looks broken or a page won't load.**
-- *Action:* refresh; if it persists, report it with what you were doing (§18).
+- *Action:* refresh; if it persists, report it with what you were doing (§19).
+
+**I cannot edit a starter program.**
+- *Likely cause:* starter programs are read-only by design.
+- *Action:* open the program and choose **Use this program** to create your own
+  editable draft, then edit that copy (§12).
+
+**The copied program does not appear in Assignments.**
+- *Likely cause:* your copy is still a draft; only published programs can be assigned.
+- *Action:* open your copy in **Programming → Programs**, review it, and **Publish** it.
+
+**I cloned a program but it is still a draft.**
+- *Likely cause:* that is expected — copying never publishes automatically.
+- *Action:* publish the draft when you are ready to assign it.
+
+**I changed my copy, but the starter program did not change.**
+- *Likely cause:* copies are independent by design; edits never flow back to the starter.
+- *Action:* nothing needed — this is intended. Starter updates also never change your copy.
+
+**I do not see the Starter Library.**
+- *Likely cause:* the starter library has not been installed for this workspace.
+- *Action:* you can build programs from scratch in **Programming → Programs**; report it
+  if you expected starter content to be available.
+
+**A "Use this program" (clone) action failed.**
+- *Likely cause:* a temporary connection or server error; no partial copy is created.
+- *Action:* retry; if it keeps failing, report it (§19). Your programs are unaffected.
 
 ---
 
-## 16. Safe and appropriate use
+## 17. Safe and appropriate use
 
 - FitIntel 360 **supports** coaching decisions; it does not make them for you.
 - It does **not** diagnose medical conditions or provide medical clearance.
@@ -347,7 +421,7 @@ personal or health information into demo.**
 
 ---
 
-## 17. Quick-start checklist
+## 18. Quick-start checklist
 
 1. Sign in to your coach account.
 2. Open **Invitations**, create an invite, and share the link/code privately.
@@ -361,7 +435,7 @@ personal or health information into demo.**
 
 ---
 
-## 18. Giving feedback
+## 19. Giving feedback
 
 Your feedback shapes the app. Please report:
 

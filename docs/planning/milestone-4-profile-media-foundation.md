@@ -17,6 +17,14 @@ understanding. It does not authorize unapproved code. Nothing here overrides
 - **Phase 3 and later (avatars, exercise media, coach/trainee media integration):**
   **not approved.** Do not implement without an explicit approved decision.
 
+### Related bounded enhancement (not a media phase)
+
+- **Curated Workout Starter Library: complete.** A read-only, system-owned starter
+  library with clone-to-edit, reusing the existing programming/publishing/assignment
+  model. It is independent of the Profile/Media milestone. See ADR-0016 and
+  [../programming-starter-library.md](../programming-starter-library.md). This did not
+  begin any avatar/profile-media work.
+
 ## Problem statement
 
 Coaches and trainees currently have no profile surface: no preferred display name,

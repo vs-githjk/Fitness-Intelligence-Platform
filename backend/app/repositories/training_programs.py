@@ -7,8 +7,10 @@ from app.models import (
     ProgramSession,
     ProgramWeek,
     TrainingProgram,
+    TrainingProgramStatus,
     TrainingProgramVersion,
     WorkoutTemplate,
+    WorkoutTemplateExercise,
     WorkoutTemplateStatus,
     WorkoutTemplateVersion,
     WorkoutTemplateVersionStatus,
@@ -22,6 +24,18 @@ def _program_graph_options():
         selectinload(ProgramSession.workout_template_version).selectinload(
             WorkoutTemplateVersion.exercises
         )
+    )
+
+
+def _program_preview_options():
+    """Eager-load down to each exercise version for a full read-only preview."""
+    return (
+        selectinload(TrainingProgram.versions)
+        .selectinload(TrainingProgramVersion.weeks)
+        .selectinload(ProgramWeek.sessions)
+        .selectinload(ProgramSession.workout_template_version)
+        .selectinload(WorkoutTemplateVersion.exercises)
+        .selectinload(WorkoutTemplateExercise.exercise_version)
     )
 
 
@@ -62,6 +76,31 @@ class TrainingProgramRepository:
                 TrainingProgram.owner_coach_id == coach_id,
             )
             .with_for_update()
+        )
+
+    def list_owned_preview(self, owner_id: uuid.UUID) -> list[TrainingProgram]:
+        return list(
+            self.db.scalars(
+                select(TrainingProgram)
+                .options(_program_preview_options())
+                .where(
+                    TrainingProgram.owner_coach_id == owner_id,
+                    TrainingProgram.status == TrainingProgramStatus.ACTIVE,
+                )
+                .order_by(TrainingProgram.created_at, TrainingProgram.id)
+            ).all()
+        )
+
+    def get_owned_preview(
+        self, owner_id: uuid.UUID, program_id: uuid.UUID
+    ) -> TrainingProgram | None:
+        return self.db.scalar(
+            select(TrainingProgram)
+            .options(_program_preview_options())
+            .where(
+                TrainingProgram.id == program_id,
+                TrainingProgram.owner_coach_id == owner_id,
+            )
         )
 
     def next_version_number(self, program_id: uuid.UUID) -> int:

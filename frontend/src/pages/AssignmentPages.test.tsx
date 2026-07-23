@@ -132,6 +132,7 @@ it('explains the empty state and links to Programming when no Programs exist', a
   expect(await screen.findByText('No programs yet.')).toBeVisible()
   expect(screen.getByText('Exercise → Workout Template → Program → Assignment')).toBeVisible()
   expect(screen.getByRole('link', { name: 'Go to Programming → Programs' })).toHaveAttribute('href', '/coach/programming/programs')
+  expect(screen.getByRole('link', { name: 'Start from a ready-made Program' })).toHaveAttribute('href', '/coach/programming/library')
   expect(screen.getByRole('button', { name: 'Preview schedule' })).toBeDisabled()
 })
 

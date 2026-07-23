@@ -287,3 +287,49 @@ its authoritative documentation.
   not shown as empty and API errors are not shown as "no programs". Recorded as a
   resolved P2 usability finding, not a business-logic change. See
   [../testing/feedback-triage.md](../testing/feedback-triage.md).
+
+## ADR-0016 — Curated starter library: system-owned, read-only, clone-to-edit
+
+- **Status:** accepted
+- **Date:** 2026-07-23
+- **Context:** A new coach must build every Exercise, Template, and Program before
+  assigning anything. A curated starter library lowers that setup cost, but shared
+  starter content must never be editable, deletable, or directly assignable by a
+  coach, and it must reuse the existing programming/publishing/assignment model
+  rather than adding a parallel one.
+- **Decision:**
+  - **System ownership.** Starter Templates and Programs are owned by a single
+    non-login `is_system` account; starter Exercises keep the existing
+    `scope = system` model. Each table therefore keeps its *established* ownership
+    model (Exercise: nullable-owner + scope; Template/Program: non-nullable owner),
+    and existing owner-scoping makes system content read-only automatically (a
+    coach's `get_owned(...)` returns nothing → `404`) and keeps it out of the
+    assignment selector (a coach can only assign programs they own).
+  - **Clone-to-edit.** The one mutation, `POST /api/v1/program-library/{id}/clone`,
+    transactionally creates an independent coach-owned **draft** Program. It
+    duplicates each referenced system Template into a coach-owned **published**
+    Template and references the read-only system Exercise versions directly (coach
+    content may reference system exercise versions). The source is never modified;
+    the copy never re-syncs. Nothing is published or assigned automatically — the
+    coach reviews, publishes, then assigns via the existing workflow.
+  - **Attribution.** `training_programs.cloned_from_program_id` and
+    `workout_templates.cloned_from_template_id` (nullable, self-referential) record
+    the snapshot source for a "Based on Starter Library" label and audit; they never
+    imply synchronization.
+  - **Seeding.** An idempotent operator command (`python -m scripts.seed_library`)
+    installs/updates the library through the normal application services, so seeded
+    content passes exactly the same validation as coach-created content. Content is
+    keyed by stable seed keys and by name-within-the-system-account. Revisions add a
+    new item rather than mutating a published version, so existing coach copies stay
+    independent.
+- **Consequences:** no parallel programming model; no schema relaxation on tables
+  holding real coach data (only additive `users.is_system` + two nullable attribution
+  columns); clone is demo-protected (`LIBRARY_DEMO_MUTATIONS`); the library is not a
+  marketplace or shared coach library and has no sync engine. See
+  [../architecture.md](../architecture.md) and
+  [../programming-starter-library.md](../programming-starter-library.md).
+- **Alternatives considered:** generalizing `scope` onto Template/Program tables —
+  rejected as it would relax `NOT NULL`/constraints on tables holding real coach
+  programs and complicate program validation (system programs referencing system
+  templates); a coach-to-coach sharing marketplace — out of scope and explicitly
+  deferred.

@@ -34,14 +34,42 @@ and env-var ownership.
 - After any deploy, confirm all three report the expected version and that the
   database migration head is correct.
 
-## Demo seed command location
+## Seed command locations
 
-- Seeding is a separate, explicit operation: `python -m scripts.seed` (the Compose
-  `seed` service under the `tools` profile), gated by `SEED_DEMO_DATA=true`.
-- Production/staging config keeps `SEED_DEMO_DATA=false`; normal startup never
-  seeds. Seeding is deterministic and idempotent — reseeding produces the same
-  synthetic state. Never seed a real-user environment with demo data expecting it
-  to overwrite real content.
+Two explicit seed commands exist; neither runs at application startup.
+
+- **Development/demo content:** `python -m scripts.seed` (the Compose `seed` service
+  under the `tools` profile), gated by `SEED_DEMO_DATA=true`. It seeds synthetic demo
+  accounts, coach content, and — for convenience — the starter library. Production and
+  staging keep `SEED_DEMO_DATA=false`; normal startup never seeds. Deterministic and
+  idempotent — reseeding produces the same synthetic state. Never seed a real-user
+  environment with demo data expecting it to overwrite real content.
+
+- **Starter library (production-safe):** `python -m scripts.seed_library`. This
+  installs or updates the curated, read-only starter library (owned by the non-login
+  `is_system` account) and is **not** gated by `SEED_DEMO_DATA` — it is real product
+  content, not demo data.
+
+### Starter-library operator procedure
+
+- **Development / staging:** the starter library is included by `python -m scripts.seed`.
+  You may also run `python -m scripts.seed_library` directly at any time.
+- **Production installation/update:** run `python -m scripts.seed_library` once as an
+  explicit operator step (same image/env as migrations). It is idempotent, additive,
+  and non-destructive: it never duplicates content, never modifies coach-owned copies
+  cloned from starter content, and never touches real accounts, assignments, or demo
+  data.
+- **Rerun behavior:** safe to re-run; existing starter Exercises/Templates/Programs are
+  detected (by system slug and by name within the `is_system` account) and skipped.
+- **Updating content:** add a **new** starter item (new name/key) or publish a new
+  system version. Never edit a published starter version in place; existing coach
+  clones are independent snapshots and are intentionally unaffected (no sync engine).
+- **Rollback:** revert the content change and re-run; already-installed content is left
+  as-is. Removing a starter Program is a manual data operation and does not affect
+  coach copies already cloned from it.
+- **Verify installed content:** as a coach, open **Programming → Starter Library**, or
+  check `GET /api/v1/program-library` returns the expected Programs. The static
+  `verify_library_content()` check also runs at the start of every seed.
 
 ## Environment-variable ownership
 

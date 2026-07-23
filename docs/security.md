@@ -76,6 +76,28 @@ repository still makes no HIPAA/GDPR/SOC 2/medical-device compliance claim.
 
 The Phase 7B analytics endpoints are all read-only GETs. Trainees can read only their own analytics; coaches can read only trainees with an active `CoachTraineeAssignment`. An inactive assignment is denied, and cross-coach session discovery returns `404` (indistinguishable from a missing object) rather than confirming existence. Every protected React Query key includes the account identity scope, so login, logout, and demo transitions never render another identity's analytics, and an in-flight response cannot repopulate a new identity's cache. Demo accounts may inspect analytics; all mutations remain blocked. The one Phase 7C mutation — the explicit trainee whole-workout skip (`POST /api/v1/trainee/workouts/{id}/skip`) — enforces trainee ownership, rejects the coach role, rejects non-scheduled/started statuses, calls backend demo protection (403 for demo), and is listed in the central workout-execution demo-mutation inventory.
 
+## Starter-library authorization
+
+The curated starter library is read-only, system-owned content. Its authorization
+posture:
+
+- **Browse/preview** (`GET /api/v1/program-library[/{id}]`) is coach-only
+  (`require_coach`); trainees receive `403`. An unavailable library or unknown program
+  returns a uniform `404`.
+- **Read-only enforcement is structural, not ad hoc.** System Templates and Programs
+  are owned by the single non-login `is_system` account, so the existing owner-scoped
+  services never return them to a coach for edit/publish/archive (a coach's
+  `get_owned(...)` yields `404`), and they never appear in the coach's own program
+  list or the assignment selector (a coach can only assign programs they own). There
+  are no update or delete routes for system content.
+- **Clone** (`POST /api/v1/program-library/{id}/clone`) is coach-only, calls backend
+  demo protection (`403 demo_read_only` for demo accounts), and is listed in the
+  central `LIBRARY_DEMO_MUTATIONS` inventory with an OpenAPI-derived completeness test.
+  It creates content owned only by the cloning coach; unrelated coaches cannot see a
+  coach's cloned Program (`404`), and the source is never modified.
+- The `is_system` account cannot log in (its password hash matches no password) and is
+  never surfaced in rosters, invitations, or assignment flows.
+
 ## Media handling
 
 The Milestone 4 media subsystem is infrastructure only; no media feature is exposed to users yet. Its security posture:

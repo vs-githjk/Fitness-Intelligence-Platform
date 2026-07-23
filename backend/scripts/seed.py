@@ -1548,6 +1548,12 @@ def seed() -> None:
             )
         db.commit()
 
+        # Development/demo content includes the curated starter library so it is
+        # browsable and clonable in local, staging, and Playwright environments.
+        # Imported lazily to avoid a module-level cycle with seed_library.
+        from scripts.seed_library import seed_starter_library
+
+        seed_starter_library(db)
         seed_exercise_library(db, coach)
         seed_workout_templates(db, coach)
         seed_training_programs(db, coach)

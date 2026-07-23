@@ -26,6 +26,10 @@ and contributors do not implement them opportunistically.
 | Media-consuming features (avatars, exercise media) | Milestone 4 later phases, not approved | Phase 2 built only the provider-independent media foundation |
 | Credential verification | Self-entered data is not verified (glossary) | Do not present self-reported data as verified |
 | Advanced medical or injury functionality | No diagnosis/clearance; safety not monitored | Hard product boundary |
+| Coach-to-coach library sharing / marketplace | Out of scope for the curated starter library (ADR-0016) | The starter library is one-way clone-to-edit, not sharing |
+| Ratings / reviews / likes / comments on programs | Social features not approved | No community layer on starter or coach content |
+| Starter-library synchronization engine | Clones are independent snapshots (ADR-0016) | Updating starter content never alters existing coach copies |
+| AI-generated or personalized programs | Requires an approved AI decision + review | Starter content is curated and static, never generated or personalized |
 
 If you believe an item should move from deferred to planned, open a feature
 proposal (issue template) and record the accepted decision in the decision log —
