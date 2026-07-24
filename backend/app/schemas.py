@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, mo
 from app.models import (
     AssignmentHistoryEvent,
     DistanceUnit,
+    ExerciseDifficulty,
     ExerciseScope,
     ExerciseStatus,
     ExerciseTrackingMode,
@@ -562,6 +563,9 @@ class ExerciseDraftData(BaseModel):
     secondary_muscle_groups: list[str] = Field(default_factory=list, max_length=20)
     unilateral: bool = False
     safety_cues: list[str] = Field(default_factory=list, max_length=20)
+    difficulty: ExerciseDifficulty | None = None
+    coaching_cues: list[str] = Field(default_factory=list, max_length=20)
+    common_mistakes: list[str] = Field(default_factory=list, max_length=20)
     image_url: str | None = Field(default=None, max_length=2048)
     thumbnail_url: str | None = Field(default=None, max_length=2048)
 
@@ -581,12 +585,12 @@ class ExerciseDraftData(BaseModel):
             raise ValueError("Metadata labels must be 80 characters or fewer")
         return cleaned
 
-    @field_validator("safety_cues")
+    @field_validator("safety_cues", "coaching_cues", "common_mistakes")
     @classmethod
     def clean_safety_cues(cls, value: list[str]) -> list[str]:
         cleaned = list(dict.fromkeys(item.strip() for item in value if item.strip()))
         if any(len(item) > 500 for item in cleaned):
-            raise ValueError("Safety cues must be 500 characters or fewer")
+            raise ValueError("Each note must be 500 characters or fewer")
         return cleaned
 
     @field_validator("image_url", "thumbnail_url")
@@ -615,11 +619,29 @@ class ExerciseCreateRequest(ExerciseDraftData):
     )
 
 
+class ExerciseMediaOut(BaseModel):
+    """Authored exercise media metadata with an authorized delivery URL.
+
+    The opaque storage key is never exposed; content_url resolves through the
+    protected coach exercise media route.
+    """
+
+    id: uuid.UUID
+    purpose: MediaPurpose
+    content_type: str
+    byte_size: int
+    original_filename: str | None
+    content_url: str
+
+
 class ExerciseVersionOut(ExerciseDraftData):
     id: uuid.UUID
     exercise_id: uuid.UUID
     version_number: int
     status: Literal["draft", "published"]
+    primary_image: ExerciseMediaOut | None = None
+    secondary_image: ExerciseMediaOut | None = None
+    demonstration_video: ExerciseMediaOut | None = None
     content_hash: str | None
     created_by_user_id: uuid.UUID | None
     created_at: datetime

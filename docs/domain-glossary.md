@@ -38,7 +38,14 @@ these meanings — in code, UI copy, docs, and issues. See
   timezone, weight unit, distance unit, locale, and theme/privacy/accessibility
   placeholders. Preferences change presentation only; they never alter recorded
   data. `UserPreferences.timezone` is the canonical timezone preference.
-- **MediaAsset** — a metadata record for one stored binary object (image). Holds the
+- **Exercise media** — authored images and one demonstration video on an
+  `ExerciseVersion`: `primary_image`, optional `secondary_image`, and
+  `demonstration_video` (`EXERCISE_IMAGE`/`EXERCISE_VIDEO`-purpose `MediaAsset`s).
+  Edited on the draft only (published versions are immutable) and delivered to any
+  coach who can see the exercise via `/coach/exercises/{id}/media/{media_id}/content`.
+- **Exercise difficulty** — an instructional `beginner`/`intermediate`/`advanced`
+  label on an exercise version. Self-declared; never a medical or fitness rating.
+- **MediaAsset** — a metadata record for one stored binary object (image or video). Holds the
   owner, uploader, purpose, visibility, lifecycle status, storage provider, opaque
   storage key, content type, size, SHA-256 checksum, and sanitized filename. Bytes
   live in a storage provider, never in the database or in an API response.

@@ -63,6 +63,14 @@ class ExerciseTrackingMode(str, enum.Enum):
     BODYWEIGHT_OR_ASSISTED_REPETITIONS = "bodyweight_or_assisted_repetitions"
 
 
+class ExerciseDifficulty(str, enum.Enum):
+    """Instructional difficulty of an exercise. Self-declared, never a medical rating."""
+
+    BEGINNER = "beginner"
+    INTERMEDIATE = "intermediate"
+    ADVANCED = "advanced"
+
+
 class WorkoutTemplateStatus(str, enum.Enum):
     ACTIVE = "active"
     ARCHIVED = "archived"
@@ -224,6 +232,7 @@ class MediaPurpose(str, enum.Enum):
     AVATAR = "avatar"
     EXERCISE_IMAGE = "exercise_image"
     EXERCISE_GIF = "exercise_gif"
+    EXERCISE_VIDEO = "exercise_video"
     DOCUMENT = "document"
 
 
@@ -562,8 +571,43 @@ class ExerciseVersion(Base):
     secondary_muscle_groups: Mapped[list[str]] = mapped_column(JSON, default=list)
     unilateral: Mapped[bool] = mapped_column(Boolean, default=False)
     safety_cues: Mapped[list[str]] = mapped_column(JSON, default=list)
+    # Richer instructional knowledge. Optional and additive; never medical advice.
+    difficulty: Mapped[ExerciseDifficulty | None] = mapped_column(
+        Enum(ExerciseDifficulty, native_enum=False, values_callable=enum_values)
+    )
+    coaching_cues: Mapped[list[str] | None] = mapped_column(JSON)
+    common_mistakes: Mapped[list[str] | None] = mapped_column(JSON)
+    # Legacy external-URL image fields (pre-media-subsystem). Retained for
+    # compatibility; new authored media uses the MediaAsset references below.
     image_url: Mapped[str | None] = mapped_column(String(2048))
     thumbnail_url: Mapped[str | None] = mapped_column(String(2048))
+    # Authored media, part of this immutable version's content. Each points at an
+    # ACTIVE MediaAsset (SET NULL if the asset row is ever removed). A single primary
+    # image, one optional secondary image, and one optional demonstration video.
+    primary_image_media_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "media_assets.id",
+            name="fk_exercise_versions_primary_image",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+    secondary_image_media_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "media_assets.id",
+            name="fk_exercise_versions_secondary_image",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+    demonstration_video_media_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "media_assets.id",
+            name="fk_exercise_versions_demonstration_video",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
     content_hash: Mapped[str | None] = mapped_column(String(64))
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
@@ -574,6 +618,16 @@ class ExerciseVersion(Base):
     )
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     exercise: Mapped[Exercise] = relationship(back_populates="versions")
+    # Read-only accessors for the authored media assets (explicit FKs disambiguate).
+    primary_image: Mapped["MediaAsset | None"] = relationship(
+        "MediaAsset", foreign_keys=[primary_image_media_id], viewonly=True
+    )
+    secondary_image: Mapped["MediaAsset | None"] = relationship(
+        "MediaAsset", foreign_keys=[secondary_image_media_id], viewonly=True
+    )
+    demonstration_video: Mapped["MediaAsset | None"] = relationship(
+        "MediaAsset", foreign_keys=[demonstration_video_media_id], viewonly=True
+    )
 
 
 class WorkoutTemplate(Base):

@@ -178,6 +178,52 @@ Exercises are the building blocks.
 Keep instructions clear and safety-minded; trainees rely on them during a workout. A
 draft exercise is a work in progress and won't be usable downstream until published.
 
+### Exercise knowledge
+
+Beyond the basics, an exercise can hold richer coaching knowledge so it becomes a
+reference, not just a name:
+
+- **Difficulty** — Beginner, Intermediate, or Advanced. This is an instructional
+  label to guide selection; it is **not** a medical or fitness rating.
+- **Coaching cues** — short prompts you'd give while someone performs the movement.
+- **Common mistakes** — frequent errors to watch for.
+- **Safety cues** — reminders to keep the movement safe.
+
+Keep all of this instructional and general. Do not enter medical claims or promises.
+
+### Exercise media (images and video)
+
+On an editable **draft**, the **Media** section lets you add:
+
+- a **primary image** (the main still),
+- an optional **secondary image** (a second angle), and
+- one optional **demonstration video**.
+
+Images accept JPEG, PNG, WEBP, or GIF up to 5 MB; video accepts MP4 or WEBM up to
+25 MB. Choose a file to see a preview, then **Upload**. Use **Replace** to swap a
+file or **Remove** to take it down. The read-only **Preview** panel shows how the
+exercise looks with its media and knowledge, with clear "No image yet" / "No video
+yet" placeholders when empty.
+
+Media is part of the **published version**: once you publish, its images and video
+are frozen with that version. To change media later, create a **revision** (which
+copies the current media), edit the draft, and publish again — earlier published
+versions and any workouts already built from them are never altered.
+
+**System exercise limitations.** Starter Library and other system exercises are
+read-only: you can view their knowledge and demonstration media, but you cannot edit
+them or change their media. To customize one, clone it (or build your own private
+exercise) and add your own media there.
+
+### Best practices
+
+- Use a clear image that shows the key position; add a short video for movements that
+  are hard to describe in words.
+- Write two or three focused coaching cues rather than a long paragraph.
+- List the mistakes you actually correct most often.
+- Publish only when the knowledge and media are ready — remember they freeze into the
+  version.
+
 ---
 
 ## 9. Workout Templates

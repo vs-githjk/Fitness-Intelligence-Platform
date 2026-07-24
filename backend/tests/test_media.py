@@ -223,7 +223,7 @@ def test_upload_rejects_signature_mismatch(db: Session, storage: LocalStoragePro
 
 def test_upload_rejects_non_uploadable_purpose(db: Session, storage: LocalStorageProvider) -> None:
     with pytest.raises(Exception) as excinfo:
-        _upload(db, storage, _coach(db), purpose=MediaPurpose.EXERCISE_IMAGE)
+        _upload(db, storage, _coach(db), purpose=MediaPurpose.DOCUMENT)
     assert excinfo.value.status_code == 400
 
 

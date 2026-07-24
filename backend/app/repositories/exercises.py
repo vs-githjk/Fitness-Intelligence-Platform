@@ -19,6 +19,16 @@ class ExerciseRepository:
         self.db = db
 
     @staticmethod
+    def _version_media_loader():
+        # Eager-load authored media so serialization never lazy-loads per version.
+        versions = selectinload(Exercise.versions)
+        return (
+            versions.selectinload(ExerciseVersion.primary_image),
+            versions.selectinload(ExerciseVersion.secondary_image),
+            versions.selectinload(ExerciseVersion.demonstration_video),
+        )
+
+    @staticmethod
     def _visible_to(coach_id: uuid.UUID):
         return or_(
             Exercise.scope == ExerciseScope.SYSTEM,
@@ -36,7 +46,7 @@ class ExerciseRepository:
     ) -> list[Exercise]:
         query = (
             select(Exercise)
-            .options(selectinload(Exercise.versions))
+            .options(selectinload(Exercise.versions), *self._version_media_loader())
             .where(self._visible_to(coach_id))
         )
         if not include_archived:
@@ -64,7 +74,7 @@ class ExerciseRepository:
     def get_visible(self, coach_id: uuid.UUID, exercise_id: uuid.UUID) -> Exercise | None:
         return self.db.scalar(
             select(Exercise)
-            .options(selectinload(Exercise.versions))
+            .options(selectinload(Exercise.versions), *self._version_media_loader())
             .where(Exercise.id == exercise_id, self._visible_to(coach_id))
         )
 

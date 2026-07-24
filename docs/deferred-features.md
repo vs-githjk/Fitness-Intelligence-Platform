@@ -23,7 +23,10 @@ and contributors do not implement them opportunistically.
 | Media EXIF stripping / thumbnails | Chose narrower validation (ADR-0014) | Deferred to a later profile-media/hardening phase; not implemented |
 | Media malware scanning | Vendor/integration and cost review needed | Not implemented; signature+MIME checks are not a safety guarantee |
 | Cloud media provider (S3/R2/Azure) | Only the local provider is implemented (ADR-0013) | Contract reserved; factory rejects unimplemented providers; required before production media |
-| Exercise / nutrition media | Milestone 4 later phase and Milestone 5, not approved | Avatars (ADR-0017) are the only media-consuming feature so far |
+| Nutrition media | Milestone 5, not approved | Avatars (ADR-0017) and exercise media (ADR-0018) are the media-consuming features so far |
+| Video streaming / transcoding / thumbnails | Exercise video is stored and delivered as-is (ADR-0018) | No HLS/DASH, no re-encode, no generated poster/thumbnail |
+| External / YouTube exercise embedding | No external media hosts (ADR-0018) | The legacy `image_url`/`thumbnail_url` fields remain but are superseded by uploads |
+| Trainee-facing exercise media in the workout runner | Needs runner UX + a trainee-scoped delivery authorization walk (ADR-0018) | Exercise media is coach-scoped this phase |
 | Credential verification | Self-entered data is not verified (glossary) | Certifications are plain text; do not present self-reported data as verified |
 | Public profiles / profile search / discovery / sharing | No public surface or social graph approved (ADR-0017) | Profiles are visible only to self and an active coach/trainee relationship |
 | Profile document uploads / license validation | Verification and document handling not designed (ADR-0017) | Certifications remain plain text only |

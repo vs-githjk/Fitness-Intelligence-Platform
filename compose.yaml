@@ -45,6 +45,11 @@ services:
     environment: *backend-environment
     ports:
       - "127.0.0.1:8000:8000"
+    # Persist local media (avatars, exercise media) across restarts and share the
+    # store with the seed job. Local storage is a dev/staging convenience only;
+    # production uses a non-local provider.
+    volumes:
+      - fitness_media:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -70,6 +75,8 @@ services:
     build: ./backend
     command: ["python", "-m", "scripts.seed"]
     environment: *backend-environment
+    volumes:
+      - fitness_media:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -93,3 +100,4 @@ services:
 
 volumes:
   fitness_postgres:
+  fitness_media:

@@ -121,6 +121,17 @@ SQLAlchemy 2 ORM models live in `app/models.py`.
   `MediaService` for validation/storage/lifecycle and add only identity concerns:
   binding a user's ACTIVE avatar to their `UserProfile` and delivering it to related
   accounts. See [profiles-and-avatars.md](profiles-and-avatars.md) and ADR-0017.
+- Exercise media (`app/exercise_media_services.py`) is the second integration: an
+  `ExerciseVersion` references a primary image, optional secondary image, and one
+  demonstration video (images reuse the image pipeline; video adds MP4/WEBM types with
+  a larger cap — no transcoding or streaming). Media is authored on the **draft** only,
+  so published versions stay immutable, and a shared asset is never retired while
+  another version still references it. Delivery is authorized to any coach who can see
+  the exercise. See [exercise-library.md](exercise-library.md) and ADR-0018.
+- **Local media is a shared, persisted volume in the dev/staging compose stack**
+  (`fitness_media` mounted at `/app/media` on `backend` and `seed`) so uploads survive
+  restarts and the seed and backend share one store. Production still uses a non-local
+  provider (local media is rejected in production).
 
 ## Starter library
 

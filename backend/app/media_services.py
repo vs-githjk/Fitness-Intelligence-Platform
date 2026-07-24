@@ -42,17 +42,24 @@ _SPOOL_THRESHOLD = 1024 * 1024
 ALLOWED_CONTENT_TYPES: frozenset[str] = frozenset(
     {"image/jpeg", "image/png", "image/webp", "image/gif"}
 )
+# Demonstration videos: container formats only, no streaming/transcoding. The file is
+# stored as-is and delivered through the same authorized route as images.
+ALLOWED_VIDEO_CONTENT_TYPES: frozenset[str] = frozenset({"video/mp4", "video/webm"})
 _EXTENSIONS = {
     "image/jpeg": "jpg",
     "image/png": "png",
     "image/webp": "webp",
     "image/gif": "gif",
+    "video/mp4": "mp4",
+    "video/webm": "webm",
 }
-# Self-service uploads may only own-scope images; broader purposes are reserved for
-# later, feature-mediated flows and are not acceptable on the generic endpoint.
-UPLOADABLE_PURPOSES: frozenset[MediaPurpose] = frozenset(
-    {MediaPurpose.GENERIC, MediaPurpose.AVATAR}
+# Purposes accepted by feature-mediated upload flows. Images cover avatars and
+# exercise images; video is reserved for a single exercise demonstration clip.
+IMAGE_PURPOSES: frozenset[MediaPurpose] = frozenset(
+    {MediaPurpose.GENERIC, MediaPurpose.AVATAR, MediaPurpose.EXERCISE_IMAGE}
 )
+VIDEO_PURPOSES: frozenset[MediaPurpose] = frozenset({MediaPurpose.EXERCISE_VIDEO})
+UPLOADABLE_PURPOSES: frozenset[MediaPurpose] = IMAGE_PURPOSES | VIDEO_PURPOSES
 
 # Documented, enforced lifecycle transitions.
 ALLOWED_TRANSITIONS: dict[MediaLifecycleStatus, frozenset[MediaLifecycleStatus]] = {
@@ -103,6 +110,12 @@ def _signature_matches(content_type: str, header: bytes) -> bool:
         return header[:6] in (b"GIF87a", b"GIF89a")
     if content_type == "image/webp":
         return header[:4] == b"RIFF" and header[8:12] == b"WEBP"
+    if content_type == "video/mp4":
+        # ISO base media format: a 'ftyp' box begins the file (after its 4-byte size).
+        return header[4:8] == b"ftyp"
+    if content_type == "video/webm":
+        # Matroska/WebM starts with the EBML header magic.
+        return header[:4] == b"\x1a\x45\xdf\xa3"
     return False
 
 
@@ -157,15 +170,20 @@ def upload_media(
         # The generic endpoint never widens visibility; broader sharing is a later,
         # relationship-mediated concern.
         raise _error(400, "media_invalid_visibility", "Only private media is supported.")
+    is_video = purpose in VIDEO_PURPOSES
+    allowed_types = ALLOWED_VIDEO_CONTENT_TYPES if is_video else ALLOWED_CONTENT_TYPES
+    max_bytes = settings.media_max_video_bytes if is_video else settings.media_max_bytes
     content_type = (declared_content_type or "").split(";")[0].strip().lower()
-    if content_type not in ALLOWED_CONTENT_TYPES:
+    if content_type not in allowed_types:
         raise _error(
             415,
             "media_unsupported_type",
-            "Only JPEG, PNG, WEBP, or GIF images are accepted.",
+            "Only MP4 or WEBM videos are accepted."
+            if is_video
+            else "Only JPEG, PNG, WEBP, or GIF images are accepted.",
         )
 
-    spool, checksum, size, header = _spool_and_hash(source, settings.media_max_bytes)
+    spool, checksum, size, header = _spool_and_hash(source, max_bytes)
     try:
         if not _signature_matches(content_type, header):
             raise _error(

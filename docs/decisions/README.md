@@ -371,3 +371,41 @@ its authoritative documentation.
   visibility rules — rejected to keep media owner-only and put relationship logic in
   the identity layer; embedding avatars as base64 in JSON — rejected for payload size
   and to preserve streamed, cacheable, authorized delivery.
+
+## ADR-0018 — Exercise knowledge and media on the immutable version
+
+- **Status:** accepted
+- **Date:** 2026-07-24
+- **Context:** An exercise should be a rich knowledge object (images, a demonstration
+  video, coaching cues, common mistakes, difficulty), not just a name and tracking
+  mode — while preserving version immutability, reusing the media subsystem, and not
+  introducing streaming, transcoding, or external/YouTube embedding.
+- **Decision:**
+  - **Extend the version.** `ExerciseVersion` gains `difficulty`, `coaching_cues`,
+    `common_mistakes` (instructional, never medical) and three media references —
+    `primary_image_media_id`, `secondary_image_media_id`,
+    `demonstration_video_media_id` (SET NULL FKs to ACTIVE `MediaAsset`s). Additive
+    migration `20260724_0017`, all nullable, so published versions keep their content.
+    Media ids are part of the version content hash.
+  - **Reuse MediaService.** Exercise media flows through the Phase 2 media service.
+    Images reuse the image pipeline; video adds MP4/WEBM content types with magic-byte
+    signatures and a separate larger size cap (`media_max_video_bytes`, default 25 MB).
+    No transcoding, streaming protocol, or thumbnail generation.
+  - **Draft-only authoring preserves immutability.** Media is edited on the editable
+    draft (`app/exercise_media_services.py`, `PUT`/`DELETE /coach/exercises/{id}/media/{slot}`).
+    A revision copies its parent's references, so a shared asset is retired
+    (REPLACED/SOFT_DELETED) only once no version still references it — published
+    versions never change byte-for-byte.
+  - **Coach-scoped authorized delivery.** `GET /coach/exercises/{id}/media/{media_id}/content`
+    streams to any coach who can see the exercise (system or owned); everything else is
+    a `404`. The client fetches the blob and renders it via an object URL. System
+    (starter) exercises may carry demonstration media, delivered read-only to coaches.
+- **Consequences:** exercise media mutations are demo-protected (`ensure_not_demo`);
+  no video streaming/transcoding, thumbnails, external URLs, or (this phase)
+  trainee-facing exercise media in the workout runner (deferred). Local media is now a
+  shared, persisted compose volume for dev/staging. See
+  [../exercise-library.md](../exercise-library.md).
+- **Alternatives considered:** dedicated `ExerciseImage`/`ExerciseVideo` tables —
+  rejected in favor of reusing `MediaAsset`; storing media on a mutable exercise-level
+  record — rejected because media must be frozen with the immutable version; widening
+  the owner-only media route for trainees — deferred with its runner UX.

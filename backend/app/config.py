@@ -62,6 +62,11 @@ class Settings(BaseSettings):
     media_storage_provider: str = "local"
     media_local_root: str = "./media"
     media_max_bytes: int = Field(default=5 * 1024 * 1024, ge=1024, le=52_428_800)
+    # Demonstration videos are larger than images but still modest — no streaming or
+    # transcoding is performed, so this bounds a single short clip stored as-is.
+    media_max_video_bytes: int = Field(
+        default=25 * 1024 * 1024, ge=1024, le=209_715_200
+    )
     log_level: str = "INFO"
     port: int = Field(default=8000, ge=1, le=65535)
 

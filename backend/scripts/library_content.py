@@ -13,6 +13,7 @@ Content principles:
 
 from typing import Any
 
+from app.models import ExerciseDifficulty as Difficulty
 from app.models import ExerciseTrackingMode as Mode
 
 # Fields on disclaimer-sensitive text that must never contain medical/absolute claims.
@@ -51,6 +52,9 @@ def _ex(
     *,
     secondary: list[str] | None = None,
     unilateral: bool = False,
+    difficulty: Difficulty = Difficulty.BEGINNER,
+    coaching: list[str] | None = None,
+    mistakes: list[str] | None = None,
 ) -> dict[str, Any]:
     return {
         "key": key,
@@ -65,6 +69,9 @@ def _ex(
         "unilateral": unilateral,
         "instructions": instructions,
         "safety_cues": cues,
+        "difficulty": difficulty,
+        "coaching_cues": coaching or [],
+        "common_mistakes": mistakes or [],
     }
 
 
@@ -73,11 +80,17 @@ LIBRARY_EXERCISES: tuple[dict[str, Any], ...] = (
     _ex("starter.goblet_squat", "starter-goblet-squat", "Goblet squat", Mode.REPETITIONS_AND_LOAD,
         "strength", "squat", ["dumbbell"], ["quadriceps", "glutes"],
         "Hold one weight at the chest and squat to a comfortable depth with control.",
-        ["Keep the chest tall and stop at a depth you can control."], secondary=["core"]),
+        ["Keep the chest tall and stop at a depth you can control."], secondary=["core"],
+        difficulty=Difficulty.BEGINNER,
+        coaching=["Drive the knees out in line with the toes.", "Keep the elbows tucked under the weight."],
+        mistakes=["Letting the heels lift off the floor.", "Rounding the upper back forward."]),
     _ex("starter.rdl", "starter-dumbbell-rdl", "Dumbbell Romanian deadlift", Mode.REPETITIONS_AND_LOAD,
         "strength", "hinge", ["dumbbell"], ["hamstrings", "glutes"],
         "Hinge at the hips with a long spine, lowering the weights along the legs, then stand tall.",
-        ["Move through a range that keeps your back comfortable and controlled."], secondary=["back"]),
+        ["Move through a range that keeps your back comfortable and controlled."], secondary=["back"],
+        difficulty=Difficulty.INTERMEDIATE,
+        coaching=["Push the hips back before bending the knees.", "Keep the weights close to the legs."],
+        mistakes=["Rounding the lower back at the bottom.", "Turning it into a squat instead of a hinge."]),
     _ex("starter.db_bench", "starter-dumbbell-bench-press", "Dumbbell bench press", Mode.REPETITIONS_AND_LOAD,
         "strength", "horizontal push", ["dumbbell", "bench"], ["chest", "triceps"],
         "Press the weights up over the chest and lower them under control.",
@@ -519,6 +532,10 @@ def verify_library_content() -> list[str]:
         _check_text(f"exercise {item['key']} instructions", item["instructions"])
         for cue in item["safety_cues"]:
             _check_text(f"exercise {item['key']} cue", cue)
+        for cue in item.get("coaching_cues", []):
+            _check_text(f"exercise {item['key']} coaching cue", cue)
+        for mistake in item.get("common_mistakes", []):
+            _check_text(f"exercise {item['key']} common mistake", mistake)
 
     template_keys = [item["key"] for item in LIBRARY_TEMPLATES]
     template_names = [item["name"] for item in LIBRARY_TEMPLATES]

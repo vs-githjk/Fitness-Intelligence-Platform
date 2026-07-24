@@ -18,7 +18,7 @@ export interface PublicProfile {
   avatar_url: string | null
 }
 export interface UserPreferences { id: string; user_id: string; timezone: string; weight_unit: WeightUnit; distance_unit: DistanceUnit; locale: string; theme: string | null; privacy_settings: Record<string, unknown>; accessibility_settings: Record<string, unknown>; created_at: string; updated_at: string }
-export type MediaPurpose = 'generic' | 'avatar' | 'exercise_image' | 'exercise_gif' | 'document'
+export type MediaPurpose = 'generic' | 'avatar' | 'exercise_image' | 'exercise_gif' | 'exercise_video' | 'document'
 export type MediaVisibility = 'private' | 'coach_trainee' | 'exercise'
 export type MediaLifecycleStatus = 'active' | 'replaced' | 'soft_deleted' | 'purged'
 export interface MediaAsset { id: string; owner_user_id: string; uploader_user_id: string | null; purpose: MediaPurpose; visibility: MediaVisibility; lifecycle_status: MediaLifecycleStatus; content_type: string; byte_size: number; checksum_sha256: string; original_filename: string | null; content_url: string; created_at: string; updated_at: string; deleted_at: string | null; replaced_at: string | null }
@@ -129,15 +129,20 @@ export type ExerciseScope = 'system' | 'coach_private'
 export type ExerciseStatus = 'active' | 'archived'
 export type ExerciseVersionStatus = 'draft' | 'published'
 export type ExerciseTrackingMode = 'repetitions_and_load' | 'repetitions_only' | 'duration' | 'distance_and_duration' | 'bodyweight_or_assisted_repetitions'
+export type ExerciseDifficulty = 'beginner' | 'intermediate' | 'advanced'
+export interface ExerciseMedia { id: string; purpose: MediaPurpose; content_type: string; byte_size: number; original_filename: string | null; content_url: string }
 
 export interface ExerciseDraftData {
   name: string; description: string | null; instructions: string
   tracking_mode: ExerciseTrackingMode; category: string; movement_pattern: string
   equipment: string[]; primary_muscle_groups: string[]; secondary_muscle_groups: string[]
-  unilateral: boolean; safety_cues: string[]; image_url: string | null; thumbnail_url: string | null
+  unilateral: boolean; safety_cues: string[]
+  difficulty: ExerciseDifficulty | null; coaching_cues: string[]; common_mistakes: string[]
+  image_url: string | null; thumbnail_url: string | null
 }
 export interface ExerciseVersion extends ExerciseDraftData {
   id: string; exercise_id: string; version_number: number; status: ExerciseVersionStatus
+  primary_image: ExerciseMedia | null; secondary_image: ExerciseMedia | null; demonstration_video: ExerciseMedia | null
   content_hash: string | null; created_by_user_id: string | null
   created_at: string; updated_at: string; published_at: string | null
 }

@@ -213,7 +213,7 @@ docker compose up --wait
 - Daily check-ins: `GET|PUT /api/v1/check-ins/today`, bounded history, and date detail
 - Daily intelligence: current score, bounded score history, and gap-aware trends under `/api/v1/daily-scores`
 - Coach: private invitation creation/list/revocation, roster summaries, assignment-protected check-ins/scores/trends, baseline alerts, and daily alerts
-- Coach programming: owned exercise, workout-template, and training-program draft/publish/revise/archive endpoints under `/api/v1/coach`
+- Coach programming: owned exercise, workout-template, and training-program draft/publish/revise/archive endpoints under `/api/v1/coach`. Exercises carry richer knowledge (difficulty, coaching cues, common mistakes) plus authored media — a primary/secondary image and a demonstration video — managed on the draft via `PUT|DELETE /api/v1/coach/exercises/{id}/media/{slot}` and delivered through the authorized `GET .../media/{media_id}/content` route (reuses the media subsystem)
 - Training assignment: coach preview/create/history/cancel-future APIs and the trainee Program schedule
 - Workout execution: trainee-owned start/resume, set logging, exercise skip, completion, intentional incomplete ending, immutable readiness context, and append-only safety APIs; assigned coaches have a scoped safety review queue
 - Identity and profile: `GET|PUT /api/v1/me/profile` and `GET|PUT /api/v1/me/preferences`; self-service avatar at `GET|PUT|DELETE /api/v1/me/avatar` (built on the media subsystem); relationship-scoped `GET /api/v1/users/{id}/profile` and `GET /api/v1/users/{id}/avatar/content` for an active coach/trainee pair
