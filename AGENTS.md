@@ -24,7 +24,8 @@ or any other regulatory compliance.
 ## Current release
 
 - Application version: **0.5.0** (Workout Intelligence milestone, tag `v0.5.0`).
-- Alembic head: **20260721_0014** (Milestone 4 identity + media infrastructure).
+- Alembic head: **20260724_0016** (Milestone 4 identity + media + starter library +
+  professional profiles/avatars).
 - Version sources: backend `backend/app/__init__.py` (`__version__`), consumed by
   FastAPI/OpenAPI and `/health*`; frontend `frontend/package.json` (mirrored in
   `package-lock.json`), surfaced through `frontend/src/env.ts`. Keep all version

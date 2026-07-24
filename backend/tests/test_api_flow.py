@@ -33,6 +33,7 @@ def test_full_registration_assessment_and_authorization_flow(client: TestClient,
         "coach_id": coach_relationship.json()["coach_id"],
         "coach_name": "Test Coach",
         "coach_email": "coach@example.com",
+        "coach_avatar_url": None,
     }
 
     assert client.get("/api/v1/coach/trainees", headers=auth(trainee_token)).status_code == 403
@@ -133,4 +134,5 @@ def test_trainee_coach_endpoint_reports_inactive_relationship(
         "coach_id": relationship.json()["coach_id"],
         "coach_name": "Test Coach",
         "coach_email": "coach@example.com",
+        "coach_avatar_url": None,
     }

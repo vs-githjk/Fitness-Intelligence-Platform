@@ -333,3 +333,41 @@ its authoritative documentation.
   programs and complicate program validation (system programs referencing system
   templates); a coach-to-coach sharing marketplace — out of scope and explicitly
   deferred.
+
+## ADR-0017 — Professional profiles and avatars on the identity + media layers
+
+- **Status:** accepted
+- **Date:** 2026-07-24
+- **Context:** The identity (`UserProfile`) and media (`MediaAsset`) subsystems exist
+  but are not surfaced to users. This phase adds a polished, user-facing profile and
+  a profile photo without redesigning either subsystem, adding a second upload
+  pipeline, or introducing verification, public profiles, or a social graph.
+- **Decision:**
+  - **Extend, don't fork.** Professional fields (`headline`, `coaching_specialties`,
+    `years_of_experience`, `certifications_text`) and `training_goals` plus
+    `avatar_media_id` are added to the shared, role-agnostic `UserProfile`
+    (additive migration `20260724_0016`, all nullable). The UI renders the
+    role-appropriate subset. Certifications are plain text — never verified.
+  - **Reuse MediaService.** Avatar upload/replace/removal (`app/avatar_services.py`,
+    `PUT`/`DELETE /api/v1/me/avatar`) flow through the Phase 2 media service verbatim
+    (validation, checksum, opaque key, `active → replaced → soft_deleted` lifecycle).
+    Replace writes new bytes before transitioning the old asset to `REPLACED`, so
+    media is never orphaned and the owner is never without a photo.
+  - **Relationship-scoped delivery.** A new identity route
+    `GET /api/v1/users/{id}/avatar/content` (and `/profile`) authorizes on **self or
+    an active `CoachTraineeAssignment` (either direction)**, returning `404`
+    otherwise. The owner-only `GET /api/v1/media/{id}/content` route is left
+    unchanged. Avatars are stored `PRIVATE`; the identity layer's relationship check
+    — not the stored visibility flag — is the delivery authority. List payloads carry
+    `avatar_url` so rosters avoid 404 storms.
+  - **Authorized image rendering.** Because delivery requires the bearer token, the
+    client fetches the blob (`apiBlob`) and renders it through an object URL in a
+    single shared `Avatar` component with an initials fallback; no `<img src>` points
+    at a protected route, and no public static path is introduced.
+- **Consequences:** avatar mutations are demo-protected (`IDENTITY_DEMO_MUTATIONS`);
+  no verification, document upload, public profile, profile search, or exercise media
+  (all deferred). See [../profiles-and-avatars.md](../profiles-and-avatars.md).
+- **Alternatives considered:** widening the generic media route with cross-user
+  visibility rules — rejected to keep media owner-only and put relationship logic in
+  the identity layer; embedding avatars as base64 in JSON — rejected for payload size
+  and to preserve streamed, cacheable, authorized delivery.

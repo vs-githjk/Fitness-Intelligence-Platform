@@ -207,6 +207,7 @@ def health_out(db: Session, snapshot: HealthIndexSnapshot) -> dict:
 
 
 def coach_trainee_summaries(db: Session, coach_id: uuid.UUID) -> list[dict]:
+    from app.avatar_services import avatar_url_for
     from app.daily_services import local_today
 
     trainees = db.scalars(
@@ -279,6 +280,7 @@ def coach_trainee_summaries(db: Session, coach_id: uuid.UUID) -> list[dict]:
                     latest_check_in and latest_check_in.local_date == today
                 ),
                 "open_daily_alerts": daily_alerts,
+                "avatar_url": avatar_url_for(db, trainee.id),
             }
         )
     return results

@@ -193,6 +193,7 @@ Deterministic calculations are used so that score behavior is repeatable, testab
 - Open an assigned scheduled workout, explicitly save or skip sets, resume it after navigation or refresh, and complete or intentionally end it incomplete.
 - View immutable fresh/stale/unavailable readiness context and submit append-only workout safety reports; critical categories safely end execution.
 - View a read-only Workouts page with deterministic training-load, completion/prescribed-set/exercise adherence, weekly planned-versus-completed load, workout-specific charts, and recorded bests over 7-, 14-, or 30-day ranges.
+- Edit a personal profile — display name, bio, and training goals — and upload, replace, or remove a profile photo. The profile and photo are visible only to the trainee and their actively assigned coach.
 - Sign out.
 
 ### Coach capabilities
@@ -209,12 +210,14 @@ Deterministic calculations are used so that score behavior is repeatable, testab
 - Filter assigned-trainee safety reports and append acknowledgement or resolution review history.
 - Read-only review of an actively assigned trainee's workout execution: session list with completed/partial/skipped/safety-ended/missed classification, per-session load and readiness context, immutable load summaries, planned-versus-completed comparison, adherence, and recorded bests. Open safety reports are surfaced first.
 - Assign an exact published Program version to an authorized trainee, preview its date-only schedule, and plan one future replacement.
+- Maintain a professional profile — photo, headline, coaching philosophy, specialties, years of experience, and plain-text (unverified) certifications — with no administrator approval. Assigned trainees see it; unrelated trainees cannot.
 - Sign out.
 
 ### Shared platform capabilities
 
 - Role-aware bearer-token authentication and server-side authorization.
 - Active coach-assignment enforcement.
+- Self-declared user profiles and avatars, delivered only to the user and their active coach/trainee relationship through authorized routes; all profile data is unverified, and there is no public profile, search, or messaging.
 - Validated input ranges and conditional daily exercise fields.
 - Versioned deterministic scoring and rule-based alerts.
 - Timezone-local daily records and UTC event timestamps.

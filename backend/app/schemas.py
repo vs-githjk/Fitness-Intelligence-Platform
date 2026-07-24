@@ -140,8 +140,21 @@ def _validate_timezone(value: str) -> str:
 class UserProfileUpdate(BaseModel):
     preferred_display_name: str | None = Field(default=None, max_length=120)
     bio: str | None = Field(default=None, max_length=1000)
+    # Coach-facing professional fields (self-declared, never verified).
+    headline: str | None = Field(default=None, max_length=160)
+    coaching_specialties: list[str] | None = Field(default=None, max_length=12)
+    years_of_experience: int | None = Field(default=None, ge=0, le=80)
+    certifications_text: str | None = Field(default=None, max_length=1000)
+    # Trainee-facing field.
+    training_goals: str | None = Field(default=None, max_length=1000)
 
-    @field_validator("preferred_display_name", "bio")
+    @field_validator(
+        "preferred_display_name",
+        "bio",
+        "headline",
+        "certifications_text",
+        "training_goals",
+    )
     @classmethod
     def blank_to_none(cls, value: str | None) -> str | None:
         if value is None:
@@ -149,11 +162,28 @@ class UserProfileUpdate(BaseModel):
         stripped = value.strip()
         return stripped or None
 
+    @field_validator("coaching_specialties")
+    @classmethod
+    def clean_specialties(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return None
+        cleaned: list[str] = []
+        for item in value:
+            label = item.strip()
+            if not label:
+                continue
+            if len(label) > 60:
+                raise ValueError("Each specialty must be 60 characters or fewer")
+            if label not in cleaned:
+                cleaned.append(label)
+        return cleaned
+
 
 class UserProfileOut(UserProfileUpdate):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
     user_id: uuid.UUID
+    avatar: "MediaAssetOut | None" = None
     created_at: datetime
     updated_at: datetime
 
@@ -222,6 +252,32 @@ class MediaAssetOut(BaseModel):
             deleted_at=asset.deleted_at,
             replaced_at=asset.replaced_at,
         )
+
+
+# UserProfileOut references MediaAssetOut, which is defined after it; resolve now.
+UserProfileOut.model_rebuild()
+
+
+class PublicProfileOut(BaseModel):
+    """A related user's profile, viewable by self or an assigned coach/trainee.
+
+    Carries only display identity — the same class of fields already shared across a
+    coaching relationship — never account internals. ``avatar_url`` is a relationship-
+    authorized delivery path, resolved through the identity layer, not the owner-only
+    media route. Role determines which fields the client surfaces.
+    """
+
+    user_id: uuid.UUID
+    role: Role
+    full_name: str
+    preferred_display_name: str | None = None
+    headline: str | None = None
+    bio: str | None = None
+    coaching_specialties: list[str] = Field(default_factory=list)
+    years_of_experience: int | None = None
+    certifications_text: str | None = None
+    training_goals: str | None = None
+    avatar_url: str | None = None
 
 
 class AssessmentData(BaseModel):
@@ -359,6 +415,8 @@ class CoachTraineeSummary(BaseModel):
     latest_readiness_state: str | None = None
     checked_in_today: bool = False
     open_daily_alerts: int = 0
+    # Relationship-authorized avatar delivery path; null when no photo is set.
+    avatar_url: str | None = None
 
 
 class CoachTraineeDetail(BaseModel):
@@ -367,6 +425,7 @@ class CoachTraineeDetail(BaseModel):
     assessment_status: str
     assessment: AssessmentOut | None
     health_index: HealthIndexOut | None
+    avatar_url: str | None = None
 
 
 class TraineeCoachOut(BaseModel):
@@ -374,6 +433,7 @@ class TraineeCoachOut(BaseModel):
     coach_id: uuid.UUID | None = None
     coach_name: str | None = None
     coach_email: EmailStr | None = None
+    coach_avatar_url: str | None = None
 
 
 OverallFeeling = Literal["very_poor", "poor", "okay", "good", "excellent"]

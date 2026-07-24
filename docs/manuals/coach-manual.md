@@ -53,7 +53,7 @@ password.
 - Make sure you are using the exact web address you were given.
 - If you were just invited as a coach, confirm your account was created (you register
   with a private coach code — see §4).
-- If it still fails, report it (see §19). Never share your password in a message or
+- If it still fails, report it (see §20). Never share your password in a message or
   screenshot.
 
 ---
@@ -362,7 +362,7 @@ personal or health information into demo.**
 - *Action:* follow the chain **Exercise → Template → Program → Assignment** and make
   sure **each required layer is published**. Use the **Go to Programming → Programs**
   link in the empty state. If you expected a published program, refresh and retry. If
-  a genuinely published program still doesn't appear, report it (§19).
+  a genuinely published program still doesn't appear, report it (§20).
 
 **A trainee doesn't appear on my roster.**
 - *Likely cause:* the invitation wasn't redeemed, expired, or was already used.
@@ -378,7 +378,7 @@ personal or health information into demo.**
   entry above.
 
 **Something looks broken or a page won't load.**
-- *Action:* refresh; if it persists, report it with what you were doing (§19).
+- *Action:* refresh; if it persists, report it with what you were doing (§20).
 
 **I cannot edit a starter program.**
 - *Likely cause:* starter programs are read-only by design.
@@ -404,7 +404,7 @@ personal or health information into demo.**
 
 **A "Use this program" (clone) action failed.**
 - *Likely cause:* a temporary connection or server error; no partial copy is created.
-- *Action:* retry; if it keeps failing, report it (§19). Your programs are unaffected.
+- *Action:* retry; if it keeps failing, report it (§20). Your programs are unaffected.
 
 ---
 
@@ -435,7 +435,60 @@ personal or health information into demo.**
 
 ---
 
-## 19. Giving feedback
+## 19. Your professional profile and photo
+
+Your profile is how you present yourself to the trainees you coach. It is
+self-declared — nothing is verified — and you can change it anytime without
+administrator approval. Open it from **Profile** in the navigation.
+
+### Editing your profile information
+
+On the **Profile** page you can set:
+
+- **Preferred display name** — how your name is shown across FitIntel 360. Defaults
+  to your account name when empty.
+- **Headline** — a short professional tagline (for example, "Strength & conditioning
+  coach").
+- **Coaching philosophy** — a longer description of how you coach and who you work
+  best with. Avoid sensitive personal or health details.
+- **Specialties** — a comma-separated list (for example, "Powerlifting, Mobility,
+  Fat loss"). They appear as tags; duplicates and extra spaces are cleaned up.
+- **Years of experience** — a whole number from 0 to 80.
+- **Certifications** — plain text, shown exactly as you type it. Certifications are
+  **not** verified or validated.
+
+Make your changes and choose **Save profile**. A confirmation appears; your entries
+stay on the page if a save fails so nothing is lost.
+
+### Uploading and changing your photo
+
+In the **Profile photo** card:
+
+1. Choose **Add photo** (or **Replace photo** if you already have one) and pick a
+   **JPEG, PNG, WEBP, or GIF up to 5 MB**.
+2. A preview appears. Choose **Upload photo** to save it, or **Cancel** to discard.
+3. To take your photo down, choose **Remove**. It is removed immediately.
+
+Replacing a photo swaps it cleanly — the previous image is retired, never left
+behind. Your photo appears next to your name in the navigation and everywhere your
+identity is shown.
+
+### How trainees see your profile
+
+Your assigned trainees see your photo, display name, headline, coaching philosophy,
+specialties, experience, and certifications on their **Today** page. Trainees who are
+not assigned to you cannot see your profile or photo at all. You, in turn, see each
+assigned trainee's photo on your roster and on their record.
+
+### Recommended practices
+
+- Use a clear, professional headshot so trainees recognize you.
+- Keep your headline short and specific.
+- List specialties that match the trainees you take on.
+- Write certifications plainly and honestly — they are self-declared and unverified,
+  so don't imply endorsement the platform does not provide.
+
+## 20. Giving feedback
 
 Your feedback shapes the app. Please report:
 

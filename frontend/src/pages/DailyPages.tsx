@@ -20,6 +20,7 @@ import { Link } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAccountQueryScope, useAuth } from '../auth'
 import { AppShell, ProfileMeta } from '../components/AppShell'
+import { Avatar } from '../components/Avatar'
 import {
   Badge,
   Button,
@@ -79,11 +80,6 @@ function DailyMetric({ label, value, detail, icon: Icon, tone = 'primary' }: { l
   return <Card><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-secondary">{label}</p><p className="metric-number mt-2 text-3xl font-bold">{value}</p><p className="mt-1 text-xs text-muted">{detail}</p></div><span className={`grid size-10 place-items-center rounded-xl ${tone === 'positive' ? 'bg-[rgb(var(--status-positive-bg))] text-positive' : tone === 'attention' ? 'bg-[rgb(var(--status-attention-bg))] text-attention' : tone === 'risk' ? 'bg-[rgb(var(--status-risk-bg))] text-risk' : 'bg-primary/10 text-primary'}`}><Icon aria-hidden="true" className="size-5" /></span></div></Card>
 }
 
-function initials(name?: string | null): string {
-  const parts = name?.trim().split(/\s+/).filter(Boolean) ?? []
-  return parts.length ? parts.slice(0, 2).map(part => part[0]).join('').toUpperCase() : 'C'
-}
-
 export function CoachRelationshipCard({ relationship, loading = false, error = false, demo = false }: { relationship?: CoachRelationship; loading?: boolean; error?: boolean; demo?: boolean }) {
   if (loading) return <Card as="section" aria-labelledby="coach-relationship-heading" className="p-4"><h2 id="coach-relationship-heading" className="font-semibold">Your coach</h2><p className="mt-1 text-sm text-muted" role="status">Loading coach details…</p></Card>
   if (error) return <Card as="section" aria-labelledby="coach-relationship-heading" className="p-4"><h2 id="coach-relationship-heading" className="font-semibold">Your coach</h2><p className="mt-1 text-sm text-muted">Coach details are temporarily unavailable.</p></Card>
@@ -95,7 +91,7 @@ export function CoachRelationshipCard({ relationship, loading = false, error = f
   }
 
   const name = relationship.coach_name?.trim() || 'Assigned coach'
-  return <Card as="section" aria-labelledby="coach-relationship-heading" className="p-4"><div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">{initials(relationship.coach_name)}</span><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 id="coach-relationship-heading" className="font-semibold">{demo ? 'Synthetic demo coach' : 'Your coach'}</h2><Badge tone={demo ? 'info' : 'positive'}>{demo ? 'Demo' : 'Connected'}</Badge></div><p className="mt-0.5 truncate text-sm font-medium">{name}</p>{relationship.coach_email && <a href={`mailto:${relationship.coach_email}`} aria-label={`Email ${name} outside FitIntel 360`} className="block break-all text-sm text-primary underline-offset-4 hover:underline">{relationship.coach_email}</a>}</div></div><p className="max-w-md text-xs leading-5 text-muted sm:text-right">{demo ? 'This is sample information from the read-only demo workspace.' : 'Connected through your current coaching assignment.'}</p></div></Card>
+  return <Card as="section" aria-labelledby="coach-relationship-heading" className="p-4"><div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><Avatar name={name} src={relationship.coach_avatar_url} size="lg" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 id="coach-relationship-heading" className="font-semibold">{demo ? 'Synthetic demo coach' : 'Your coach'}</h2><Badge tone={demo ? 'info' : 'positive'}>{demo ? 'Demo' : 'Connected'}</Badge></div><p className="mt-0.5 truncate text-sm font-medium">{name}</p>{relationship.coach_email && <a href={`mailto:${relationship.coach_email}`} aria-label={`Email ${name} outside FitIntel 360`} className="block break-all text-sm text-primary underline-offset-4 hover:underline">{relationship.coach_email}</a>}</div></div><p className="max-w-md text-xs leading-5 text-muted sm:text-right">{demo ? 'This is sample information from the read-only demo workspace.' : 'Connected through your current coaching assignment.'}</p></div></Card>
 }
 
 export function TodayPage() {

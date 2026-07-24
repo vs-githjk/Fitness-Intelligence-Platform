@@ -23,8 +23,11 @@ and contributors do not implement them opportunistically.
 | Media EXIF stripping / thumbnails | Chose narrower validation (ADR-0014) | Deferred to a later profile-media/hardening phase; not implemented |
 | Media malware scanning | Vendor/integration and cost review needed | Not implemented; signature+MIME checks are not a safety guarantee |
 | Cloud media provider (S3/R2/Azure) | Only the local provider is implemented (ADR-0013) | Contract reserved; factory rejects unimplemented providers; required before production media |
-| Media-consuming features (avatars, exercise media) | Milestone 4 later phases, not approved | Phase 2 built only the provider-independent media foundation |
-| Credential verification | Self-entered data is not verified (glossary) | Do not present self-reported data as verified |
+| Exercise / nutrition media | Milestone 4 later phase and Milestone 5, not approved | Avatars (ADR-0017) are the only media-consuming feature so far |
+| Credential verification | Self-entered data is not verified (glossary) | Certifications are plain text; do not present self-reported data as verified |
+| Public profiles / profile search / discovery / sharing | No public surface or social graph approved (ADR-0017) | Profiles are visible only to self and an active coach/trainee relationship |
+| Profile document uploads / license validation | Verification and document handling not designed (ADR-0017) | Certifications remain plain text only |
+| Avatar cropping / rotation / filters / thumbnails | Chose the minimal reuse of media validation (ADR-0017) | Client preview only; server stores the uploaded image as-is |
 | Advanced medical or injury functionality | No diagnosis/clearance; safety not monitored | Hard product boundary |
 | Coach-to-coach library sharing / marketplace | Out of scope for the curated starter library (ADR-0016) | The starter library is one-way clone-to-edit, not sharing |
 | Ratings / reviews / likes / comments on programs | Social features not approved | No community layer on starter or coach content |

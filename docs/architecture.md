@@ -76,6 +76,19 @@ SQLAlchemy 2 ORM models live in `app/models.py`.
   `TraineeProfile.timezone` is retained and kept in sync for trainees so existing
   daily/workout local-date behavior is unchanged. Changing a preference affects
   presentation only and never reinterprets stored records.
+- `UserProfile` also carries the polished profile experience: professional fields
+  (`headline`, `coaching_specialties`, `years_of_experience`, `certifications_text`
+  for coaches; `training_goals` for trainees) and `avatar_media_id`, a reference to
+  the current ACTIVE avatar `MediaAsset`. The UI surfaces the role-appropriate
+  subset; the record stays role-agnostic. Certifications are plain text only — never
+  verified. See [profiles-and-avatars.md](profiles-and-avatars.md) and ADR-0017.
+- Viewing another user's profile/avatar is relationship-scoped:
+  `GET /api/v1/users/{id}/profile` and `GET /api/v1/users/{id}/avatar/content` are
+  allowed for the user themselves or either side of an **active**
+  `CoachTraineeAssignment`; every other target is a `404`. This lets an assigned
+  coach and trainee render each other's photo without the owner-only media route
+  being widened. `avatar` upload/replace/removal at `/api/v1/me/avatar` are
+  demo-protected (`IDENTITY_DEMO_MUTATIONS`).
 
 ## Media infrastructure
 
@@ -102,8 +115,12 @@ SQLAlchemy 2 ORM models live in `app/models.py`.
 - Endpoints `POST /api/v1/media`, `GET /api/v1/media/{id}`,
   `GET /api/v1/media/{id}/content`, `DELETE /api/v1/media/{id}` are authenticated and
   owner-scoped; cross-account access returns `404`. Mutations are demo-protected
-  (`MEDIA_DEMO_MUTATIONS`) and identity-scoped in the frontend cache. No media UI is
-  exposed in this phase — only reusable client infrastructure. See ADR-0013/0014.
+  (`MEDIA_DEMO_MUTATIONS`) and identity-scoped in the frontend cache. See
+  ADR-0013/0014.
+- The first feature integration is avatars (`app/avatar_services.py`), which reuse
+  `MediaService` for validation/storage/lifecycle and add only identity concerns:
+  binding a user's ACTIVE avatar to their `UserProfile` and delivering it to related
+  accounts. See [profiles-and-avatars.md](profiles-and-avatars.md) and ADR-0017.
 
 ## Starter library
 

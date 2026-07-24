@@ -259,7 +259,13 @@ abstraction, exercise instruction images, external exercise video links, and med
 authorization/deletion, with deterministic demo examples. Planning:
 [planning/milestone-4-profile-media-foundation.md](planning/milestone-4-profile-media-foundation.md).
 Out of scope: direct workout-video uploads, social feed, messaging, and any image
-analysis. Not yet approved for implementation.
+analysis.
+
+Delivered so far (still 0.5.0; no release cut): the shared identity/preferences layer
+(ADR-0012), the provider-independent media foundation (ADR-0013/0014), the curated
+starter library (ADR-0016), and professional profiles + avatars
+([profiles-and-avatars.md](profiles-and-avatars.md), ADR-0017). Remaining and not yet
+approved: exercise instruction images and external exercise video links.
 
 ### Milestone 5 — Nutrition Intelligence
 

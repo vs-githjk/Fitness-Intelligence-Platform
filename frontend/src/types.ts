@@ -1,7 +1,22 @@
 export type Role = 'coach' | 'trainee'
 export interface User { id: string; email: string; first_name: string; last_name: string; role: Role; is_demo: boolean }
 export interface AuthResponse { access_token: string; token_type: string; user: User }
-export interface UserProfile { id: string; user_id: string; preferred_display_name: string | null; bio: string | null; created_at: string; updated_at: string }
+export interface UserProfile {
+  id: string; user_id: string
+  preferred_display_name: string | null; bio: string | null
+  headline: string | null; coaching_specialties: string[] | null
+  years_of_experience: number | null; certifications_text: string | null
+  training_goals: string | null
+  avatar: MediaAsset | null
+  created_at: string; updated_at: string
+}
+export interface PublicProfile {
+  user_id: string; role: Role; full_name: string
+  preferred_display_name: string | null; headline: string | null; bio: string | null
+  coaching_specialties: string[]; years_of_experience: number | null
+  certifications_text: string | null; training_goals: string | null
+  avatar_url: string | null
+}
 export interface UserPreferences { id: string; user_id: string; timezone: string; weight_unit: WeightUnit; distance_unit: DistanceUnit; locale: string; theme: string | null; privacy_settings: Record<string, unknown>; accessibility_settings: Record<string, unknown>; created_at: string; updated_at: string }
 export type MediaPurpose = 'generic' | 'avatar' | 'exercise_image' | 'exercise_gif' | 'document'
 export type MediaVisibility = 'private' | 'coach_trainee' | 'exercise'
@@ -58,10 +73,11 @@ export interface TraineeSummary {
   latest_check_in_date?: string | null; latest_check_in_at?: string | null
   latest_readiness_score?: number | null; latest_readiness_state?: string | null
   checked_in_today: boolean; open_daily_alerts: number
+  avatar_url?: string | null
 }
 export interface TraineeDetail {
   trainee: User; profile: Profile | null; assessment_status: string; assessment?: Assessment | null
-  health_index: HealthIndex | null
+  health_index: HealthIndex | null; avatar_url?: string | null
 }
 export interface CoachAlert {
   id: string; trainee_id: string; rule_key: string; severity: string; title: string
@@ -69,6 +85,7 @@ export interface CoachAlert {
 }
 export interface CoachRelationship {
   assignment_status: string; coach_id?: string | null; coach_name?: string | null; coach_email?: string | null
+  coach_avatar_url?: string | null
 }
 
 export interface DailyCheckInData {

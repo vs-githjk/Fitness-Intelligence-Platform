@@ -216,6 +216,8 @@ docker compose up --wait
 - Coach programming: owned exercise, workout-template, and training-program draft/publish/revise/archive endpoints under `/api/v1/coach`
 - Training assignment: coach preview/create/history/cancel-future APIs and the trainee Program schedule
 - Workout execution: trainee-owned start/resume, set logging, exercise skip, completion, intentional incomplete ending, immutable readiness context, and append-only safety APIs; assigned coaches have a scoped safety review queue
+- Identity and profile: `GET|PUT /api/v1/me/profile` and `GET|PUT /api/v1/me/preferences`; self-service avatar at `GET|PUT|DELETE /api/v1/me/avatar` (built on the media subsystem); relationship-scoped `GET /api/v1/users/{id}/profile` and `GET /api/v1/users/{id}/avatar/content` for an active coach/trainee pair
+- Media: authenticated, owner-scoped upload/metadata/authorized-delivery/soft-delete under `/api/v1/media`
 
 When API documentation is enabled, FastAPI publishes the exact OpenAPI contract at `/docs`. Coach endpoints enforce both role and active assignment; possession of a trainee UUID is insufficient. Operational probes are available at `/health/live` and `/health/ready`, with `/health` retained for compatibility.
 

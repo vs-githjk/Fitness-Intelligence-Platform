@@ -308,7 +308,17 @@ def test_identity_demo_mutation_inventory_matches_openapi(
         "/api/v1/auth/demo-session", json={"role": "trainee"}
     ).json()["access_token"]
     for method, path in IDENTITY_DEMO_MUTATIONS:
-        denied = client.request(method, path, headers=_auth(token), json={})
+        if method == "PUT" and path.endswith("/avatar"):
+            # Multipart mutation: send a field so File(...) validation passes and the
+            # demo guard is what rejects the request.
+            denied = client.request(
+                method,
+                path,
+                headers=_auth(token),
+                files={"file": ("a.png", b"unused-by-demo-guard", "image/png")},
+            )
+        else:
+            denied = client.request(method, path, headers=_auth(token), json={})
         assert denied.status_code == 403, (method, path)
         assert denied.json()["detail"]["code"] == "demo_read_only"
 

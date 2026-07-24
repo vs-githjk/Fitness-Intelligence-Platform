@@ -324,6 +324,24 @@ class UserProfile(Base):
     )
     preferred_display_name: Mapped[str | None] = mapped_column(String(120))
     bio: Mapped[str | None] = mapped_column(Text)
+    # Professional identity fields. Self-declared, never verified; surfaced by role in
+    # the UI (headline/specialties/experience/certifications for coaches, training
+    # goals for trainees) but stored on the shared, role-agnostic profile record.
+    headline: Mapped[str | None] = mapped_column(String(160))
+    coaching_specialties: Mapped[list[str] | None] = mapped_column(JSON)
+    years_of_experience: Mapped[int | None] = mapped_column(Integer)
+    certifications_text: Mapped[str | None] = mapped_column(Text)
+    training_goals: Mapped[str | None] = mapped_column(Text)
+    # Current profile photo. Points at an ACTIVE avatar MediaAsset; SET NULL if the
+    # asset row is ever removed. Delivery authorization lives in the identity layer.
+    avatar_media_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "media_assets.id",
+            name="fk_user_profiles_avatar_media",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow

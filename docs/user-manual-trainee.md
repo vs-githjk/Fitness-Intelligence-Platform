@@ -515,7 +515,9 @@ The service also authorizes the assigned coach to retrieve the underlying date-b
 
 Coaches have read-only daily endpoints in the current implementation. They cannot edit your check-ins, change your submitted assessment, write a note into your record, resolve alerts through the interface, or send a message. They can assign a published Program version, which creates a read-only date schedule for you.
 
-The **Your coach** card on **Today** shows whether a coaching assignment is active, plus the available coach name and email. Selecting the email uses your device's external email application; FitIntel 360 has no in-app messaging. The relationship does not mean the coach continuously monitors the application, will respond immediately, holds verified credentials, or provides medical supervision. In the public demo, this card is explicitly labeled as synthetic sample information.
+The **Your coach** card on **Today** shows whether a coaching assignment is active, plus the available coach name, photo, and email. Selecting the email uses your device's external email application; FitIntel 360 has no in-app messaging. The relationship does not mean the coach continuously monitors the application, will respond immediately, holds verified credentials, or provides medical supervision. In the public demo, this card is explicitly labeled as synthetic sample information.
+
+Your own profile and photo are visible to your actively assigned coach and to you. If your coaching assignment is not active, your profile and photo are not shared. No unrelated coach or trainee can see them. See [Your profile, photo, and goals](#12c-your-profile-photo-and-goals).
 
 Authentication currently stores an expiring access token in browser local storage. This current-milestone design may be used only with synthetic data in staging and requires further security hardening for production use. The repository does not claim HIPAA, GDPR, or other legal compliance. See [Security and compliance notes](security.md) for the implemented controls and known production gaps.
 
@@ -589,6 +591,33 @@ values are shown as unavailable and are never treated as zero. Every chart has a
 table, and analytics never change your program, schedule, sets, or loads. See
 [Workout Load v1](scoring/workout-load-v1.md), [Workout adherence](workout-adherence.md), and
 [Recorded bests](recorded-bests.md).
+
+## 12C. Your profile, photo, and goals
+
+Open **Profile** to make your account feel like yours. Everything here is
+self-declared — nothing is verified.
+
+- **Preferred display name** — how your name appears across FitIntel 360. It defaults
+  to your account name when empty.
+- **Bio** — a short description of yourself. Avoid sensitive personal or health
+  details.
+- **Training goals** — what you're working toward. Your coach reads this to tailor
+  your program, so keep it specific (for example, "Deadlift bodyweight by winter").
+
+### Your photo
+
+In the **Profile photo** card, choose **Add photo** (or **Replace photo**) and pick a
+**JPEG, PNG, WEBP, or GIF up to 5 MB**. A preview appears; choose **Upload photo** to
+save it or **Cancel** to discard. Choose **Remove** to take it down. Your photo shows
+next to your name across the app.
+
+### Privacy — who can see this
+
+Your profile, goals, and photo are visible to **you** and to your **actively
+assigned coach**. If you have no active coaching assignment, they are not shared with
+anyone. No unrelated coach or trainee can see them, and there is no public profile,
+profile search, or messaging. You control your photo — upload, replace, or remove it
+at any time.
 
 ## 13. Sign out and handle session expiry
 

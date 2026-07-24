@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.avatar_services import avatar_url_for
 from app.daily_services import (
     bounded_dates,
     build_trends,
@@ -62,6 +63,7 @@ def trainee_detail(
         "assessment_status": assessment.status.value if assessment else "not_started",
         "assessment": assessment_out(assessment) if assessment else None,
         "health_index": health_out(db, snapshot) if snapshot else None,
+        "avatar_url": avatar_url_for(db, trainee_id),
     }
 
 

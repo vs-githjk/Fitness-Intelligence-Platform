@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.avatar_services import avatar_url_for
 from app.database import get_db
 from app.models import CoachTraineeAssignment, TraineeProfile, User
 from app.schemas import ProfileOut, ProfileUpdate, TraineeCoachOut
@@ -21,11 +22,20 @@ def get_coach(user: User = Depends(require_trainee), db: Session = Depends(get_d
     if assignment is None:
         return {"assignment_status": "unassigned"}
     coach = db.get(User, assignment.coach_id)
+    # Only advertise the coach avatar when the relationship is active, since the
+    # delivery route authorizes on an active assignment; otherwise the client shows
+    # initials rather than requesting a URL that would resolve to 404.
+    coach_avatar_url = (
+        avatar_url_for(db, coach.id)
+        if coach and assignment.status == "active"
+        else None
+    )
     return {
         "assignment_status": assignment.status,
         "coach_id": coach.id if coach else None,
         "coach_name": f"{coach.first_name} {coach.last_name}" if coach else None,
         "coach_email": coach.email if coach else None,
+        "coach_avatar_url": coach_avatar_url,
     }
 
 

@@ -25,8 +25,15 @@ these meanings — in code, UI copy, docs, and issues. See
 ## Identity records
 
 - **UserProfile** — a role-agnostic identity record, one-to-one with a user:
-  preferred display name and bio. Shared across roles; self-declared and never
-  verified. Distinct from `CoachProfile`/`TraineeProfile`.
+  preferred display name, bio, professional fields surfaced for coaches (headline,
+  coaching specialties, years of experience, plain-text certifications), a trainee
+  training-goals field, and a reference to the current avatar. Shared across roles;
+  self-declared and **never verified**. Distinct from `CoachProfile`/`TraineeProfile`.
+- **Avatar** — a user's profile photo: an `AVATAR`-purpose `MediaAsset` referenced by
+  `UserProfile.avatar_media_id`. Uploaded/replaced/removed through
+  `/api/v1/me/avatar` (reusing the media subsystem) and delivered to the owner or an
+  active coach/trainee relationship through an authorized route
+  (`/api/v1/users/{id}/avatar/content`); never a public URL.
 - **UserPreferences** — a role-agnostic preference record, one-to-one with a user:
   timezone, weight unit, distance unit, locale, and theme/privacy/accessibility
   placeholders. Preferences change presentation only; they never alter recorded

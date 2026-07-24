@@ -124,6 +124,7 @@ def test_demo_sessions_use_normal_roles_and_short_lived_tokens(
         "coach_id": str(coach.id),
         "coach_name": "Demo Coach",
         "coach_email": coach.email,
+        "coach_avatar_url": None,
     }
 
     payload = jwt.decode(
