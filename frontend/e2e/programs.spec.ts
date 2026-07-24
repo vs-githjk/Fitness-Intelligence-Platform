@@ -65,6 +65,7 @@ test('coach publishes, revises, and archives an exact-version multi-week program
 test('program workspace is read-only in demo and responsive at supported widths', async ({ page }) => {
   await page.goto('/demo')
   await page.getByRole('button', { name: 'View as Coach' }).click()
+  await expect(page).toHaveURL(/\/coach\/dashboard$/)
 
   for (const width of [320, 390, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 })

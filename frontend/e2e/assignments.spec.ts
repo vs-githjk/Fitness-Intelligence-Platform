@@ -54,6 +54,7 @@ test('trainee sees current Program, today context, calendar, and executable work
 test('demo coach and trainee can browse assignments but cannot mutate', async ({ page }) => {
   await page.goto('/demo')
   await page.getByRole('button', { name: 'View as Coach' }).click()
+  await expect(page).toHaveURL(/\/coach\/dashboard$/)
   await page.goto('/coach/assignments')
   await expect(page.getByRole('button', { name: 'Preview schedule' })).toBeDisabled()
   await expect(page.getByText('Assignment history')).toBeVisible()
@@ -61,6 +62,7 @@ test('demo coach and trainee can browse assignments but cannot mutate', async ({
   await page.getByRole('button', { name: 'Exit demo' }).first().click()
   await page.goto('/demo')
   await page.getByRole('button', { name: 'View as Trainee' }).click()
+  await expect(page).toHaveURL(/\/trainee\/today$/)
   await page.goto('/trainee/program')
   await expect(page.getByText('Current Program')).toBeVisible()
   await expect(page.getByRole('heading', { name: "Today's Workout" })).toBeVisible()

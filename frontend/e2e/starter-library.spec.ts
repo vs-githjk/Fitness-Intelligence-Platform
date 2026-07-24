@@ -79,6 +79,7 @@ test('coach clones a starter program, edits, publishes, assigns, and the trainee
 test('demo coach can browse the starter library but cannot clone', async ({ page }) => {
   await page.goto('/demo')
   await page.getByRole('button', { name: 'View as Coach' }).click()
+  await expect(page).toHaveURL(/\/coach\/dashboard$/)
   await page.goto('/coach/programming/library')
   await expect(page.getByRole('heading', { name: 'Starter Library' })).toBeVisible()
   const useButton = page.getByRole('button', { name: 'Use this program' }).first()

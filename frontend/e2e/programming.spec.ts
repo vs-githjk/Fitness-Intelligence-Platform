@@ -82,6 +82,7 @@ test('coach publishes a private exercise and a versioned workout template', asyn
 test('Programming workspace is read-only in demo and responsive at supported widths', async ({ page }) => {
   await page.goto('/demo')
   await page.getByRole('button', { name: 'View as Coach' }).click()
+  await expect(page).toHaveURL(/\/coach\/dashboard$/)
   await page.goto('/coach/programming/exercises')
   await expect(page.getByRole('button', { name: 'New exercise' })).toBeDisabled()
   await expect(page.getByText(/changes are disabled/i).first()).toBeVisible()
