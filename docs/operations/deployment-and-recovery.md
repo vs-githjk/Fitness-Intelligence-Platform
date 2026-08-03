@@ -71,6 +71,25 @@ Two explicit seed commands exist; neither runs at application startup.
   check `GET /api/v1/program-library` returns the expected Programs. The static
   `verify_library_content()` check also runs at the start of every seed.
 
+## User password reset (operator)
+
+There is no self-service password reset yet (no email/notification channel — see
+[deferred-features](../deferred-features.md)). For the controlled test-user stage,
+an operator resets a password from a trusted shell with database access:
+
+```
+python -m scripts.reset_password --email someone@example.com            # prints a generated temp password
+python -m scripts.reset_password --email someone@example.com --password 'NewSecret123'
+```
+
+The command sets the account's password (reusing the standard hashing), matches
+the email case-insensitively, and refuses demo (read-only) and system accounts. It
+is an internal tool only — no HTTP endpoint is exposed, so there is no public reset
+surface or account-enumeration risk. Relay the new password out-of-band; the user
+should treat it as temporary. The sign-in page points users here with a
+"Contact your coach or administrator" hint. A self-service email-based reset
+remains deferred until a transactional email provider is approved.
+
 ## Environment-variable ownership
 
 - **Backend-only (never sent to Vercel):** `DATABASE_URL`,

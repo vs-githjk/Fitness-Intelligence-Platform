@@ -62,6 +62,7 @@ describe('role-aware registration', () => {
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.queryByText('What type of account are you creating?')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Explore Demo' })).toHaveAttribute('href', '/demo')
+    expect(screen.getByText(/Contact your coach or administrator to reset it\./)).toBeInTheDocument()
   })
 
   it('routes a coach using the backend-owned role', async () => {

@@ -36,6 +36,9 @@ and contributors do not implement them opportunistically.
 | Ratings / reviews / likes / comments on programs | Social features not approved | No community layer on starter or coach content |
 | Starter-library synchronization engine | Clones are independent snapshots (ADR-0016) | Updating starter content never alters existing coach copies |
 | AI-generated or personalized programs | Requires an approved AI decision + review | Starter content is curated and static, never generated or personalized |
+| SSO / social or enterprise login (OIDC/SAML) | Milestone-sized: identity linking, role/invite interplay, demo interplay, security review; no real driver yet | Proposal recorded; revisit when an enterprise/coach-org requirement exists. Auth is email+password only today |
+| Self-service password reset (email) | Needs a transactional email provider (Messaging/Notifications deferred) | Interim: operators reset via `python -m scripts.reset_password` (see deployment-and-recovery). No public reset endpoint exists |
+| Self-service in-app change-password | Not built yet; natural small next step after email reset | No `change-password` endpoint exists; password changes are operator-driven for now |
 
 If you believe an item should move from deferred to planned, open a feature
 proposal (issue template) and record the accepted decision in the decision log —
