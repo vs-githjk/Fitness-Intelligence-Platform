@@ -40,6 +40,7 @@ IDENTITY_DEMO_MUTATIONS = frozenset(
         ("PUT", "/api/v1/me/preferences"),
         ("PUT", "/api/v1/me/avatar"),
         ("DELETE", "/api/v1/me/avatar"),
+        ("PUT", "/api/v1/me/password"),
     }
 )
 

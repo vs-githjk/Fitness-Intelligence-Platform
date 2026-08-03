@@ -162,3 +162,38 @@ it('disables identity edits for demo accounts', async () => {
   expect(screen.getByRole('status', { name: 'Demo workspace' })).toBeVisible()
   expect(screen.getByLabelText('Weight unit')).toBeDisabled()
 })
+
+it('changes the password and posts the current and new values', async () => {
+  setSession('coach', false)
+  const bodies: string[] = []
+  mockFetch((url, init) => {
+    if (url.endsWith('/me/preferences')) return ok(preferences())
+    if (url.endsWith('/me/password') && init?.method === 'PUT') { bodies.push(String(init?.body)); return new Response(null, { status: 204 }) }
+    return ok({})
+  })
+  renderPage(<SettingsPage />)
+  fireEvent.change(await screen.findByLabelText('Current password'), { target: { value: 'CoachPass123!' } })
+  fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'BrandNewPass1' } })
+  fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'BrandNewPass1' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Change password' }))
+  await waitFor(() => expect(bodies).toHaveLength(1))
+  expect(JSON.parse(bodies[0])).toEqual({ current_password: 'CoachPass123!', new_password: 'BrandNewPass1' })
+  expect(await screen.findByText(/Your password was changed/)).toBeVisible()
+})
+
+it('blocks a password change when the confirmation does not match', async () => {
+  setSession('coach', false)
+  const calls: string[] = []
+  mockFetch((url, init) => {
+    if (url.endsWith('/me/preferences')) return ok(preferences())
+    if (url.endsWith('/me/password')) { calls.push(String(init?.method)); return new Response(null, { status: 204 }) }
+    return ok({})
+  })
+  renderPage(<SettingsPage />)
+  fireEvent.change(await screen.findByLabelText('Current password'), { target: { value: 'CoachPass123!' } })
+  fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'BrandNewPass1' } })
+  fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'Different123' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Change password' }))
+  expect(await screen.findByText(/do not match/)).toBeVisible()
+  expect(calls).toHaveLength(0)
+})

@@ -73,9 +73,11 @@ Two explicit seed commands exist; neither runs at application startup.
 
 ## User password reset (operator)
 
-There is no self-service password reset yet (no email/notification channel — see
-[deferred-features](../deferred-features.md)). For the controlled test-user stage,
-an operator resets a password from a trusted shell with database access:
+Signed-in users can change their own password in **Settings** (`PUT /api/v1/me/password`,
+current password required). There is no self-service reset for a *forgotten* password
+yet (no email/notification channel — see [deferred-features](../deferred-features.md)).
+For that case, at the controlled test-user stage, an operator resets the password from a
+trusted shell with database access:
 
 ```
 python -m scripts.reset_password --email someone@example.com            # prints a generated temp password

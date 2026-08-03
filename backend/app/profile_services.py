@@ -7,6 +7,7 @@ logic; no existing behavior is changed.
 
 import uuid
 
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -20,6 +21,7 @@ from app.models import (
     utcnow,
 )
 from app.schemas import UserPreferencesUpdate, UserProfileUpdate
+from app.security import hash_password, verify_password
 
 
 def _transient_demo_defaults(instance: UserProfile | UserPreferences) -> None:
@@ -106,3 +108,32 @@ def update_user_preferences(
     db.commit()
     db.refresh(preferences)
     return preferences
+
+
+def change_user_password(
+    db: Session, user: User, current_password: str, new_password: str
+) -> None:
+    """Set a new password after verifying the current one.
+
+    Raises 400 for an incorrect current password or a new password equal to the
+    current one. Password length policy is enforced by the request schema.
+    """
+    if not verify_password(current_password, user.password_hash):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "invalid_current_password",
+                "message": "Your current password is incorrect.",
+            },
+        )
+    if verify_password(new_password, user.password_hash):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "password_unchanged",
+                "message": "Choose a new password different from your current one.",
+            },
+        )
+    user.password_hash = hash_password(new_password)
+    db.add(user)
+    db.commit()

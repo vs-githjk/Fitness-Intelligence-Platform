@@ -14,6 +14,7 @@ from app.avatar_services import get_active_avatar, remove_avatar, set_avatar
 from app.database import get_db
 from app.models import User, UserProfile
 from app.profile_services import (
+    change_user_password,
     get_or_create_user_preferences,
     get_or_create_user_profile,
     update_user_preferences,
@@ -21,6 +22,7 @@ from app.profile_services import (
 )
 from app.schemas import (
     MediaAssetOut,
+    PasswordChangeRequest,
     UserPreferencesOut,
     UserPreferencesUpdate,
     UserProfileOut,
@@ -30,6 +32,16 @@ from app.security import ensure_not_demo, get_current_user
 from app.storage import StorageProvider, get_storage_provider
 
 router = APIRouter(prefix="/me", tags=["identity"])
+
+
+def require_writable_user(user: User = Depends(get_current_user)) -> User:
+    """Current user, but reject demo accounts as a dependency.
+
+    Used where the request body is required: enforcing the demo guard here means
+    it fires before body validation, so demo callers get 403 (not 422).
+    """
+    ensure_not_demo(user)
+    return user
 
 
 def _profile_out(db: Session, profile: UserProfile) -> UserProfileOut:
@@ -109,3 +121,13 @@ def write_preferences(
 ) -> User:
     ensure_not_demo(user)
     return update_user_preferences(db, user, body)
+
+
+@router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    body: PasswordChangeRequest,
+    user: User = Depends(require_writable_user),
+    db: Session = Depends(get_db),
+) -> Response:
+    change_user_password(db, user, body.current_password, body.new_password)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
