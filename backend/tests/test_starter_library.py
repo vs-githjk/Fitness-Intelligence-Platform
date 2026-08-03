@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -258,10 +259,12 @@ def test_cloned_program_publishes_assigns_and_schedules(
     programs = client.get("/api/v1/coach/training-programs?per_page=100", headers=_auth(token)).json()
     assert any(item["id"] == program_id for item in programs["items"])
 
+    # A near-future start date, computed so the test never drifts into the past.
+    start_date = (datetime.now(UTC).date() + timedelta(days=3)).isoformat()
     preview = client.post(
         f"/api/v1/coach/trainees/{trainee_id}/training-assignments/preview",
         headers=_auth(token),
-        json={"training_program_version_id": version_id, "effective_start_date": "2026-07-27"},
+        json={"training_program_version_id": version_id, "effective_start_date": start_date},
     )
     assert preview.status_code == 200, preview.text
     assert preview.json()["workouts"]
@@ -269,7 +272,7 @@ def test_cloned_program_publishes_assigns_and_schedules(
     assigned = client.post(
         f"/api/v1/coach/trainees/{trainee_id}/training-assignments",
         headers=_auth(token),
-        json={"training_program_version_id": version_id, "effective_start_date": "2026-07-27"},
+        json={"training_program_version_id": version_id, "effective_start_date": start_date},
     )
     assert assigned.status_code in (200, 201), assigned.text
 
