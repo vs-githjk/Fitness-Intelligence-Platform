@@ -3,7 +3,12 @@ name = "fitness-intelligence-backend"
 dynamic = ["version"]
 requires-python = ">=3.12"
 dependencies = [
-  "alembic>=1.13,<2",
+  # Cap below 1.19: its new autogenerate `checkconstraint_byname` plugin compares
+  # named CHECK constraints (previously invisible to SQLite reflection), which
+  # makes `alembic check` report spurious drift when exercised through the
+  # migration-replay tests. Head/models are clean on a fresh upgrade. Revisit
+  # once the historical migrations' check-constraint round-trip is normalized.
+  "alembic>=1.13,<1.19",
   "bcrypt>=4.1,<5",
   "email-validator>=2.1,<3",
   "fastapi>=0.115,<1",
