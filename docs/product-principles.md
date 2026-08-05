@@ -5,6 +5,74 @@ FitIntel 360. They are binding product contracts, not aspirations. When a propos
 change conflicts with a principle, the change needs an explicit approved decision
 (see [decisions/README.md](decisions/README.md)) — not a silent exception.
 
+They fall into two groups. **Experience principles** govern how the product
+presents guidance — what leads, what supports, and what is removed. **Boundary
+principles** constrain what the product may compute, claim, store, or automate. A
+change that satisfies every boundary can still fail the experience principles, and
+is not shippable until it passes both; the Product Experience review evaluates the
+experience principles explicitly.
+
+## Experience principles
+
+These govern how every screen, recommendation, and piece of copy is designed —
+what leads, what supports, and what is removed. They are as binding as the
+boundaries below and are checked explicitly in the Product Experience review.
+
+### Guidance over metrics
+
+- **Guidance is the product; metrics justify it.** Users open FitIntel 360 to learn
+  what to do, not to read numbers. Every screen leads with a recommendation or next
+  action; scores, charts, and breakdowns exist to explain and support it.
+- **Guidance wins conflicts.** When presenting more metrics competes with presenting
+  clearer guidance, guidance takes precedence.
+- **Evidence stays available, never dominant.** No number is hidden — provenance and
+  component breakdowns remain reachable, consistent with the calculation-integrity
+  boundary below — but supporting evidence must not out-weigh the recommendation it
+  justifies. Prefer progressive disclosure over competition.
+
+### One dominant answer
+
+- **One primary question per screen.** Each screen answers a single most-important
+  question, and a user should grasp that answer within about five seconds.
+- **Hierarchy enforces the answer.** Visual weight, order, and emphasis reinforce the
+  one takeaway; everything else is visibly secondary.
+- **Competing sections are a smell.** If multiple sections claim equal attention, the
+  screen is answering too many questions — reduce, combine, or progressively
+  disclose until one answer dominates.
+
+### Coach first
+
+- **The coach is the expert; the software amplifies them.** Recommendations are
+  framed as guidance from the trainee's coach, supported by explainable
+  intelligence — never as advice from an algorithm, and never in a way that appears
+  to replace the coach. This is the experiential half of the coaching-model boundary
+  ([Coaching model](#coaching-model)); apply those autonomy limits rather than
+  restating them.
+- **Surface coach intent first.** Where a coach has authored intent — an assigned
+  program, a workout's trainee instructions, a target effort — present it before
+  system-generated explanation. Reuse existing coach-authored, deterministic content;
+  do not invent a coach voice the coach did not write, and do not add AI to
+  manufacture one.
+
+### Calm intelligence
+
+- **Reduce anxiety, don't manufacture it.** The interface is confident, supportive,
+  and professional — not warning-heavy. Avoid alert fatigue: cap and rank concerns
+  rather than stacking them.
+- **Every concern carries an action.** A problem is never surfaced without a clear,
+  calm next step.
+- **Reinforce what is going well.** Where it is genuinely true, acknowledge progress
+  before highlighting what needs attention. Positive reinforcement is deterministic
+  too — surfaced from real inputs, never fabricated.
+
+### Premium simplicity
+
+- **Remove before adding.** New cards, sections, metrics, or controls must clearly
+  improve a decision to earn a place. Before adding UI, first ask what existing
+  element can be removed instead.
+- **Restraint is a feature.** Whitespace is a primary layout tool; not every element
+  needs its own container. Simple is the default; complexity must be justified.
+
 ## Coaching model
 
 - **Coach-assisted, not autonomous.** The product surfaces structured, explainable

@@ -165,7 +165,7 @@ diff unless a screenshot change is intended.
 
 - Prefer updating and consolidating existing docs over adding overlapping ones.
 - Keep terminology consistent with [docs/domain-glossary.md](docs/domain-glossary.md).
-- Reflect product boundaries from [docs/product-principles.md](docs/product-principles.md).
+- Reflect product boundaries and experience principles from [docs/product-principles.md](docs/product-principles.md).
 - Record accepted contracts in [docs/decisions/README.md](docs/decisions/README.md).
 - Update [docs/roadmap.md](docs/roadmap.md) only when scope/ordering is approved.
 
