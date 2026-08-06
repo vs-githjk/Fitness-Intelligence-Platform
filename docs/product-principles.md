@@ -17,6 +17,8 @@ experience principles explicitly.
 These govern how every screen, recommendation, and piece of copy is designed —
 what leads, what supports, and what is removed. They are as binding as the
 boundaries below and are checked explicitly in the Product Experience review.
+Worked, per-screen applications of these principles live under
+[design/](design/) — e.g. [design/trainee-today.md](design/trainee-today.md).
 
 ### Guidance over metrics
 
