@@ -32,6 +32,117 @@
   --status-critical-border: 244 183 193;
 }
 
+/* ============================================================
+   Morning Brief design tokens — Experience Cycle 1, Phase A.
+   Additive foundation. The legacy --color-* / --status-* tokens
+   above remain the source of truth for unmigrated ("legacy")
+   surfaces until their design-debt retirement in a later cycle.
+   These --mb-* tokens are consumed via the Tailwind `mb-*`
+   utilities or var(--mb-*). No surface renders them yet, so the
+   application's appearance is unchanged by this phase.
+   Colors are stored as space-separated RGB triples so Tailwind's
+   `rgb(var(--token) / <alpha-value>)` can apply opacity.
+   ============================================================ */
+:root {
+  /* Brand — one indigo ramp; --mb-action is the single action color (#4A44C9) */
+  --mb-indigo-50: 238 240 251;
+  --mb-indigo-100: 220 223 246;
+  --mb-indigo-300: 156 159 232;
+  --mb-indigo-500: 91 85 214;
+  --mb-indigo-600: 74 68 201;
+  --mb-indigo-700: 59 54 168;
+  --mb-indigo-900: 35 32 94;
+  --mb-action: var(--mb-indigo-600);
+  --mb-action-hover: var(--mb-indigo-700);
+
+  /* Neutral grounds & text (light) */
+  --mb-page: 250 249 247;
+  --mb-surface: 255 255 255;
+  --mb-inset: 243 242 239;
+  --mb-ink: 26 26 33;
+  --mb-secondary: 82 82 94;
+  --mb-muted: 138 138 150;
+  --mb-hairline: 26 26 33;
+  --mb-hairline-alpha: 0.08;
+  --mb-hairline-color: rgb(var(--mb-hairline) / var(--mb-hairline-alpha));
+
+  /* Semantic (light) — success/caution as glyph+word only; error is product-failure only */
+  --mb-success: 46 125 91;
+  --mb-caution: 176 120 24;
+  --mb-error: 180 69 62;
+  --mb-info: 62 107 150;
+
+  /* Atmospheric readiness — band bases applied only as a whisper tint on guidance heroes */
+  --mb-atm-gold: 217 168 78;
+  --mb-atm-blue: 110 123 196;
+  --mb-atm-amber: 201 138 90;
+  --mb-atm-violet: 122 107 176;
+  --mb-atm-alpha: 0.06;
+  --mb-atm-edge-alpha: 0;
+
+  /* Typography families — structure = product voice, voice = human-authored serif.
+     Fallback stacks pending the font-licensing decision (see report). */
+  --mb-font-structure: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mb-font-voice: 'Signifier', Georgia, 'Times New Roman', serif;
+  --mb-font-stat: var(--mb-font-structure);
+
+  /* Radius */
+  --mb-radius-surface: 14px;
+  --mb-radius-inset: 10px;
+  --mb-radius-control: 10px;
+  --mb-radius-tag: 6px;
+
+  /* Elevation — light: border + one soft shadow; dark redefines to none + edge-light */
+  --mb-shadow-surface: 0 1px 3px rgb(15 23 42 / 0.10);
+  --mb-shadow-overlay: 0 12px 40px rgb(15 23 42 / 0.18);
+
+  /* Motion — durations capped per the design language; standard easing */
+  --mb-dur-micro: 160ms;
+  --mb-dur-structural: 220ms;
+  --mb-dur-entrance: 500ms;
+  --mb-dur-completion: 500ms;
+  --mb-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Focus — consumes the action color */
+  --mb-focus: var(--mb-action);
+
+  /* Semantic spacing */
+  --mb-gutter: 20px;
+  --mb-section: 48px;
+  --mb-section-tight: 24px;
+  --mb-pad-surface: 24px;
+  --mb-pad-inset: 16px;
+}
+
+/* Dark theme architecture. Applied by ThemeProvider via
+   data-theme="dark" (system preference is resolved in JS). Only the
+   theme-dependent --mb-* tokens are overridden; legacy --color-*
+   tokens are intentionally NOT redefined here, so unmigrated
+   surfaces stay light even under a dark root. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --mb-page: 16 16 20;
+  --mb-surface: 23 23 29;
+  --mb-inset: 30 30 37;
+  --mb-ink: 242 241 238;
+  --mb-secondary: 168 168 180;
+  --mb-muted: 110 110 122;
+  --mb-hairline: 255 255 255;
+  --mb-hairline-alpha: 0.09;
+
+  --mb-success: 87 185 142;
+  --mb-caution: 217 168 78;
+  --mb-error: 224 123 114;
+  --mb-info: 127 168 204;
+
+  --mb-atm-alpha: 0.10;
+  --mb-atm-edge-alpha: 0.35;
+
+  --mb-shadow-surface: none;
+  --mb-shadow-overlay: 0 12px 40px rgb(0 0 0 / 0.5);
+}
+
 @layer base {
   * { @apply border-border; }
   html { @apply bg-page; scroll-behavior: smooth; }
