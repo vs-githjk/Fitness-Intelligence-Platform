@@ -74,8 +74,10 @@ export function GuidanceHero({
           {verdict}
         </h1>
         {reason && <p className="mt-3 max-w-mb-measure text-mb-body-lg text-mb-secondary">{reason}</p>}
-        {session && <div className="mt-6">{session}</div>}
-        {action && <div className="mt-6">{action}</div>}
+        {/* mt-5 (not mt-6): keep the reason→session rhythm generous but trim the
+            excess that pushed the primary action toward/under the mobile fold. */}
+        {session && <div className="mt-5">{session}</div>}
+        {action && <div className="mt-5">{action}</div>}
         {secondaryAction && <div className="mt-3">{secondaryAction}</div>}
       </div>
     </section>

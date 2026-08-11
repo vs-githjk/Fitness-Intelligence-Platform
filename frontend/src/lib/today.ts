@@ -72,15 +72,16 @@ export function workoutContext(workout: ScheduledWorkout): string | undefined {
   return undefined
 }
 
-// Most recent recorded change for a score series, or null when unavailable.
-export function scoreTrend(trends: DailyTrends | undefined, seriesKey: string): number | null {
+// The change since the latest check-in — but ONLY when the latest recorded point
+// is actually present. If today's value is missing we do NOT reach back to an
+// older recorded pair and present it as recent ("since your last check-in" would
+// overstate certainty); we return null so callers omit rather than overclaim.
+export function latestTrend(trends: DailyTrends | undefined, seriesKey: string): number | null {
   const series = trends?.series.find((item) => item.key === seriesKey)
-  if (!series) return null
-  for (let index = series.points.length - 1; index >= 0; index -= 1) {
-    const point = series.points[index]
-    if (!point.missing && point.difference_from_previous != null) return point.difference_from_previous
-  }
-  return null
+  if (!series || series.points.length === 0) return null
+  const last = series.points[series.points.length - 1]
+  if (last.missing || last.difference_from_previous == null) return null
+  return last.difference_from_previous
 }
 
 const GOING_WELL_SERIES: ReadonlyArray<{ key: string; label: string }> = [
@@ -90,12 +91,14 @@ const GOING_WELL_SERIES: ReadonlyArray<{ key: string; label: string }> = [
   { key: 'nutrition_score', label: 'Nutrition' },
 ]
 
-// One truthful positive: a score that genuinely rose since the last check-in.
+// One truthful positive: a score that genuinely rose at the latest check-in.
+// Uses latestTrend, so a rise is only surfaced when today's value is actually
+// present — an older increase is never relabelled as "since your last check-in".
 // Returns null when nothing qualifies (positivity is never invented). No streaks.
 export function selectGoingWell(trends: DailyTrends | undefined): string | null {
   if (!trends) return null
   for (const { key, label } of GOING_WELL_SERIES) {
-    const delta = scoreTrend(trends, key)
+    const delta = latestTrend(trends, key)
     if (delta != null && delta > 0) return `${label} is up since your last check-in.`
   }
   return null

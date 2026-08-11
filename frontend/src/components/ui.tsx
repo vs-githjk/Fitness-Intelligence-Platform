@@ -228,7 +228,7 @@ export function ErrorState({ title = 'We could not load this page', description,
 
 export type { ScoreTone } from '../lib/score'
 
-const mbFocusRing =
+export const mbFocusRing =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mb-action focus-visible:ring-offset-2 focus-visible:ring-offset-mb-surface'
 
 const ctaVariants = {
@@ -338,25 +338,23 @@ const scoreWordClass: Record<ScoreTone, string> = {
 }
 
 // The score law as a component: WORD (from the backend band) then INTEGER.
-// `tone` is explicit — the component never derives a band from the numeric value,
-// and its tone set excludes red for body data. `word` is optional because some
-// real metrics (recovery/activity/nutrition) have no backend band; when omitted,
-// only the integer is shown — a band is never invented for a band-less number.
-export function Score({
-  value,
-  word,
-  tone = 'neutral',
-  variant = 'row',
-  unavailableLabel = 'Unavailable',
-  className = '',
-}: {
+// The band/tone is NEVER derived from the number. The contract is a discriminated
+// union so the law is enforced at compile time:
+//   - a BANDED score MUST carry the backend interpretation `word` (WORD → INTEGER);
+//   - an UNBANDED metric declares `banded: false` and simply cannot accept a word,
+//     so a band is never invented for a metric the backend does not interpret.
+type ScoreBase = {
   value: number | null | undefined
-  word?: string
-  tone?: ScoreTone
   variant?: 'row' | 'hero'
   unavailableLabel?: string
   className?: string
-}) {
+}
+export type ScoreProps = ScoreBase & ({ banded: true; word: string; tone?: ScoreTone } | { banded: false })
+
+export function Score(props: ScoreProps) {
+  const { value, variant = 'row', unavailableLabel = 'Unavailable', className = '' } = props
+  const word = props.banded ? props.word : undefined
+  const tone: ScoreTone = props.banded ? props.tone ?? 'neutral' : 'neutral'
   const missing = isScoreMissing(value)
   const display = missing ? unavailableLabel : String(roundScore(value as number))
   if (variant === 'hero') {
@@ -392,29 +390,29 @@ export function TrendDelta({ delta, className = '' }: { delta: number; className
   )
 }
 
-// A labelled evidence row: metric name + Score (+ optional TrendDelta).
-export function EvidenceRow({
-  label,
-  value,
-  word,
-  tone = 'neutral',
-  trend,
-  unavailableLabel = 'Unavailable',
-  className = '',
-}: {
+// A labelled evidence row: metric name + Score (+ optional TrendDelta). It carries
+// the same banded/unbanded discriminated contract as `Score`, so an evidence row
+// for a backend-banded metric must supply the word and a neutral metric cannot.
+type EvidenceBase = {
   label: string
   value: number | null | undefined
-  word?: string
-  tone?: ScoreTone
   trend?: number | null
   unavailableLabel?: string
   className?: string
-}) {
+}
+export type EvidenceRowProps = EvidenceBase & ({ banded: true; word: string; tone?: ScoreTone } | { banded: false })
+
+export function EvidenceRow(props: EvidenceRowProps) {
+  const { label, value, trend, unavailableLabel = 'Unavailable', className = '' } = props
   return (
     <div className={`flex items-center justify-between gap-4 py-3 font-structure ${className}`}>
       <span className="text-mb-body text-mb-secondary">{label}</span>
       <span className="flex items-center gap-3">
-        <Score value={value} word={word} tone={tone} unavailableLabel={unavailableLabel} />
+        {props.banded ? (
+          <Score banded value={value} word={props.word} tone={props.tone} unavailableLabel={unavailableLabel} />
+        ) : (
+          <Score banded={false} value={value} unavailableLabel={unavailableLabel} />
+        )}
         {trend != null && <TrendDelta delta={trend} />}
       </span>
     </div>

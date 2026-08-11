@@ -156,6 +156,33 @@ the new exported `ctaClassName` (so `ui.tsx` stays router-free). `Score`/`Eviden
 gained an **optional `word`**: recovery/activity/nutrition have no backend band, so
 they render as an integer only — a band is never invented.
 
+## Phase D.1 — spec-conformance hardening (shipped)
+
+A tightly scoped conformance pass over the Phase D checked-in Today (no new states,
+no redesign):
+
+- **Score law restored as a typed contract.** `Score`/`EvidenceRow` no longer take
+  an optional `word`. They take a discriminated union — `{ banded: true; word }`
+  (the backend interpretation is required; WORD → INTEGER cannot be dropped) or
+  `{ banded: false }` (a neutral integer metric that *cannot* accept a word, so a
+  band is never invented). Health Index renders `banded`; recovery/activity/
+  nutrition and the component breakdown render `banded={false}`.
+- **Product vocabulary at the presentation boundary.** `lib/dailyComponents.ts`
+  maps every Daily Intelligence component key to approved human copy; Today no
+  longer titleizes raw keys or surfaces raw explanations, so the frozen §8 removed
+  vocabulary ("compliance", "arbitrary units", snake_case) can no longer leak.
+  Domain keys are untouched.
+- **Trend recency truthfulness.** `scoreTrend` is replaced by `latestTrend`, which
+  returns a change only when the latest recorded point is present; "…up since your
+  last check-in" can no longer be attached to an older pair. Going Well omits
+  rather than overstate.
+- **Guidance spine.** The checked-in Today composition is constrained to the
+  existing `max-w-mb-guidance` (≈640px) centred measure; extra desktop width is
+  whitespace, and the hero/session/evidence inherit the readable line length.
+- **Mobile CTA rhythm.** The hero's session/action top margin is trimmed
+  (`mt-6`→`mt-5`) so the primary action sits higher relative to the mobile fold and
+  the fixed bottom nav, without compressing the screen or touching coach content.
+
 ## Deviations / decisions forced by repository reality
 
 - **Additive over in-place evolution.** `Button`, `Disclosure`, and `StatusNotice`
@@ -180,10 +207,11 @@ they render as an integer only — a band is never invented.
 - **Attribution avatar size (Phase C).** Attribution reuses `Avatar`'s existing
   `sm`/`md` sizes rather than adding a 24px size, to avoid modifying a shared
   component that other surfaces render.
-- **Band-less scores (Phase D).** Only readiness has a backend band; recovery,
-  activity, and nutrition scores do not. Rather than invent bands, `Score`/
-  `EvidenceRow` render those as an integer with no word — the score law forbids a
-  derived band, so a band-less number simply omits the word.
+- **Band-less scores (Phase D → D.1).** Only readiness/Health Index have a backend
+  band; recovery, activity, and nutrition scores do not. Phase D first expressed
+  this with an optional `word`; Phase D.1 hardened it into a discriminated
+  `banded` union so a band is impossible to invent *and* impossible to omit where
+  one exists (see the Phase D.1 section above).
 - **Reason line + Going Well (Phase D).** The reason is a deterministic per-state
   sentence (a conservative, truthful fallback; richer trend-composed reasons are
   deferred). Going Well surfaces one genuinely positive score trend since the last

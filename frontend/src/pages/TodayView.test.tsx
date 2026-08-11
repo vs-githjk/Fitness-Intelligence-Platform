@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { CoachRelationship, DailyScore, RiskFlag, ScheduledWorkout, TrainingAssignmentWorkspace, User } from '../types'
+import { CoachRelationship, DailyScore, DailyScoreComponent, HealthIndex, RiskFlag, ScheduledWorkout, TrainingAssignmentWorkspace, User } from '../types'
 import { MorningBriefToday } from './TodayView'
 
 const user: User = { id: 'u1', email: 't@e.com', first_name: 'Arjun', last_name: 'K', role: 'trainee', is_demo: false }
@@ -167,6 +167,41 @@ describe('MorningBriefToday', () => {
     expect(screen.getByText('Add nutrition targets to track this')).toBeInTheDocument()
     expect(screen.getByText('Recovery')).toBeInTheDocument()
     expect(screen.getByText('Training readiness')).toBeInTheDocument()
+  })
+
+  it('never renders banned product vocabulary in the details, only human component labels', () => {
+    const components: DailyScoreComponent[] = [
+      { key: 'recent_training_load', group: 'readiness', raw_inputs: {}, normalized_score: 100, weight: 30, contribution: 30, status: 'within_product_threshold', explanation: 'Load does not reduce readiness through 1,200 arbitrary units.', missing: false },
+      { key: 'protein_compliance', group: 'nutrition', raw_inputs: {}, normalized_score: 0, weight: 0, contribution: 0, status: 'unavailable', explanation: 'raw explanation', missing: true },
+      { key: 'hydration_compliance', group: 'nutrition', raw_inputs: {}, normalized_score: 57, weight: 100, contribution: 57, status: 'needs_attention', explanation: 'raw explanation', missing: false },
+    ]
+    const { container } = renderToday({ score: score({ components }) })
+    fireEvent.click(screen.getByRole('button', { name: /today's details/i }))
+    const text = container.textContent ?? ''
+    expect(text).not.toMatch(/compliance/i)
+    expect(text).not.toMatch(/arbitrary units/i)
+    expect(text).not.toMatch(/\w+_\w+/) // no snake_case leaks
+    // Approved human labels replace the raw keys.
+    expect(screen.getByText('Recent training load')).toBeInTheDocument()
+    expect(screen.getByText('Protein intake')).toBeInTheDocument()
+    expect(screen.getByText('Hydration')).toBeInTheDocument()
+  })
+
+  it('renders the baseline Health Index as an explicitly banded score, carrying its band word', () => {
+    const baseline: HealthIndex = {
+      id: 'h1', trainee_id: 'u1', assessment_id: 'a1', overall_score: 90, band: 'Excellent',
+      scoring_version: 'health-index-v1', calculated_at: '', components: [], missing_fields: [], risk_flags: [], recommendations: [],
+    }
+    renderToday({ score: score(), baseline })
+    fireEvent.click(screen.getByRole('button', { name: /today's details/i }))
+    expect(screen.getByText('Health Index')).toBeInTheDocument()
+    expect(screen.getByText('Excellent')).toBeInTheDocument()
+    expect(screen.getByText('90')).toBeInTheDocument()
+  })
+
+  it('constrains the guidance to the centred ~640px spine (no full-width stretch)', () => {
+    const { container } = renderToday({ score: score(), workspace: withWorkout() })
+    expect(container.querySelector('.max-w-mb-guidance')).not.toBeNull()
   })
 
   it('renders under both Morning Brief themes', () => {

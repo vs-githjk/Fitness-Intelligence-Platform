@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { DailyTrends, RiskFlag, ScheduledWorkout, TrainingAssignmentWorkspace } from '../types'
 import {
+  latestTrend,
   readinessPresentation,
   reasonLine,
-  scoreTrend,
   selectGoingWell,
   selectTodayWorkout,
   selectWatch,
@@ -150,19 +150,39 @@ describe('workoutContext', () => {
   })
 })
 
-describe('scoreTrend and selectGoingWell', () => {
-  it('returns the latest recorded difference and ignores missing tails', () => {
-    expect(
-      scoreTrend(trend('recovery_score', [{ value: 60, diff: null }, { value: 63, diff: 3 }, { value: null, diff: null }]), 'recovery_score'),
-    ).toBe(3)
-    expect(scoreTrend(trend('recovery_score', []), 'nope')).toBeNull()
-    expect(scoreTrend(undefined, 'recovery_score')).toBeNull()
+describe('latestTrend', () => {
+  it('returns the change only when the latest recorded point is present', () => {
+    // Latest valid pair: today's value exists with a real difference.
+    expect(latestTrend(trend('recovery_score', [{ value: 60, diff: null }, { value: 63, diff: 3 }]), 'recovery_score')).toBe(3)
   })
 
-  it('selects a truthful positive trend (preferring recovery), else nothing', () => {
+  it('does NOT reach back to an older pair when today is missing (no overstatement)', () => {
+    // Older pair rose (+3) but today's value is missing → we return null rather
+    // than presenting a stale increase as "since your last check-in".
+    expect(
+      latestTrend(trend('recovery_score', [{ value: 60, diff: null }, { value: 63, diff: 3 }, { value: null, diff: null }]), 'recovery_score'),
+    ).toBeNull()
+  })
+
+  it('returns null for insufficient/empty trend data or a missing series', () => {
+    expect(latestTrend(trend('recovery_score', []), 'recovery_score')).toBeNull()
+    expect(latestTrend(trend('recovery_score', [{ value: 60, diff: null }]), 'recovery_score')).toBeNull()
+    expect(latestTrend(trend('recovery_score', [{ value: 60, diff: null }, { value: 63, diff: 3 }]), 'nope')).toBeNull()
+    expect(latestTrend(undefined, 'recovery_score')).toBeNull()
+  })
+})
+
+describe('selectGoingWell', () => {
+  it('selects a truthful latest-pair positive (preferring recovery), else nothing', () => {
     expect(selectGoingWell(trend('recovery_score', [{ value: 60, diff: null }, { value: 63, diff: 3 }]))).toMatch(/Recovery is up/)
     expect(selectGoingWell(trend('recovery_score', [{ value: 63, diff: null }, { value: 60, diff: -3 }]))).toBeNull()
     expect(selectGoingWell(undefined)).toBeNull()
+  })
+
+  it('omits going-well when today is missing, even if an older reading rose', () => {
+    expect(
+      selectGoingWell(trend('recovery_score', [{ value: 60, diff: null }, { value: 63, diff: 3 }, { value: null, diff: null }])),
+    ).toBeNull()
   })
 })
 

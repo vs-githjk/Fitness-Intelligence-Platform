@@ -91,38 +91,46 @@ describe('SystemBanner', () => {
 
 describe('Score', () => {
   it('renders the backend word and an integer value', () => {
-    render(<Score value={76.4} word="Strong" />)
+    render(<Score banded value={76.4} word="Strong" />)
     expect(screen.getByText('Strong')).toBeInTheDocument()
     expect(screen.getByText('76')).toBeInTheDocument()
   })
 
   it('renders missing values as unavailable, never zero', () => {
-    render(<Score value={null} word="Recovery" />)
+    render(<Score banded value={null} word="Recovery" />)
     expect(screen.getByText('Unavailable')).toBeInTheDocument()
     expect(screen.queryByText('0')).toBeNull()
   })
 
   it('supports custom unavailable copy', () => {
-    render(<Score value={null} word="Nutrition" unavailableLabel="Add nutrition targets to track this" />)
+    render(<Score banded value={null} word="Nutrition" unavailableLabel="Add nutrition targets to track this" />)
     expect(screen.getByText('Add nutrition targets to track this')).toBeInTheDocument()
   })
 
   it('takes its band/tone from props, never re-thresholding the number', () => {
     // A high value with an explicit caution tone must render caution styling,
     // proving the component never derives meaning from the numeric value.
-    render(<Score value={95} word="Ease off" tone="caution" />)
+    render(<Score banded value={95} word="Ease off" tone="caution" />)
     expect(screen.getByText('Ease off')).toHaveClass('text-mb-caution')
   })
 
   it('exposes word and value as text for assistive technology', () => {
-    render(<Score value={80} word="Ready to train" />)
+    render(<Score banded value={80} word="Ready to train" />)
     expect(screen.getByText('Ready to train')).toBeInTheDocument()
     expect(screen.getByText('80')).toBeInTheDocument()
   })
 
-  it('renders a band-less score as an integer only, never inventing a word', () => {
-    render(<Score value={76.4} />)
+  it('renders an explicitly unbanded score as an integer only, never inventing a word', () => {
+    const { container } = render(<Score banded={false} value={76.4} />)
     expect(screen.getByText('76')).toBeInTheDocument()
+    // Only the wrapper + the integer span; no band-word span is emitted.
+    expect(container.querySelectorAll('span')).toHaveLength(2)
+  })
+
+  it('renders an unbanded missing metric as unavailable, never zero', () => {
+    render(<Score banded={false} value={null} unavailableLabel="Not tracked" />)
+    expect(screen.getByText('Not tracked')).toBeInTheDocument()
+    expect(screen.queryByText('0')).toBeNull()
   })
 })
 
@@ -149,16 +157,23 @@ describe('SectionHeader', () => {
 })
 
 describe('EvidenceRow', () => {
-  it('renders label, score word + value and an optional trend', () => {
-    render(<EvidenceRow label="Recovery" value={76} word="Strong" tone="positive" trend={3} />)
+  it('renders a banded label, score word + value and an optional trend', () => {
+    render(<EvidenceRow banded label="Recovery" value={76} word="Strong" tone="positive" trend={3} />)
     expect(screen.getByText('Recovery')).toBeInTheDocument()
     expect(screen.getByText('Strong')).toBeInTheDocument()
     expect(screen.getByText('76')).toBeInTheDocument()
     expect(screen.getByText('+3')).toBeInTheDocument()
   })
 
+  it('renders an unbanded metric with only an integer, no invented word', () => {
+    render(<EvidenceRow banded={false} label="Activity" value={52} trend={2} />)
+    expect(screen.getByText('Activity')).toBeInTheDocument()
+    expect(screen.getByText('52')).toBeInTheDocument()
+    expect(screen.getByText('+2')).toBeInTheDocument()
+  })
+
   it('shows missing scores as context copy and omits an absent trend', () => {
-    render(<EvidenceRow label="Nutrition" value={null} word="Not tracked" unavailableLabel="Add nutrition targets" />)
+    render(<EvidenceRow banded={false} label="Nutrition" value={null} unavailableLabel="Add nutrition targets" />)
     expect(screen.getByText('Add nutrition targets')).toBeInTheDocument()
   })
 })
@@ -176,9 +191,11 @@ describe('renders under both Morning Brief themes', () => {
             <p>evidence</p>
           </DisclosureBlock>
           <SystemBanner tone="info" title="Heads up" />
-          <Score value={80} word="Strong" />
+          <Score banded value={80} word="Strong" />
+          <Score banded={false} value={52} />
           <TrendDelta delta={2} />
-          <EvidenceRow label="Recovery" value={76} word="Strong" />
+          <EvidenceRow banded label="Recovery" value={76} word="Strong" />
+          <EvidenceRow banded={false} label="Activity" value={52} />
         </div>,
       )
       expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()

@@ -9,12 +9,12 @@ import { Link } from 'react-router-dom'
 import { CoachAttribution, CoachMessage } from '../components/coach'
 import { GuidanceHero } from '../components/guidance'
 import { SessionSlip, StatStrip } from '../components/session'
-import { ctaClassName, DisclosureBlock, EvidenceRow, NoteLine, Score, SectionHeader } from '../components/ui'
-import { titleize } from '../lib/format'
+import { ctaClassName, DisclosureBlock, EvidenceRow, mbFocusRing, NoteLine, Score, SectionHeader } from '../components/ui'
+import { componentPresentation } from '../lib/dailyComponents'
 import {
+  latestTrend,
   readinessPresentation,
   reasonLine,
-  scoreTrend,
   selectGoingWell,
   selectTodayWorkout,
   selectWatch,
@@ -41,14 +41,15 @@ function TodayDetails({ score, trends, baseline }: { score: DailyScore; trends?:
         <div>
           <SectionHeader as="h3">Your numbers today</SectionHeader>
           <div className="mt-1 divide-y divide-mb-hairline">
-            <EvidenceRow label="Recovery" value={score.recovery_score} trend={scoreTrend(trends, 'recovery_score')} />
-            <EvidenceRow label="Training readiness" value={score.readiness_score} trend={scoreTrend(trends, 'readiness_score')} />
-            <EvidenceRow label="Activity" value={score.activity_score} trend={scoreTrend(trends, 'activity_score')} />
+            <EvidenceRow banded={false} label="Recovery" value={score.recovery_score} trend={latestTrend(trends, 'recovery_score')} />
+            <EvidenceRow banded={false} label="Training readiness" value={score.readiness_score} trend={latestTrend(trends, 'readiness_score')} />
+            <EvidenceRow banded={false} label="Activity" value={score.activity_score} trend={latestTrend(trends, 'activity_score')} />
             <EvidenceRow
+              banded={false}
               label="Nutrition"
               value={score.nutrition_score}
               unavailableLabel="Add nutrition targets to track this"
-              trend={scoreTrend(trends, 'nutrition_score')}
+              trend={latestTrend(trends, 'nutrition_score')}
             />
           </div>
         </div>
@@ -56,15 +57,18 @@ function TodayDetails({ score, trends, baseline }: { score: DailyScore; trends?:
         <div>
           <SectionHeader as="h3">Why today looks this way</SectionHeader>
           <div className="mt-2 space-y-3">
-            {score.components.map((component) => (
-              <div key={component.key}>
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-mb-body text-mb-ink">{titleize(component.key)}</span>
-                  <Score value={component.missing ? null : component.normalized_score} />
+            {score.components.map((component) => {
+              const { label, explanation } = componentPresentation(component.key)
+              return (
+                <div key={component.key}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-mb-body text-mb-ink">{label}</span>
+                    <Score banded={false} value={component.missing ? null : component.normalized_score} />
+                  </div>
+                  {explanation && <p className="mt-0.5 text-mb-label text-mb-secondary">{explanation}</p>}
                 </div>
-                <p className="mt-0.5 text-mb-label text-mb-secondary">{component.explanation}</p>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
@@ -72,7 +76,7 @@ function TodayDetails({ score, trends, baseline }: { score: DailyScore; trends?:
           <div>
             <SectionHeader as="h3">Your starting point</SectionHeader>
             <div className="mt-1">
-              <EvidenceRow label="Health Index" value={baseline.overall_score} word={baseline.band} />
+              <EvidenceRow banded label="Health Index" value={baseline.overall_score} word={baseline.band} />
             </div>
           </div>
         )}
@@ -127,7 +131,7 @@ export function MorningBriefToday({
   const editLink = user.is_demo ? undefined : (
     <Link
       to="/trainee/check-in"
-      className="inline-flex items-center gap-1.5 rounded-mb-control text-mb-label font-medium text-mb-secondary underline-offset-4 hover:text-mb-ink hover:underline"
+      className={`inline-flex min-h-11 items-center gap-1.5 rounded-mb-control text-mb-label font-medium text-mb-secondary underline-offset-4 hover:text-mb-ink hover:underline ${mbFocusRing}`}
     >
       <Pencil aria-hidden="true" className="size-3.5" />
       Edit today's check-in
@@ -135,7 +139,10 @@ export function MorningBriefToday({
   )
 
   return (
-    <div className="space-y-mb-section">
+    // The guidance lives on one centred ~640px spine (max-w-mb-guidance); on wider
+    // desktops the extra width becomes whitespace, never a second column. The hero,
+    // session, and evidence all inherit this readable measure.
+    <div className="mx-auto w-full max-w-mb-guidance space-y-mb-section">
       <GuidanceHero
         atmosphere={presentation.atmosphere}
         attribution={coachActive ? <CoachAttribution variant="sender" name={coachName} avatarUrl={coachAvatar} demo={user.is_demo} /> : undefined}
