@@ -1,13 +1,17 @@
 /* eslint-disable react-refresh/only-export-components -- semantic helpers belong with UI primitives */
 import {
   AlertCircle,
+  ArrowDown,
+  ArrowUp,
   Check,
   ChevronDown,
   CircleAlert,
   Info,
   LoaderCircle,
+  Minus,
   Search,
   ShieldAlert,
+  WifiOff,
 } from 'lucide-react'
 import {
   ButtonHTMLAttributes,
@@ -19,7 +23,9 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
 } from 'react'
+import { isScoreMissing, roundScore, ScoreTone, trendDirection } from '../lib/score'
 
 export type Tone = 'neutral' | 'positive' | 'info' | 'attention' | 'risk' | 'critical'
 
@@ -211,4 +217,197 @@ export function EmptyState({ icon: Icon = Info, title, description, action }: { 
 
 export function ErrorState({ title = 'We could not load this page', description, onRetry }: { title?: string; description: string; onRetry?: () => void }) {
   return <Card className="py-10 text-center"><AlertCircle aria-hidden="true" className="mx-auto size-7 text-risk" /><h2 className="mt-3 text-xl font-semibold">{title}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-secondary">{description}</p>{onRetry && <Button variant="secondary" className="mt-5" onClick={onRetry}>Try again</Button>}</Card>
+}
+
+/* ============================================================
+   Morning Brief primitives + intelligence layer (Experience Cycle 1, Phase B).
+   These consume the --mb-* token system (see index.css) and render correctly
+   in both Morning Brief light and dark contexts. They are additive: the legacy
+   components above are unchanged, so unmigrated surfaces stay visually stable.
+   ============================================================ */
+
+export type { ScoreTone } from '../lib/score'
+
+const mbFocusRing =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mb-action focus-visible:ring-offset-2 focus-visible:ring-offset-mb-surface'
+
+// The one prominent action on a surface. Filled variant is the single primary;
+// ghost/text are secondary. Loading locks the label in place (no layout shift).
+export function PrimaryCTA({
+  variant = 'filled',
+  loading = false,
+  className = '',
+  children,
+  disabled,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'filled' | 'ghost' | 'text'; loading?: boolean }) {
+  const variants = {
+    filled: 'bg-mb-action text-white hover:bg-mb-action-hover active:translate-y-px',
+    ghost: 'border border-mb-hairline text-mb-ink hover:bg-mb-inset active:translate-y-px',
+    text: 'text-mb-action underline-offset-4 hover:underline',
+  }
+  return (
+    <button
+      className={`relative inline-flex min-h-12 items-center justify-center gap-2 rounded-mb-control px-5 font-structure text-mb-body font-semibold transition duration-mb-micro ease-mb-standard disabled:cursor-not-allowed disabled:opacity-60 ${mbFocusRing} ${variants[variant]} ${className}`}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...props}
+    >
+      <span className={`inline-flex items-center gap-2 ${loading ? 'invisible' : ''}`}>{children}</span>
+      {loading && <LoaderCircle aria-hidden="true" className="absolute size-5 animate-spin" />}
+    </button>
+  )
+}
+
+// Quiet caps section label; never competes with the content it introduces.
+export function SectionHeader({ children, action, as: Element = 'h2', className = '' }: { children: ReactNode; action?: ReactNode; as?: 'h2' | 'h3'; className?: string }) {
+  return (
+    <div className={`flex items-baseline justify-between gap-3 ${className}`}>
+      <Element className="font-structure text-mb-label font-semibold uppercase tracking-[0.06em] text-mb-secondary">{children}</Element>
+      {action && <div className="shrink-0">{action}</div>}
+    </div>
+  )
+}
+
+export type NoteTone = 'success' | 'caution' | 'neutral'
+
+// A single line of positive/caution/neutral guidance. Meaning is carried by the
+// sentence (and an assistive-tech label); the dot is decorative only.
+export function NoteLine({ tone = 'neutral', children, className = '' }: { tone?: NoteTone; children: ReactNode; className?: string }) {
+  const dot = { success: 'bg-mb-success', caution: 'bg-mb-caution', neutral: 'bg-mb-muted' }
+  const srLabel = { success: 'Going well', caution: 'Keep an eye on', neutral: 'Note' }
+  return (
+    <p className={`flex gap-2.5 font-structure text-mb-body text-mb-ink ${className}`}>
+      <span aria-hidden="true" className={`mt-[0.5rem] size-1.5 shrink-0 rounded-full ${dot[tone]}`} />
+      <span className="min-w-0"><span className="sr-only">{srLabel[tone]}: </span>{children}</span>
+    </p>
+  )
+}
+
+// Progressive disclosure for supporting evidence. Answers never live here.
+export function DisclosureBlock({ summary, children, defaultOpen = false, className = '' }: { summary: ReactNode; children: ReactNode; defaultOpen?: boolean; className?: string }) {
+  const [open, setOpen] = useState(defaultOpen)
+  const id = useId()
+  const contentId = `${id}-content`
+  return (
+    <div className={className}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={contentId}
+        onClick={() => setOpen(value => !value)}
+        className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-mb-control font-structure text-mb-body font-medium text-mb-secondary transition-colors duration-mb-micro hover:text-mb-ink ${mbFocusRing}`}
+      >
+        <span>{summary}</span>
+        <ChevronDown aria-hidden="true" className={`size-4 transition-transform duration-mb-structural ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <div id={contentId} hidden={!open} className="pt-3">{open && children}</div>
+    </div>
+  )
+}
+
+export type SystemBannerTone = 'info' | 'demo' | 'offline'
+
+// Product/system-condition notice (offline, demo, maintenance). NEVER used for
+// body-data warnings — its tone set contains no risk/error state by design.
+export function SystemBanner({ tone = 'info', title, children, className = '' }: { tone?: SystemBannerTone; title: string; children?: ReactNode; className?: string }) {
+  const Icon = tone === 'offline' ? WifiOff : Info
+  return (
+    <div role="status" className={`flex items-start gap-3 rounded-mb-inset bg-mb-inset px-4 py-3 font-structure text-mb-label text-mb-secondary ${className}`}>
+      <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-mb-muted" />
+      <div className="min-w-0">
+        <p className="font-semibold text-mb-ink">{title}</p>
+        {children && <p className="mt-0.5">{children}</p>}
+      </div>
+    </div>
+  )
+}
+
+const scoreWordClass: Record<ScoreTone, string> = {
+  neutral: 'text-mb-secondary',
+  positive: 'text-mb-success',
+  caution: 'text-mb-caution',
+  info: 'text-mb-info',
+}
+
+// The score law as a component: WORD (from the backend band) then INTEGER.
+// `word` is required and `tone` is explicit — the component never derives a
+// band from the numeric value, and its tone set excludes red for body data.
+export function Score({
+  value,
+  word,
+  tone = 'neutral',
+  variant = 'row',
+  unavailableLabel = 'Unavailable',
+  className = '',
+}: {
+  value: number | null | undefined
+  word: string
+  tone?: ScoreTone
+  variant?: 'row' | 'hero'
+  unavailableLabel?: string
+  className?: string
+}) {
+  const missing = isScoreMissing(value)
+  const display = missing ? unavailableLabel : String(roundScore(value as number))
+  if (variant === 'hero') {
+    return (
+      <div className={`font-structure ${className}`}>
+        <p className={`text-mb-label font-medium uppercase tracking-[0.04em] ${scoreWordClass[tone]}`}>{word}</p>
+        <p className={`mt-1 text-mb-display-xl tabular-nums ${missing ? 'text-mb-muted' : 'text-mb-ink'}`}>{display}</p>
+      </div>
+    )
+  }
+  return (
+    <span className={`inline-flex items-baseline gap-2 font-structure ${className}`}>
+      <span className={`text-mb-label font-medium ${scoreWordClass[tone]}`}>{word}</span>
+      <span className={`text-mb-body font-semibold tabular-nums ${missing ? 'text-mb-muted' : 'text-mb-ink'}`}>{display}</span>
+    </span>
+  )
+}
+
+// Factual direction + signed integer of a 0-100 score delta. Direction is
+// conveyed by glyph and an assistive-tech label, never by color alone.
+export function TrendDelta({ delta, className = '' }: { delta: number; className?: string }) {
+  const direction = trendDirection(delta)
+  const rounded = roundScore(delta)
+  const Arrow = direction === 'up' ? ArrowUp : direction === 'down' ? ArrowDown : Minus
+  const srLabel = direction === 'up' ? 'up' : direction === 'down' ? 'down' : 'no change'
+  const display = rounded > 0 ? `+${rounded}` : String(rounded)
+  return (
+    <span className={`inline-flex items-center gap-1 font-structure text-mb-label tabular-nums text-mb-secondary ${className}`}>
+      <Arrow aria-hidden="true" className="size-3.5" />
+      <span className="sr-only">{srLabel} </span>
+      <span>{display}</span>
+    </span>
+  )
+}
+
+// A labelled evidence row: metric name + Score (+ optional TrendDelta).
+export function EvidenceRow({
+  label,
+  value,
+  word,
+  tone = 'neutral',
+  trend,
+  unavailableLabel = 'Unavailable',
+  className = '',
+}: {
+  label: string
+  value: number | null | undefined
+  word: string
+  tone?: ScoreTone
+  trend?: number | null
+  unavailableLabel?: string
+  className?: string
+}) {
+  return (
+    <div className={`flex items-center justify-between gap-4 py-3 font-structure ${className}`}>
+      <span className="text-mb-body text-mb-secondary">{label}</span>
+      <span className="flex items-center gap-3">
+        <Score value={value} word={word} tone={tone} unavailableLabel={unavailableLabel} />
+        {trend != null && <TrendDelta delta={trend} />}
+      </span>
+    </div>
+  )
 }
