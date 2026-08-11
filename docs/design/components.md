@@ -76,6 +76,53 @@ Binding rules (enforced by the component contracts and covered by tests):
 - The "N more notes" pattern is composed from a `DisclosureBlock` wrapping
   additional `NoteLine`s (no separate component in this layer).
 
+## Phase C — voice + athletic objects (shipped)
+
+Voice (`frontend/src/components/coach.tsx`) and athletic objects
+(`frontend/src/components/session.tsx`). Presentational and reusable outside Today;
+they contain no routing, API, auth, or score-law logic (verified by a source-scan
+test). They consume the `--mb-*` tokens and render in both resolved themes.
+
+### Voice
+
+| Component | Purpose | Variants | Accessibility |
+| --- | --- | --- | --- |
+| `CoachAttribution` | reusable human-authorship marker — a person, not a status widget | `sender`, `inline`, `byline`; optional `demo` tag | name always present even if imagery fails; decorative dash `aria-hidden`; avatar delegates to the shared `Avatar` (empty alt, name adjacent) |
+| `CoachMessage` | verbatim human-authored content in the serif voice (SERIF = HUMAN) | with / without attribution | semantic `figure`/`blockquote`/`figcaption`; absent or blank note collapses with no empty chrome |
+
+Laws: only real coach-authored content uses `CoachMessage`; product- and
+AI-generated text never do. No status rings, presence dots, verification, or
+invented titles. An absent coach collapses to nothing. Not interactive on guidance
+surfaces.
+
+### Athletic objects
+
+| Component | Purpose | Variants | Accessibility |
+| --- | --- | --- | --- |
+| `StatStrip` | factual prescription facts inside an athletic object | duration, target effort (extensible via further optional props) | compact visual text + a spoken `sr-only` form; missing facts collapse; an empty strip renders nothing |
+| `SessionSlip` | the primary athletic object — an inset session | `workout`, `rest`, `done`, `compact-row` | done state is announced ("Completed workout: …"); the name is never struck through |
+
+Laws: `StatStrip` carries facts only — no readiness/score, no status colors, no
+red, no fake precision, no re-thresholding. `SessionSlip` is an **Inset** object (no
+new elevation level) that composes `name`, optional `context`/`description`,
+`StatStrip`, `CoachMessage`, and an **action slot** — the caller supplies the
+semantic button/link, so the object never owns routing. Rest is a legitimate
+programmed state with no fake stats and no guilt/medical framing; done is calm
+closure with no confetti, badges, or points.
+
+### Intended future reuse
+
+- `CoachAttribution` / `CoachMessage` → Today, coach trainee-detail, programming
+  notes, future messaging, adaptive-coaching intent, the AI-vs-human boundary.
+- `StatStrip` / `SessionSlip` → Today, Workout Execution header, Programming
+  schedule and history rows (`compact-row`).
+
+### Non-responsibilities
+
+These objects do not fetch data, navigate, resolve auth, format scores, or apply
+readiness interpretation. Which action and which data appear is decided at the
+later screen-assembly phase.
+
 ## Deviations / decisions forced by repository reality
 
 - **Additive over in-place evolution.** `Button`, `Disclosure`, and `StatusNotice`
@@ -89,3 +136,14 @@ Binding rules (enforced by the component contracts and covered by tests):
   primitive with the full loading/disabled/focus contract.
 - **Shape tier** (subordinate bars) is composed where needed rather than baked into
   `Score`, keeping the law (shape never carries meaning alone) impossible to break.
+- **Coach avatar reuse (Phase C).** `CoachAttribution` composes the shared `Avatar`
+  (the canonical person component that encapsulates authorized image loading) rather
+  than reinventing it; `Avatar`'s internals are still legacy-token based and will
+  migrate with `Avatar` in a later cycle.
+- **Quote-rule color (Phase C).** `CoachMessage` uses a neutral `border-mb-muted/40`
+  left rule instead of the comp's fixed `indigo-900` — the latter is invisible on the
+  dark theme and would overload the action-indigo. The serif (`font-voice`) carries
+  the "human voice" signal per the law, so no new token was required.
+- **Attribution avatar size (Phase C).** Attribution reuses `Avatar`'s existing
+  `sm`/`md` sizes rather than adding a 24px size, to avoid modifying a shared
+  component that other surfaces render.
