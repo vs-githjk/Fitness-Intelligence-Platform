@@ -119,6 +119,11 @@ describe('Score', () => {
     expect(screen.getByText('Ready to train')).toBeInTheDocument()
     expect(screen.getByText('80')).toBeInTheDocument()
   })
+
+  it('renders a band-less score as an integer only, never inventing a word', () => {
+    render(<Score value={76.4} />)
+    expect(screen.getByText('76')).toBeInTheDocument()
+  })
 })
 
 describe('TrendDelta', () => {

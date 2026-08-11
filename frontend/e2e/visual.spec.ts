@@ -113,7 +113,7 @@ test('trainee dashboard is responsive and contains real baseline', async ({ page
   await setSession(page, auth)
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/trainee/dashboard')
-  await expect(page.getByText('Training readiness', { exact: true })).toBeVisible()
+  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today/i).first()).toBeVisible()
   await expectNoOverflow(page)
   await page.screenshot({ path: `${screenshots}/trainee-dashboard-mobile.png`, fullPage: true })
   await page.setViewportSize({ width: 1024, height: 900 })

@@ -231,6 +231,18 @@ export type { ScoreTone } from '../lib/score'
 const mbFocusRing =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mb-action focus-visible:ring-offset-2 focus-visible:ring-offset-mb-surface'
 
+const ctaVariants = {
+  filled: 'bg-mb-action text-white hover:bg-mb-action-hover active:translate-y-px',
+  ghost: 'border border-mb-hairline text-mb-ink hover:bg-mb-inset active:translate-y-px',
+  text: 'text-mb-action underline-offset-4 hover:underline',
+}
+
+// Shared CTA styling so a router Link can be rendered as the primary action with
+// correct link semantics, without coupling this presentational library to a router.
+export function ctaClassName(variant: 'filled' | 'ghost' | 'text' = 'filled', className = '') {
+  return `relative inline-flex min-h-12 items-center justify-center gap-2 rounded-mb-control px-5 font-structure text-mb-body font-semibold transition duration-mb-micro ease-mb-standard disabled:cursor-not-allowed disabled:opacity-60 ${mbFocusRing} ${ctaVariants[variant]} ${className}`
+}
+
 // The one prominent action on a surface. Filled variant is the single primary;
 // ghost/text are secondary. Loading locks the label in place (no layout shift).
 export function PrimaryCTA({
@@ -241,14 +253,9 @@ export function PrimaryCTA({
   disabled,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'filled' | 'ghost' | 'text'; loading?: boolean }) {
-  const variants = {
-    filled: 'bg-mb-action text-white hover:bg-mb-action-hover active:translate-y-px',
-    ghost: 'border border-mb-hairline text-mb-ink hover:bg-mb-inset active:translate-y-px',
-    text: 'text-mb-action underline-offset-4 hover:underline',
-  }
   return (
     <button
-      className={`relative inline-flex min-h-12 items-center justify-center gap-2 rounded-mb-control px-5 font-structure text-mb-body font-semibold transition duration-mb-micro ease-mb-standard disabled:cursor-not-allowed disabled:opacity-60 ${mbFocusRing} ${variants[variant]} ${className}`}
+      className={ctaClassName(variant, className)}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...props}
@@ -331,8 +338,10 @@ const scoreWordClass: Record<ScoreTone, string> = {
 }
 
 // The score law as a component: WORD (from the backend band) then INTEGER.
-// `word` is required and `tone` is explicit — the component never derives a
-// band from the numeric value, and its tone set excludes red for body data.
+// `tone` is explicit — the component never derives a band from the numeric value,
+// and its tone set excludes red for body data. `word` is optional because some
+// real metrics (recovery/activity/nutrition) have no backend band; when omitted,
+// only the integer is shown — a band is never invented for a band-less number.
 export function Score({
   value,
   word,
@@ -342,7 +351,7 @@ export function Score({
   className = '',
 }: {
   value: number | null | undefined
-  word: string
+  word?: string
   tone?: ScoreTone
   variant?: 'row' | 'hero'
   unavailableLabel?: string
@@ -353,14 +362,14 @@ export function Score({
   if (variant === 'hero') {
     return (
       <div className={`font-structure ${className}`}>
-        <p className={`text-mb-label font-medium uppercase tracking-[0.04em] ${scoreWordClass[tone]}`}>{word}</p>
+        {word && <p className={`text-mb-label font-medium uppercase tracking-[0.04em] ${scoreWordClass[tone]}`}>{word}</p>}
         <p className={`mt-1 text-mb-display-xl tabular-nums ${missing ? 'text-mb-muted' : 'text-mb-ink'}`}>{display}</p>
       </div>
     )
   }
   return (
     <span className={`inline-flex items-baseline gap-2 font-structure ${className}`}>
-      <span className={`text-mb-label font-medium ${scoreWordClass[tone]}`}>{word}</span>
+      {word && <span className={`text-mb-label font-medium ${scoreWordClass[tone]}`}>{word}</span>}
       <span className={`text-mb-body font-semibold tabular-nums ${missing ? 'text-mb-muted' : 'text-mb-ink'}`}>{display}</span>
     </span>
   )
@@ -395,7 +404,7 @@ export function EvidenceRow({
 }: {
   label: string
   value: number | null | undefined
-  word: string
+  word?: string
   tone?: ScoreTone
   trend?: number | null
   unavailableLabel?: string

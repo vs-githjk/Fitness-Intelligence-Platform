@@ -37,8 +37,11 @@ test('trainee can edit today, view scores, and inspect real trends', async ({ pa
   await submit.click()
   await expect(page.getByText(/check-in was (updated|submitted)/i)).toBeVisible()
   await page.goto('/trainee/today')
+  // Morning Brief: guidance leads with a verdict; evidence is one tap away.
+  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today/i)).toBeVisible()
+  await page.getByRole('button', { name: /today's details/i }).click()
+  await expect(page.getByText(/not medical advice/i)).toBeVisible()
   await expect(page.getByText('Training readiness', { exact: true })).toBeVisible()
-  await expect(page.getByText(/coaching guidance/i).first()).toBeVisible()
   await expectNoOverflow(page)
   await page.screenshot({ path: `${screenshots}/daily-today-mobile.png`, fullPage: true })
   await page.goto('/trainee/progress')

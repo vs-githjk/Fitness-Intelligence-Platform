@@ -121,7 +121,7 @@ test('capture implemented trainee and coach daily workflows', async ({ page }) =
 
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto('/trainee/today')
-  await expect(page.getByText('Training readiness', { exact: true })).toBeVisible()
+  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today/i).first()).toBeVisible()
   await page.screenshot({ path: `${screenshots}/trainee-today-desktop.png`, fullPage: true })
   await page.goto('/trainee/progress')
   await expect(page.getByRole('heading', { name: 'Longitudinal fitness intelligence' })).toBeVisible()

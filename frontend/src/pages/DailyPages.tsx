@@ -4,12 +4,8 @@ import {
   Activity,
   ArrowRight,
   BedDouble,
-  CheckCircle2,
   ClipboardCheck,
   Droplets,
-  Gauge,
-  Pencil,
-  Salad,
   Sparkles,
   TrendingUp,
   UserRoundCheck,
@@ -32,15 +28,14 @@ import {
   Field,
   LoadingState,
   PageHeader,
-  ProgressBar,
   SegmentedControl,
   SelectInput,
   StatusNotice,
   TextInput,
-  toneForSeverity,
 } from '../components/ui'
 import { formatDate, titleize } from '../lib/format'
 import { checkInSchema } from '../lib/dailyValidation'
+import { MorningBriefToday } from './TodayView'
 import {
   DailyCheckIn,
   DailyCheckInData,
@@ -48,6 +43,7 @@ import {
   DailyTrends,
   CoachRelationship,
   HealthIndex,
+  TrainingAssignmentWorkspace,
   TrendSeries,
 } from '../types'
 
@@ -74,12 +70,6 @@ const activityOptions = ['walking', 'running', 'cycling', 'swimming', 'strength_
 
 function isMissing(error: unknown): boolean { return error instanceof ApiError && error.status === 404 }
 function localDateLabel(value: string): string { return formatDate(`${value}T12:00:00`) }
-function readinessTone(state: string) { return state === 'ready_to_push' ? 'positive' as const : state === 'maintain' ? 'info' as const : state === 'reduce_intensity' ? 'attention' as const : 'risk' as const }
-
-function DailyMetric({ label, value, detail, icon: Icon, tone = 'primary' }: { label: string; value: string | number; detail: string; icon: typeof Activity; tone?: 'primary' | 'positive' | 'attention' | 'risk' }) {
-  return <Card><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-secondary">{label}</p><p className="metric-number mt-2 text-3xl font-bold">{value}</p><p className="mt-1 text-xs text-muted">{detail}</p></div><span className={`grid size-10 place-items-center rounded-xl ${tone === 'positive' ? 'bg-[rgb(var(--status-positive-bg))] text-positive' : tone === 'attention' ? 'bg-[rgb(var(--status-attention-bg))] text-attention' : tone === 'risk' ? 'bg-[rgb(var(--status-risk-bg))] text-risk' : 'bg-primary/10 text-primary'}`}><Icon aria-hidden="true" className="size-5" /></span></div></Card>
-}
-
 export function CoachRelationshipCard({ relationship, loading = false, error = false, demo = false }: { relationship?: CoachRelationship; loading?: boolean; error?: boolean; demo?: boolean }) {
   if (loading) return <Card as="section" aria-labelledby="coach-relationship-heading" className="p-4"><h2 id="coach-relationship-heading" className="font-semibold">Your coach</h2><p className="mt-1 text-sm text-muted" role="status">Loading coach details…</p></Card>
   if (error) return <Card as="section" aria-labelledby="coach-relationship-heading" className="p-4"><h2 id="coach-relationship-heading" className="font-semibold">Your coach</h2><p className="mt-1 text-sm text-muted">Coach details are temporarily unavailable.</p></Card>
@@ -101,10 +91,20 @@ export function TodayPage() {
   const score = useQuery({ queryKey: [...scope, 'daily-score-today'], queryFn: () => api<DailyScore>('/daily-scores/today'), retry: false })
   const baseline = useQuery({ queryKey: [...scope, 'health-current'], queryFn: () => api<HealthIndex>('/health-index/current'), retry: false })
   const coach = useQuery({ queryKey: [...scope, 'trainee-coach'], queryFn: () => api<CoachRelationship>('/trainee/coach'), retry: false })
-  if (checkIn.isLoading || score.isLoading || baseline.isLoading) return <AppShell><LoadingState label="Loading today's fitness intelligence" /></AppShell>
+  const workspace = useQuery({ queryKey: [...scope, 'my-training-program'], queryFn: () => api<TrainingAssignmentWorkspace>('/trainee/program'), retry: false })
+  const trends = useQuery({ queryKey: [...scope, 'daily-trends', '7'], queryFn: () => api<DailyTrends>('/daily-scores/trends?days=7'), retry: false })
+  if (checkIn.isLoading || score.isLoading || baseline.isLoading || workspace.isLoading) return <AppShell><LoadingState label="Loading today's fitness intelligence" /></AppShell>
   if (checkIn.error && !isMissing(checkIn.error)) return <AppShell><ErrorState description={checkIn.error.message} onRetry={() => checkIn.refetch()} /></AppShell>
   const complete = Boolean(checkIn.data && score.data)
-  return <AppShell><div className="space-y-8"><PageHeader eyebrow="Today" title={complete ? `Your state for ${localDateLabel(checkIn.data!.local_date)}` : 'Check in with your day'} description="A one-to-two minute reflection turns today’s recovery, movement, and compliance into explainable coaching signals." action={<ProfileMeta role="trainee" />} /><CoachRelationshipCard relationship={coach.data} loading={coach.isLoading} error={Boolean(coach.error)} demo={Boolean(user?.is_demo)} />{!complete ? <EmptyState icon={ClipboardCheck} title="No check-in yet today" description="Your daily scores remain unavailable until you submit real information. Missing data is never displayed as zero." action={<Link to="/trainee/check-in" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white">Complete today’s check-in<ArrowRight aria-hidden="true" className="size-4" /></Link>} /> : <><div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-surface p-4"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-[rgb(var(--status-positive-bg))] text-positive"><CheckCircle2 aria-hidden="true" className="size-5" /></span><div><p className="font-semibold">Today’s check-in is complete</p><p className="text-sm text-muted">You can edit it until your local day changes.</p></div></div><Link to="/trainee/check-in" className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-semibold text-primary"><Pencil aria-hidden="true" className="size-4" />Edit today</Link></div><section aria-label="Daily score summary" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><DailyMetric label="Recovery" value={score.data!.recovery_score} detail="Sleep, fatigue, soreness, stress" icon={BedDouble} tone={score.data!.recovery_score >= 80 ? 'positive' : score.data!.recovery_score >= 60 ? 'attention' : 'risk'} /><DailyMetric label="Training readiness" value={score.data!.readiness_score} detail={titleize(score.data!.readiness_state)} icon={Gauge} tone={score.data!.readiness_score >= 80 ? 'positive' : score.data!.readiness_score >= 60 ? 'attention' : 'risk'} /><DailyMetric label="Activity" value={score.data!.activity_score} detail="Steps and capped exercise credit" icon={Activity} /><DailyMetric label="Nutrition" value={score.data!.nutrition_score ?? '—'} detail={score.data!.nutrition_score == null ? 'Insufficient configured targets' : 'Available inputs reweighted'} icon={Salad} /></section><StatusNotice tone={readinessTone(score.data!.readiness_state)} title={titleize(score.data!.readiness_state)}>This state is practical coaching guidance based on today’s inputs and recent load. It is not medical clearance or injury prediction.</StatusNotice>{score.data!.risk_flags.length > 0 && <section aria-labelledby="daily-alerts"><h2 id="daily-alerts" className="mb-3 text-xl font-semibold">Current review signals</h2><div className="space-y-3">{score.data!.risk_flags.map(alert => <StatusNotice key={alert.rule_key} tone={toneForSeverity(alert.severity)} title={alert.title}>{alert.explanation}<span className="mt-2 block font-medium">Next action: {alert.recommended_action}</span></StatusNotice>)}</div></section>}<section aria-labelledby="daily-recommendations"><h2 id="daily-recommendations" className="mb-3 text-xl font-semibold">Recommended next actions</h2><div className="grid gap-3 lg:grid-cols-2">{score.data!.recommendations.map(item => <Card key={item.key}><div className="flex items-center justify-between gap-3"><Badge tone={item.priority === 'high' ? 'attention' : 'info'}>{titleize(item.category)}</Badge><span className="text-xs text-muted">{titleize(item.priority)} priority</span></div><p className="mt-3 text-sm font-medium leading-6">{item.recommended_action}</p>{item.safety_text && <p className="mt-2 text-xs leading-5 text-muted">{item.safety_text}</p>}</Card>)}</div></section><Card><Disclosure summary="How today’s scores were calculated"><div className="space-y-4">{score.data!.components.map(component => <div key={component.key} className="border-b pb-4 last:border-0"><div className="flex items-center justify-between gap-3"><p className="font-semibold">{titleize(component.key)}</p><span className="metric-number text-sm font-bold">{component.missing ? 'Unavailable' : component.normalized_score}</span></div>{!component.missing && <ProgressBar value={component.normalized_score} label={`${titleize(component.key)} ${component.normalized_score} of 100`} className="mt-2" />}<p className="mt-2 text-xs leading-5 text-muted">{component.explanation}</p></div>)}</div></Disclosure></Card></>}{baseline.data ? <Card><div className="flex items-center justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-primary">Baseline reference</p><h2 className="mt-1 text-xl font-semibold">Health Index {baseline.data.overall_score}</h2><p className="mt-1 text-sm text-secondary">Your onboarding baseline remains separate and is never overwritten by daily check-ins.</p></div><Badge tone="neutral">{baseline.data.band}</Badge></div></Card> : !isMissing(baseline.error) && baseline.error ? <StatusNotice tone="info" title="Baseline temporarily unavailable">Daily information remains available independently.</StatusNotice> : null}</div></AppShell>
+
+  // Checked in: the Morning Brief guidance experience (Experience Cycle 1, Phase D).
+  if (complete && user) {
+    return <AppShell><MorningBriefToday user={user} score={score.data!} coach={coach.data} workspace={workspace.data} trends={trends.data} baseline={baseline.data} /></AppShell>
+  }
+
+  // Not checked in yet — the invitation to check in (its redesign is a later phase).
+  // The baseline reference is preserved here exactly as before so this deferred state stays stable.
+  return <AppShell><div className="space-y-8"><PageHeader eyebrow="Today" title="Check in with your day" description="A one-to-two minute reflection turns today’s recovery, movement, and compliance into explainable coaching signals." action={<ProfileMeta role="trainee" />} /><CoachRelationshipCard relationship={coach.data} loading={coach.isLoading} error={Boolean(coach.error)} demo={Boolean(user?.is_demo)} /><EmptyState icon={ClipboardCheck} title="No check-in yet today" description="Your daily scores remain unavailable until you submit real information. Missing data is never displayed as zero." action={<Link to="/trainee/check-in" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white">Complete today’s check-in<ArrowRight aria-hidden="true" className="size-4" /></Link>} />{baseline.data ? <Card><div className="flex items-center justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-primary">Baseline reference</p><h2 className="mt-1 text-xl font-semibold">Health Index {baseline.data.overall_score}</h2><p className="mt-1 text-sm text-secondary">Your onboarding baseline remains separate and is never overwritten by daily check-ins.</p></div><Badge tone="neutral">{baseline.data.band}</Badge></div></Card> : !isMissing(baseline.error) && baseline.error ? <StatusNotice tone="info" title="Baseline temporarily unavailable">Daily information remains available independently.</StatusNotice> : null}</div></AppShell>
 }
 
 function NumberField({ name, label, unit, min, max, optional, register, errors }: { name: keyof DailyCheckInData; label: string; unit?: string; min: number; max: number; optional?: boolean; register: ReturnType<typeof useForm<DailyCheckInData>>['register']; errors: FieldErrors<DailyCheckInData> }) {

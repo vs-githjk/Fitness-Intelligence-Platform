@@ -123,6 +123,39 @@ These objects do not fetch data, navigate, resolve auth, format scores, or apply
 readiness interpretation. Which action and which data appear is decided at the
 later screen-assembly phase.
 
+## Phase D — composition + the checked-in Today (shipped)
+
+The first phase to visibly change a product screen: the checked-in Trainee Today
+now renders the Morning Brief hierarchy (coach → verdict → why → session → action →
+going well → keep an eye on → today's details). Loading, error, and not-checked-in
+states are intentionally unchanged (their redesign is a later phase).
+
+### Composition shells (`frontend/src/components/guidance.tsx`)
+
+| Component | Purpose | Rules |
+| --- | --- | --- |
+| `AtmosphereCanvas` | whisper-level readiness background | receives a resolved band (never a score), maps it to the atmosphere token, renders a decorative `aria-hidden` tint; both themes; neutral supported; never carries meaning alone |
+| `GuidanceHero` | the single dominant Surface for the one answer | composes attribution / greeting / verdict / reason / session / action slots; verdict is words-first; contains no `Score` and no raw readiness number; a labelled region |
+
+### Presentation derivations (`frontend/src/lib/today.ts`, pure)
+
+`readinessPresentation` is the **one** centralized mapping from the backend
+`readiness_state` to Morning Brief presentation (frozen verdict + atmosphere band) —
+so word and atmosphere can never drift. Also: `reasonLine`, `selectTodayWorkout`
+(server `local_today`, actionable + id only), `workoutContext`, `scoreTrend`,
+`selectGoingWell`, `selectWatch`. It selects and formats; it is not a scoring
+engine and never derives a band from a number.
+
+### Assembly
+
+`MorningBriefToday` (`frontend/src/pages/TodayView.tsx`) composes the above with the
+Phase B/C primitives, wired to existing data (`/daily-scores/today`, `/trainee/coach`,
+`/trainee/program`, `/daily-scores/trends`, `/health-index/current`) — no new
+endpoints. The Start action is a router `Link` to `/trainee/workouts/:id` styled via
+the new exported `ctaClassName` (so `ui.tsx` stays router-free). `Score`/`EvidenceRow`
+gained an **optional `word`**: recovery/activity/nutrition have no backend band, so
+they render as an integer only — a band is never invented.
+
 ## Deviations / decisions forced by repository reality
 
 - **Additive over in-place evolution.** `Button`, `Disclosure`, and `StatusNotice`
@@ -147,3 +180,14 @@ later screen-assembly phase.
 - **Attribution avatar size (Phase C).** Attribution reuses `Avatar`'s existing
   `sm`/`md` sizes rather than adding a 24px size, to avoid modifying a shared
   component that other surfaces render.
+- **Band-less scores (Phase D).** Only readiness has a backend band; recovery,
+  activity, and nutrition scores do not. Rather than invent bands, `Score`/
+  `EvidenceRow` render those as an integer with no word — the score law forbids a
+  derived band, so a band-less number simply omits the word.
+- **Reason line + Going Well (Phase D).** The reason is a deterministic per-state
+  sentence (a conservative, truthful fallback; richer trend-composed reasons are
+  deferred). Going Well surfaces one genuinely positive score trend since the last
+  check-in, or nothing — no streaks, no invented positives.
+- **Deferred Today states unchanged (Phase D).** The not-checked-in invitation
+  (including its baseline Health Index reference), loading, and error branches are
+  kept exactly as before so those deferred states stay stable.
