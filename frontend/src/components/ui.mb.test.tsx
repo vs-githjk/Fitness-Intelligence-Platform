@@ -7,9 +7,11 @@ import {
   PrimaryCTA,
   Score,
   SectionHeader,
+  StateSurface,
   SystemBanner,
   TrendDelta,
 } from './ui'
+import { GhostPlan } from './guidance'
 
 afterEach(() => {
   cleanup()
@@ -175,6 +177,32 @@ describe('EvidenceRow', () => {
   it('shows missing scores as context copy and omits an absent trend', () => {
     render(<EvidenceRow banded={false} label="Nutrition" value={null} unavailableLabel="Add nutrition targets" />)
     expect(screen.getByText('Add nutrition targets')).toBeInTheDocument()
+  })
+})
+
+describe('StateSurface', () => {
+  it('renders one calm surface with a heading, optional eyebrow/body and one action', () => {
+    render(
+      <StateSurface
+        eyebrow="Good morning, Arjun"
+        title="Let’s plan your day."
+        body="Two minutes on how you slept and moved."
+        action={<button type="button">Start check-in</button>}
+      />,
+    )
+    expect(screen.getByRole('heading', { level: 1, name: /let’s plan your day/i })).toBeInTheDocument()
+    expect(screen.getByText('Good morning, Arjun')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start check-in' })).toBeInTheDocument()
+  })
+})
+
+describe('GhostPlan', () => {
+  it('is a plan-shaped, announced placeholder — no metric grid, no fake numbers', () => {
+    const { container } = render(<GhostPlan />)
+    expect(screen.getByRole('status')).toHaveTextContent('Getting today ready…')
+    expect(container.querySelector('.metric-number')).toBeNull()
+    // A skeleton for the plan, never a zeroed score: no digits render at all.
+    expect(container.textContent).not.toMatch(/\d/)
   })
 })
 

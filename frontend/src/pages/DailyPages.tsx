@@ -2,39 +2,46 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Activity,
+  AlertCircle,
   ArrowRight,
   BedDouble,
-  ClipboardCheck,
   Droplets,
   Sparkles,
   TrendingUp,
   UserRoundCheck,
+  WifiOff,
 } from 'lucide-react'
 import { ReactNode, useEffect, useState } from 'react'
 import { FieldErrors, useForm, useWatch } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAccountQueryScope, useAuth } from '../auth'
-import { AppShell, ProfileMeta } from '../components/AppShell'
+import { AppShell } from '../components/AppShell'
 import { Avatar } from '../components/Avatar'
+import { GhostPlan } from '../components/guidance'
 import {
   Badge,
   Button,
   Card,
   Chip,
+  ctaClassName,
   Disclosure,
   EmptyState,
   ErrorState,
   Field,
   LoadingState,
   PageHeader,
+  PrimaryCTA,
   SegmentedControl,
   SelectInput,
+  StateSurface,
   StatusNotice,
   TextInput,
 } from '../components/ui'
 import { formatDate, titleize } from '../lib/format'
 import { checkInSchema } from '../lib/dailyValidation'
+import { greetingFor } from '../lib/today'
+import { useOnlineStatus } from '../lib/useOnlineStatus'
 import { MorningBriefToday } from './TodayView'
 import {
   DailyCheckIn,
@@ -84,27 +91,64 @@ export function CoachRelationshipCard({ relationship, loading = false, error = f
   return <Card as="section" aria-labelledby="coach-relationship-heading" className="p-4"><div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><Avatar name={name} src={relationship.coach_avatar_url} size="lg" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 id="coach-relationship-heading" className="font-semibold">{demo ? 'Synthetic demo coach' : 'Your coach'}</h2><Badge tone={demo ? 'info' : 'positive'}>{demo ? 'Demo' : 'Connected'}</Badge></div><p className="mt-0.5 truncate text-sm font-medium">{name}</p>{relationship.coach_email && <a href={`mailto:${relationship.coach_email}`} aria-label={`Email ${name} outside FitIntel 360`} className="block break-all text-sm text-primary underline-offset-4 hover:underline">{relationship.coach_email}</a>}</div></div><p className="max-w-md text-xs leading-5 text-muted sm:text-right">{demo ? 'This is sample information from the read-only demo workspace.' : 'Connected through your current coaching assignment.'}</p></div></Card>
 }
 
+// A calm 640px spine wrapper shared by the non-plan Today states (invitation,
+// error, offline), so their spatial memory matches the checked-in composition.
+function TodaySpine({ children }: { children: ReactNode }) {
+  return <div className="mx-auto w-full max-w-mb-guidance space-y-4">{children}</div>
+}
+
 export function TodayPage() {
   const { user } = useAuth()
   const scope = useAccountQueryScope()
-  const checkIn = useQuery({ queryKey: [...scope, 'daily-check-in-today'], queryFn: () => api<DailyCheckIn>('/check-ins/today'), retry: false })
+  const online = useOnlineStatus()
+  // CORE: the daily score IS the plan/verdict, and its absence (404) is exactly the
+  // "not checked in" signal — so it alone decides loading / error / plan / invite.
   const score = useQuery({ queryKey: [...scope, 'daily-score-today'], queryFn: () => api<DailyScore>('/daily-scores/today'), retry: false })
+  // OPTIONAL / enrichment: each may fail and simply collapse its slot; none gates the
+  // page, so a failed coach / program / trends / baseline never turns Today into an error.
   const baseline = useQuery({ queryKey: [...scope, 'health-current'], queryFn: () => api<HealthIndex>('/health-index/current'), retry: false })
   const coach = useQuery({ queryKey: [...scope, 'trainee-coach'], queryFn: () => api<CoachRelationship>('/trainee/coach'), retry: false })
   const workspace = useQuery({ queryKey: [...scope, 'my-training-program'], queryFn: () => api<TrainingAssignmentWorkspace>('/trainee/program'), retry: false })
   const trends = useQuery({ queryKey: [...scope, 'daily-trends', '7'], queryFn: () => api<DailyTrends>('/daily-scores/trends?days=7'), retry: false })
-  if (checkIn.isLoading || score.isLoading || baseline.isLoading || workspace.isLoading) return <AppShell><LoadingState label="Loading today's fitness intelligence" /></AppShell>
-  if (checkIn.error && !isMissing(checkIn.error)) return <AppShell><ErrorState description={checkIn.error.message} onRetry={() => checkIn.refetch()} /></AppShell>
-  const complete = Boolean(checkIn.data && score.data)
 
-  // Checked in: the Morning Brief guidance experience (Experience Cycle 1, Phase D).
-  if (complete && user) {
-    return <AppShell><MorningBriefToday user={user} score={score.data!} coach={coach.data} workspace={workspace.data} trends={trends.data} baseline={baseline.data} /></AppShell>
+  const coreLoading = score.isLoading
+  const coreData = Boolean(score.data)
+  // A 404 means "no score yet" (not checked in); only a non-404 failure is an error.
+  const coreErrored = Boolean(score.error && !isMissing(score.error))
+  const retryCore = () => { void score.refetch() }
+
+  // Deterministic Today state precedence:
+  //   offline-with-no-usable-data -> loading -> core error -> checked-in plan -> invitation.
+  // (Demo and offline-with-data are overlays inside MorningBriefToday, not separate pages.)
+
+  // There is no persisted query cache, so a reload while offline has nothing to show.
+  if (!online && !coreData && (coreErrored || coreLoading)) {
+    return <AppShell><TodaySpine><StateSurface icon={WifiOff} title="You’re offline" body="We can’t reach FitIntel right now. Reconnect and we’ll load today’s guidance." action={<PrimaryCTA onClick={retryCore}>Try again</PrimaryCTA>} /></TodaySpine></AppShell>
+  }
+  if (coreLoading) return <AppShell><GhostPlan /></AppShell>
+  if (coreErrored) {
+    return <AppShell><TodaySpine><StateSurface icon={AlertCircle} title="We couldn’t load today" body="Something went wrong on our side. Please try again." action={<PrimaryCTA onClick={retryCore}>Try again</PrimaryCTA>} /></TodaySpine></AppShell>
   }
 
-  // Not checked in yet — the invitation to check in (its redesign is a later phase).
-  // The baseline reference is preserved here exactly as before so this deferred state stays stable.
-  return <AppShell><div className="space-y-8"><PageHeader eyebrow="Today" title="Check in with your day" description="A one-to-two minute reflection turns today’s recovery, movement, and compliance into explainable coaching signals." action={<ProfileMeta role="trainee" />} /><CoachRelationshipCard relationship={coach.data} loading={coach.isLoading} error={Boolean(coach.error)} demo={Boolean(user?.is_demo)} /><EmptyState icon={ClipboardCheck} title="No check-in yet today" description="Your daily scores remain unavailable until you submit real information. Missing data is never displayed as zero." action={<Link to="/trainee/check-in" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white">Complete today’s check-in<ArrowRight aria-hidden="true" className="size-4" /></Link>} />{baseline.data ? <Card><div className="flex items-center justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-primary">Baseline reference</p><h2 className="mt-1 text-xl font-semibold">Health Index {baseline.data.overall_score}</h2><p className="mt-1 text-sm text-secondary">Your onboarding baseline remains separate and is never overwritten by daily check-ins.</p></div><Badge tone="neutral">{baseline.data.band}</Badge></div></Card> : !isMissing(baseline.error) && baseline.error ? <StatusNotice tone="info" title="Baseline temporarily unavailable">Daily information remains available independently.</StatusNotice> : null}</div></AppShell>
+  // Checked in: the Morning Brief guidance experience, re-weighted per resolved state.
+  if (coreData && user) {
+    return <AppShell><MorningBriefToday user={user} score={score.data!} coach={coach.data} workspace={workspace.data} trends={trends.data} baseline={baseline.data} online={online} /></AppShell>
+  }
+
+  // Not checked in: the frozen invitation (§9). No metrics, no baseline, no coach
+  // card, no readiness atmosphere before any check-in exists.
+  return (
+    <AppShell>
+      <TodaySpine>
+        <StateSurface
+          eyebrow={user ? greetingFor(user.first_name) : undefined}
+          title="Let’s plan your day."
+          body="Two minutes on how you slept and moved, and I’ll tell you exactly how to train today."
+          action={<Link to="/trainee/check-in" className={ctaClassName('filled')}>Start check-in<ArrowRight aria-hidden="true" className="size-4" /></Link>}
+        />
+      </TodaySpine>
+    </AppShell>
+  )
 }
 
 function NumberField({ name, label, unit, min, max, optional, register, errors }: { name: keyof DailyCheckInData; label: string; unit?: string; min: number; max: number; optional?: boolean; register: ReturnType<typeof useForm<DailyCheckInData>>['register']; errors: FieldErrors<DailyCheckInData> }) {

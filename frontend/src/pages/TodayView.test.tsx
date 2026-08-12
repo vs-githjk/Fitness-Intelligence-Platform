@@ -213,3 +213,82 @@ describe('MorningBriefToday', () => {
     }
   })
 })
+
+const restWorkspace = (nextDate: string | null): TrainingAssignmentWorkspace => ({
+  timezone: 'UTC',
+  local_today: TODAY,
+  current_assignment: { id: 'a1', program_name: 'Base' } as unknown as TrainingAssignmentWorkspace['current_assignment'],
+  upcoming_assignment: null,
+  assignment_history: [],
+  history_events: [],
+  scheduled_workouts: nextDate
+    ? [
+        {
+          ...withWorkout().scheduled_workouts[0],
+          id: 'next',
+          scheduled_date: nextDate,
+          status: 'scheduled',
+          workout_template_version: { ...withWorkout().scheduled_workouts[0].workout_template_version, name: 'Full Body Strength' },
+        },
+      ]
+    : [],
+})
+
+describe('MorningBriefToday — Phase E states', () => {
+  it('renders a programmed rest day with frozen copy, next-up, and no Start action', () => {
+    renderToday({ score: score(), workspace: restWorkspace('2026-03-16') })
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Take today off — on purpose.')
+    expect(screen.getByText(/You've earned it\. Rest is when the work pays off\./)).toBeInTheDocument()
+    expect(screen.getByText(/Next up: Full Body Strength, tomorrow\./)).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /start workout/i })).toBeNull()
+  })
+
+  it('renders a completed workout as a calm done state with no Start action', () => {
+    renderToday({ score: score(), workspace: withWorkout({ status: 'completed' }) })
+    // Verdict still leads; the session is closed, not shouting Start.
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Train as planned today.')
+    expect(screen.getByText('Lower Body Strength')).toBeInTheDocument()
+    expect(screen.getByText(/Completed workout:/)).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /start workout/i })).toBeNull()
+  })
+
+  it('collapses the session cleanly when there is no program (plan-only), keeping guidance', () => {
+    renderToday({ score: score({ readiness_state: 'ready_to_push' }) }) // no workspace
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Go for it today.')
+    expect(screen.queryByRole('link', { name: /start workout/i })).toBeNull()
+    expect(screen.queryByText(/Rest day/)).toBeNull()
+    // Still one interaction to evidence.
+    expect(screen.getByRole('button', { name: /today's details/i })).toBeInTheDocument()
+  })
+
+  it('marks demo authorship and hides the edit affordance for demo users', () => {
+    // The demo *condition* is announced app-wide by AppShell; Today owns the coach
+    // "Demo" attribution tag and disables editing (no second demo banner here).
+    const coach: CoachRelationship = { assignment_status: 'active', coach_name: 'Maya Coach' }
+    render(
+      <MemoryRouter>
+        <MorningBriefToday user={{ ...user, is_demo: true }} score={score()} coach={coach} workspace={withWorkout()} />
+      </MemoryRouter>,
+    )
+    expect(screen.getAllByText('Demo').length).toBeGreaterThan(0)
+    expect(screen.queryByRole('link', { name: /edit today's check-in/i })).toBeNull()
+  })
+
+  it('when offline, shows an offline banner and disables Start rather than linking', () => {
+    renderToday({ score: score(), workspace: withWorkout(), online: false })
+    expect(screen.getByText(/You’re offline/)).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /start workout/i })).toBeNull()
+    const start = screen.getByRole('button', { name: /start workout/i })
+    expect(start).toBeDisabled()
+  })
+
+  it('degrades gracefully when coach, trends, and Health Index are all absent', () => {
+    renderToday({ score: score({ nutrition_score: null }), workspace: withWorkout() })
+    // Core plan still renders; going-well omitted; no crash.
+    expect(screen.getByRole('link', { name: /start workout/i })).toBeInTheDocument()
+    expect(screen.queryByText(/is up since your last check-in/)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /today's details/i }))
+    expect(screen.getByText('Add nutrition targets to track this')).toBeInTheDocument()
+    expect(screen.queryByText('Health Index')).toBeNull()
+  })
+})

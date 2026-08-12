@@ -106,8 +106,11 @@ test('capture public access and complete trainee onboarding', async ({ page }) =
   await page.getByText('I confirm these answers are accurate').click()
   await page.getByRole('button', { name: 'Calculate my baseline' }).click()
   await expect(page).toHaveURL(/\/trainee\/dashboard/)
-  await expect(page.getByText(/Health Index/)).toBeVisible()
-  await page.screenshot({ path: `${screenshots}/trainee-baseline-reference-desktop.png`, fullPage: true })
+  // Morning Brief not-checked-in invitation (Experience Cycle 1, Phase E): a calm
+  // invite, no baseline/metric grid before any check-in exists.
+  await expect(page.getByRole('heading', { name: /let’s plan your day/i })).toBeVisible()
+  await expect(page.getByRole('link', { name: /start check-in/i })).toBeVisible()
+  await page.screenshot({ path: `${screenshots}/trainee-today-invitation-desktop.png`, fullPage: true })
 })
 
 test('capture implemented trainee and coach daily workflows', async ({ page }) => {
@@ -121,7 +124,7 @@ test('capture implemented trainee and coach daily workflows', async ({ page }) =
 
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto('/trainee/today')
-  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today/i).first()).toBeVisible()
+  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today|take today off/i).first()).toBeVisible()
   await page.screenshot({ path: `${screenshots}/trainee-today-desktop.png`, fullPage: true })
   await page.goto('/trainee/progress')
   await expect(page.getByRole('heading', { name: 'Longitudinal fitness intelligence' })).toBeVisible()

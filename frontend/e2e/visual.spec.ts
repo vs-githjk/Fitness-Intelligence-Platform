@@ -105,7 +105,9 @@ test('onboarding renders at desktop and mobile widths', async ({ page }) => {
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Build your basic profile' })).toBeVisible()
   await page.goto('/trainee/dashboard')
-  await expect(page.getByRole('heading', { name: 'No check-in yet today' })).toBeVisible()
+  // Morning Brief not-checked-in invitation (Experience Cycle 1, Phase E).
+  await expect(page.getByRole('heading', { name: /let’s plan your day/i })).toBeVisible()
+  await expect(page.getByRole('link', { name: /start check-in/i })).toBeVisible()
 })
 
 test('trainee dashboard is responsive and contains real baseline', async ({ page }) => {
@@ -113,7 +115,7 @@ test('trainee dashboard is responsive and contains real baseline', async ({ page
   await setSession(page, auth)
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/trainee/dashboard')
-  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today/i).first()).toBeVisible()
+  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today|take today off/i).first()).toBeVisible()
   await expectNoOverflow(page)
   await page.screenshot({ path: `${screenshots}/trainee-dashboard-mobile.png`, fullPage: true })
   await page.setViewportSize({ width: 1024, height: 900 })
@@ -173,12 +175,22 @@ test('auth and empty-state boundaries remain actionable', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'No assigned trainees' })).toBeVisible()
 })
 
-test('API outage shows retained-data guidance and retry', async ({ page }) => {
+test('a failed enrichment query keeps the plan; a core failure shows calm retry', async ({ page }) => {
   const auth = await signIn('trainee@fitness.example.com')
   await setSession(page, auth)
-  await page.route('**/api/v1/check-ins/today', route => route.abort())
+
+  // OPTIONAL query fails (training program): the plan/verdict still renders — a
+  // failed garnish never blocks the core answer (Experience Cycle 1, Phase E).
+  await page.route('**/api/v1/trainee/program', route => route.abort())
   await page.goto('/trainee/today')
-  await expect(page.getByRole('heading', { name: 'We could not load this page' })).toBeVisible()
-  await expect(page.getByText(/entries remain on this page/i)).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /couldn’t load today/i })).toHaveCount(0)
+
+  // CORE query fails (the daily score itself): one calm, recoverable error + retry,
+  // no red warning wall and no technical detail.
+  await page.unroute('**/api/v1/trainee/program')
+  await page.route('**/api/v1/daily-scores/today', route => route.fulfill({ status: 500, contentType: 'application/json', body: '{"detail":"outage"}' }))
+  await page.goto('/trainee/today')
+  await expect(page.getByRole('heading', { name: /couldn’t load today/i })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
 })

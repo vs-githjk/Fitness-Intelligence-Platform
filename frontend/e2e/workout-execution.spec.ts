@@ -56,7 +56,7 @@ test('trainee starts, logs, resumes, completes, and ends another workout incompl
   const api = await authenticatedApi(auth)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/trainee/today')
-  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today/i).first()).toBeVisible()
+  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today|take today off/i).first()).toBeVisible()
 
   let data = await workspace(api)
   const scheduled = data.scheduled_workouts.find(item => item.status === 'scheduled' && item.workout_template_version.name === 'Full Body Strength')

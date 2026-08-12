@@ -183,6 +183,76 @@ no redesign):
   (`mt-6`→`mt-5`) so the primary action sits higher relative to the mobile fold and
   the fixed bottom nav, without compressing the screen or touching coach content.
 
+## Phase E — complete Today state coverage (shipped)
+
+Phase E completes the remaining approved Today states without redesigning Today.
+There is still **one** Today screen: every state re-weights the same Morning Brief
+composition (the hero, the SessionSlip variants, the evidence disclosure), so
+spatial memory stays stable. No metric dashboards, warning walls, contact cards,
+gamification, or medical framing return.
+
+### New state components
+
+| Component | Location | Purpose |
+| --- | --- | --- |
+| `StateSurface` | `ui.tsx` | one calm dominant Surface (heading + optional eyebrow/body + one action) for the invitation, error, and offline states — no red, no scaffolding, no metric grid |
+| `GhostPlan` | `guidance.tsx` | the loading state, shaped like the plan (attribution → verdict → reason → session), `role="status"` with a human label; no metric-card skeleton, no shimmer, no spinner, no zeroed score |
+
+The checked-in states reuse the existing `SessionSlip` **rest** and **done**
+variants (Phase C) — Phase E only decides *which* variant renders.
+
+### State resolver (`frontend/src/lib/todayState.ts`, pure, tested)
+
+`resolveCheckedInPlan(workspace)` is the single deterministic resolver for the
+checked-in body. It reads only the real domain model (`scheduled_workouts` +
+`status` + `local_today` + `current_assignment`) and returns one of:
+
+- `workout` — an actionable session today (preferred over everything);
+- `completed` — today's only session(s) are finished (`completed`/`partial`);
+- `rest` — an empty schedule today **with** an active program (a programmed rest
+  day), plus the `nextUp` session;
+- `plan_only` — checked in with guidance but no session to launch (no active
+  program, an absent workspace, or a day whose only sessions were skipped/
+  cancelled); the session slot collapses cleanly.
+
+Also `nextUpWorkout` and `relativeDay` (a truthful "tomorrow" / "on Thursday").
+Rest uses the frozen §8 copy and a **neutral** atmosphere so strong readiness never
+reads as "override your rest"; every other state keeps the readiness verdict.
+
+### Page-level state precedence + query boundaries (`DailyPages.TodayPage`)
+
+Deterministic order: **offline-with-no-usable-data → loading → core error →
+checked-in plan → invitation.** Demo and offline-with-data are overlays, not
+separate pages.
+
+Query classification (§11):
+
+- **CORE** — `GET /daily-scores/today`. It *is* the plan/verdict, and its 404 is
+  exactly the "not checked in" signal, so it alone drives loading / error / plan /
+  invite. Only a **non-404** failure is an error; a 404 is the invitation.
+- **OPTIONAL / enrichment** — `/trainee/program`, `/trainee/coach`,
+  `/daily-scores/trends`, `/health-index/current`. Each may fail and simply collapse
+  its slot (session → `plan_only`, coach attribution omitted, going-well omitted,
+  Health Index row omitted). A failed garnish never turns Today into an error.
+
+Connectivity is read truthfully via `useOnlineStatus` (`navigator.onLine` +
+online/offline events; **no** persistence layer is added). Offline behaviour:
+if usable in-session data exists it stays visible under an offline `SystemBanner`
+and the Start action is a genuinely **disabled** button (starting a workout needs a
+connection); with no usable data (e.g. a reload while offline) the offline
+`StateSurface` shows. The demo condition is already announced app-wide by
+`AppShell`'s banner, so Today adds the coach "Demo" attribution tag and disables
+editing rather than stacking a second banner.
+
+### Unresolved copy dependencies (not silently resolved)
+
+- **Completed-workout copy** is an open item in the frozen spec (§23 #4). Phase E
+  ships the stable done state (SessionSlip `done`, no Start, coach note retained,
+  readiness verdict kept for spatial memory) but invents no new completion copy.
+- **Rest-day primary action.** The frozen §8 lists "Log how you feel →", which
+  assumes a not-yet-logged day; a checked-in rest day has already logged, so Today
+  shows the quiet "Edit today's check-in" affordance instead of implying a re-log.
+
 ## Deviations / decisions forced by repository reality
 
 - **Additive over in-place evolution.** `Button`, `Disclosure`, and `StatusNotice`

@@ -37,7 +37,7 @@ test('visitor explores read-only trainee and coach demo workspaces', async ({ pa
   await expect(page.getByRole('status', { name: 'Demo workspace' })).toContainText('changes are disabled')
   // Morning Brief: coach presence is authorship (name), not a contact card.
   await expect(page.getByText('Maya Demo Coach', { exact: true })).toBeVisible()
-  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today/i).first()).toBeVisible()
+  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today|take today off/i).first()).toBeVisible()
   await page.goto('/trainee/progress')
   await expect(page.getByRole('heading', { name: 'Longitudinal fitness intelligence' })).toBeVisible()
   await page.getByRole('button', { name: 'Exit demo' }).first().click()

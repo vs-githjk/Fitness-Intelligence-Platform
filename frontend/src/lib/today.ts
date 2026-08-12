@@ -35,6 +35,14 @@ export function readinessPresentation(readinessState: string): ReadinessPresenta
   return READINESS_PRESENTATION[readinessState] ?? FALLBACK_PRESENTATION
 }
 
+// Time-of-day greeting by the local clock (frozen copy, docs §8). Shared by the
+// checked-in hero and the not-checked-in invitation so the greeting is identical.
+export function greetingFor(name: string, now = new Date()): string {
+  const hour = now.getHours()
+  const part = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening'
+  return `Good ${part}, ${name}`
+}
+
 // Deterministic, conservative reason line keyed on the backend readiness_state.
 // Truthful (readiness is driven by recovery and recent load), product voice,
 // non-medical, non-judgemental. No causal claims beyond what the state guarantees.

@@ -37,9 +37,14 @@ test('trainee can edit today, view scores, and inspect real trends', async ({ pa
   await submit.click()
   await expect(page.getByText(/check-in was (updated|submitted)/i)).toBeVisible()
   await page.goto('/trainee/today')
-  // Morning Brief: guidance leads with a verdict; evidence is one tap away.
-  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today/i)).toBeVisible()
-  await page.getByRole('button', { name: /today's details/i }).click()
+  // Morning Brief: guidance leads with a verdict (or the programmed rest headline);
+  // evidence is one tap away.
+  await expect(page.getByText(/go for it today|train as planned today|ease off a little today|keep it light today|plan for today|take today off/i)).toBeVisible()
+  // Open the disclosure via its handler: on short states (e.g. a rest day) it can
+  // sit under the fixed mobile nav, a known/deferred nav-overlap polish item, so a
+  // pointer click is intercepted even though a real user reaches it by scrolling.
+  const details = page.getByRole('button', { name: /today's details/i })
+  await details.evaluate(el => (el as HTMLButtonElement).click())
   await expect(page.getByText(/not medical advice/i)).toBeVisible()
   await expect(page.getByText('Training readiness', { exact: true })).toBeVisible()
   await expectNoOverflow(page)

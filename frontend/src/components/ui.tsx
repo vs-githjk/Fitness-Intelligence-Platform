@@ -330,6 +330,49 @@ export function SystemBanner({ tone = 'info', title, children, className = '' }:
   )
 }
 
+// A calm, single-surface Today state (invitation / error / offline). It is the
+// same dominant Surface as GuidanceHero, re-weighted to one message + one action,
+// so the screen's spatial memory stays stable across states. No red, no scaffolding,
+// no metric grid — one heading, optional body, and at most one primary action.
+export function StateSurface({
+  icon: Icon,
+  eyebrow,
+  title,
+  body,
+  action,
+  secondaryAction,
+  className = '',
+}: {
+  icon?: typeof Info
+  eyebrow?: string
+  title: string
+  body?: ReactNode
+  action?: ReactNode
+  secondaryAction?: ReactNode
+  className?: string
+}) {
+  const headingId = useId()
+  return (
+    <section
+      aria-labelledby={headingId}
+      className={`rounded-mb-surface border border-mb-hairline bg-mb-surface p-mb-pad-surface shadow-mb-surface font-structure ${className}`}
+    >
+      {Icon && (
+        <span className="grid size-11 place-items-center rounded-mb-inset bg-mb-inset text-mb-secondary">
+          <Icon aria-hidden="true" className="size-5" />
+        </span>
+      )}
+      {eyebrow && <p className={`${Icon ? 'mt-4 ' : ''}text-mb-label text-mb-secondary`}>{eyebrow}</p>}
+      <h1 id={headingId} className={`${eyebrow ? 'mt-1 ' : Icon ? 'mt-4 ' : ''}text-balance text-mb-display text-mb-ink`}>
+        {title}
+      </h1>
+      {body && <p className="mt-3 max-w-mb-measure text-mb-body-lg text-mb-secondary">{body}</p>}
+      {action && <div className="mt-6">{action}</div>}
+      {secondaryAction && <div className="mt-3">{secondaryAction}</div>}
+    </section>
+  )
+}
+
 const scoreWordClass: Record<ScoreTone, string> = {
   neutral: 'text-mb-secondary',
   positive: 'text-mb-success',

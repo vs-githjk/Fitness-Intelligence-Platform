@@ -35,6 +35,42 @@ export function AtmosphereCanvas({ band, className = '' }: { band: AtmosphereBan
   )
 }
 
+// The loading state, shaped like the plan it precedes (Experience Cycle 1, Phase E).
+// A calm, plan-shaped placeholder — NOT the old metric-card grid, no shimmer, no
+// spinner, and no zeroed score. The visual is decorative; the human label is what
+// assistive tech announces.
+export function GhostPlan({ label = 'Getting today ready…' }: { label?: string }) {
+  const bar = 'rounded-mb-control bg-mb-inset'
+  const chip = 'rounded-mb-control bg-mb-surface'
+  return (
+    <div role="status" aria-live="polite" aria-busy="true" className="mx-auto w-full max-w-mb-guidance">
+      <span className="sr-only">{label}</span>
+      <section
+        aria-hidden="true"
+        className="rounded-mb-surface border border-mb-hairline bg-mb-surface p-mb-pad-surface shadow-mb-surface font-structure"
+      >
+        <div className="flex items-center gap-3">
+          <div className="size-10 rounded-full bg-mb-inset" />
+          <div className="space-y-1.5">
+            <div className={`h-3 w-24 ${bar}`} />
+            <div className={`h-2.5 w-16 ${bar}`} />
+          </div>
+        </div>
+        <div className={`mt-5 h-3 w-28 ${bar}`} />
+        <div className={`mt-3 h-8 w-3/4 ${bar}`} />
+        <div className={`mt-2 h-8 w-1/2 ${bar}`} />
+        <div className={`mt-4 h-3.5 w-full ${bar}`} />
+        <div className={`mt-2 h-3.5 w-2/3 ${bar}`} />
+        <div className="mt-5 rounded-mb-inset bg-mb-inset p-4">
+          <div className={`h-4 w-40 ${chip}`} />
+          <div className={`mt-2 h-3 w-24 ${chip}`} />
+          <div className={`mt-4 h-11 w-40 ${chip}`} />
+        </div>
+      </section>
+    </div>
+  )
+}
+
 // The composition shell for the dominant answer. It composes an authorship slot,
 // greeting, verdict (words-first), reason, a session slot, and action slots. It
 // contains no Score, no raw readiness number, no alert stack, and no competing
