@@ -45,6 +45,27 @@ export function nextUpWorkout(workspace: TrainingAssignmentWorkspace | undefined
   )
 }
 
+// True only when the CURRENT program still has a launchable session strictly
+// after today — i.e. today falls *within* the program's materialized span. This
+// is the rest-day integrity guard: the backend has no rest flag and no COMPLETED
+// assignment status (an assignment stays ACTIVE forever after its last workout,
+// and `effective_end_date` is null for a live assignment), so "active program +
+// empty today" alone cannot tell a genuine mid-program rest day apart from a
+// program that has simply run out. The materialized schedule is the authority —
+// an empty weekday is a programmed rest day only while real sessions remain
+// ahead. Past the last workout we must NOT invent "take today off on purpose".
+function hasRemainingProgram(workspace: TrainingAssignmentWorkspace): boolean {
+  const currentId = workspace.current_assignment?.id
+  if (!currentId) return false
+  return workspace.scheduled_workouts.some(
+    (workout) =>
+      workout.training_assignment_id === currentId &&
+      Boolean(workout.id) &&
+      workout.scheduled_date > workspace.local_today &&
+      ACTIONABLE_STATUSES.includes(workout.status),
+  )
+}
+
 export function resolveCheckedInPlan(workspace: TrainingAssignmentWorkspace | undefined): CheckedInPlan {
   // No workspace at all (absent, or an optional-query failure) → collapse the
   // session slot rather than fabricate a rest day we cannot substantiate.
@@ -57,10 +78,12 @@ export function resolveCheckedInPlan(workspace: TrainingAssignmentWorkspace | un
   const completed = today.find((session) => COMPLETED_STATUSES.includes(session.status))
   if (completed) return { kind: 'completed', workout: completed }
 
-  // No actionable and no completed session today. A genuinely empty schedule with
-  // an active program is a programmed rest day; anything else (no program, or a day
-  // whose only sessions were skipped/cancelled) collapses to guidance-only.
-  if (today.length === 0 && workspace.current_assignment) {
+  // No actionable and no completed session today. An empty schedule is a programmed
+  // rest day ONLY while the active program still has sessions ahead of today (see
+  // hasRemainingProgram). Anything else — no program, a lapsed/finished program, or
+  // a day whose only sessions were skipped/cancelled — collapses to guidance-only
+  // rather than claiming a coach-authored rest the domain cannot substantiate.
+  if (today.length === 0 && hasRemainingProgram(workspace)) {
     return { kind: 'rest', nextUp: nextUpWorkout(workspace) }
   }
   return { kind: 'plan_only' }

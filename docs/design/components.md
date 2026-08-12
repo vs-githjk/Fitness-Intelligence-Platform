@@ -209,15 +209,31 @@ checked-in body. It reads only the real domain model (`scheduled_workouts` +
 
 - `workout` — an actionable session today (preferred over everything);
 - `completed` — today's only session(s) are finished (`completed`/`partial`);
-- `rest` — an empty schedule today **with** an active program (a programmed rest
-  day), plus the `nextUp` session;
+- `rest` — an empty schedule today that is a genuine **programmed rest day**, plus
+  the `nextUp` session;
 - `plan_only` — checked in with guidance but no session to launch (no active
-  program, an absent workspace, or a day whose only sessions were skipped/
-  cancelled); the session slot collapses cleanly.
+  program, a lapsed/finished program, an absent workspace, or a day whose only
+  sessions were skipped/cancelled); the session slot collapses cleanly.
 
 Also `nextUpWorkout` and `relativeDay` (a truthful "tomorrow" / "on Thursday").
 Rest uses the frozen §8 copy and a **neutral** atmosphere so strong readiness never
 reads as "override your rest"; every other state keeps the readiness verdict.
+
+**Rest-day integrity (authored, not inferred).** The domain has no rest flag and no
+rest session type — per the product model an empty weekday *is* a rest day
+(`docs/user-manual-coach.md`, `docs/design/trainee-today.md`), and the full program
+is materialized eagerly at assignment time, so within a program's date range an empty
+today is authoritatively rest. But `TrainingAssignmentStatus` has **no `COMPLETED`
+state**: an assignment stays `ACTIVE` indefinitely after its final workout, and
+`effective_end_date` is `null` for a live assignment. "Active program + empty today"
+therefore cannot by itself tell a genuine mid-program rest day apart from a program
+that has simply run out. The resolver's `hasRemainingProgram` guard closes this: `rest`
+is returned only while the **current** assignment still has an actionable session
+strictly after today (the materialized schedule is the authority). Past the last
+workout — a lapsed program, or a between-programs gap whose only future sessions belong
+to an *upcoming* assignment — Today shows `plan_only`, never a fabricated
+"take today off — on purpose." This is a Coach-First / authored-not-generated
+requirement: Today never invents coach intent the domain cannot substantiate.
 
 ### Page-level state precedence + query boundaries (`DailyPages.TodayPage`)
 

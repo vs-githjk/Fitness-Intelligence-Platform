@@ -64,7 +64,7 @@ describe('resolveCheckedInPlan', () => {
     expect(resolveCheckedInPlan(workspace([workout({ status: 'partial' })])).kind).toBe('completed')
   })
 
-  it('returns a programmed rest day when the schedule is empty today but a program is active', () => {
+  it('returns a programmed rest day when today is empty but the program has sessions ahead', () => {
     const plan = resolveCheckedInPlan(
       workspace([workout({ id: 'future', scheduled_date: '2026-03-18', status: 'scheduled' })]),
     )
@@ -72,16 +72,28 @@ describe('resolveCheckedInPlan', () => {
     expect(plan.kind === 'rest' && plan.nextUp?.id).toBe('future')
   })
 
-  it('rest has a null nextUp when nothing actionable is scheduled ahead', () => {
-    const plan = resolveCheckedInPlan(workspace([workout({ id: 'past', scheduled_date: '2026-03-10', status: 'completed' })]))
-    expect(plan.kind).toBe('rest')
-    expect(plan.kind === 'rest' && plan.nextUp).toBeNull()
+  it('does NOT claim rest once the program has run out (lapsed program → plan_only)', () => {
+    // The assignment stays ACTIVE forever after its last workout (no COMPLETED
+    // status, null effective_end_date), so an empty today with only PAST sessions
+    // is a finished program, not an authored rest day. Integrity: never invent rest.
+    expect(
+      resolveCheckedInPlan(workspace([workout({ id: 'past', scheduled_date: '2026-03-10', status: 'completed' })])).kind,
+    ).toBe('plan_only')
+  })
+
+  it('does NOT claim rest when the only remaining sessions belong to a different (upcoming) assignment', () => {
+    // A between-programs gap must not be dressed up as "you've earned it" rest.
+    const plan = resolveCheckedInPlan(
+      workspace([workout({ id: 'other', training_assignment_id: 'a2', scheduled_date: '2026-03-18', status: 'scheduled' })]),
+    )
+    expect(plan.kind).toBe('plan_only')
   })
 
   it('collapses to plan_only with no program, an absent workspace, or a skipped-only today', () => {
     expect(resolveCheckedInPlan(workspace([], null)).kind).toBe('plan_only')
     expect(resolveCheckedInPlan(undefined).kind).toBe('plan_only')
-    // Program active but today's only session was skipped → not a programmed rest.
+    // Program active but today's only session was skipped → not a programmed rest,
+    // and no session ahead → guidance-only.
     expect(resolveCheckedInPlan(workspace([workout({ status: 'skipped' })])).kind).toBe('plan_only')
     expect(resolveCheckedInPlan(workspace([workout({ status: 'cancelled' })])).kind).toBe('plan_only')
   })
