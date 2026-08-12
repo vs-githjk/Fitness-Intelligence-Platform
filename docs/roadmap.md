@@ -30,6 +30,42 @@ The repository currently implements:
 
 Known current limits include local-storage JWTs, local/demo enrollment, no coach mutations, no roster search/filter/sort or dedicated attention queue, limited raw daily fields in coach view, and no alert-resolution UI.
 
+## Product Experience (Stream B)
+
+Stream B is a permanent product-experience workstream that runs alongside the
+capability milestones; it applies [product-principles.md](product-principles.md) to
+one screen at a time and does not add capabilities. It changes presentation only — no
+scoring, endpoint, schema, or business-logic changes.
+
+### Experience Cycle 1 — Trainee Today — COMPLETE / RELEASED TO STAGING
+
+- **Status:** complete; released to synthetic staging. Canonical commit **`main == 2e9cf11`**
+  (application version unchanged at **0.5.0**, Alembic head **0017** — a frontend
+  experience iteration, so no version bump and no release tag, consistent with prior
+  Experience-Cycle phases).
+- **What changed at the experience level.** Today became FitIntel's guidance-first
+  surface: a single "here is your plan for today, from your coach" (verdict-led, coach
+  authorship, the day's workout one tap away, the alert wall removed), against the
+  frozen spec [design/trainee-today.md](design/trainee-today.md) and the Morning Brief
+  design system [design/components.md](design/components.md). It covers every Today
+  state (workout / completed / programmed rest / plan-only / not-checked-in invite /
+  loading / error / offline / demo). The final polish added a route-scoped Morning
+  Brief **dark theme** (follows the OS; the shared legacy chrome stays light and
+  protected), fixed mobile-nav clearance, atmosphere calibration, the approved motion
+  budget, an evidence-density pass, and a truthful read-only demo Start. Rest-state and
+  copy decisions are recorded in [ADR-0019](decisions/README.md).
+- **Validation.** Frontend gates (tsc, eslint `--max-warnings=0`, 235 vitest, build)
+  and backend regression (ruff, pytest) green; isolated Playwright 20/20 on the merged
+  build; hosted staging smoke green (health `0.5.0`; the deployed frontend serves
+  `2e9cf11`; guidance-first Today; evidence clean with no banned vocabulary and the
+  disclaimer exactly once; route-scoped dark with legacy chrome protected; responsive
+  320/390 with no overflow and nav clearance; demo read-only; coach route reachable).
+- **Known debt (non-blocking):** app-wide dark awaits migrating the shared chrome;
+  no explicit backend rest flag or assignment-completion status (rest is bounded to a
+  program with remaining sessions and degrades to guidance-only otherwise); a
+  pre-existing date-sensitive workout-execution e2e flake; component-evidence grouping
+  deferred pending validation of user-facing category meaning.
+
 ## Milestone 2C — deployment and synthetic beta readiness
 
 ### Documentation deliverables
