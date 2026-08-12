@@ -91,6 +91,45 @@
   --mb-font-voice: 'Signifier', Georgia, 'Times New Roman', serif;
   --mb-font-stat: var(--mb-font-structure);
 
+  /* ==========================================================================
+     Iron Editorial substrate (Experience Cycle 2, C2.0). Additive only: no
+     existing --mb-* value changes, so the one migrated surface (Today) renders
+     identically and legacy screens are untouched. C2.1 repoints the live tokens
+     onto these as each surface migrates (EXTEND → ALIAS → MIGRATE → RETIRE).
+     Authority: docs/design/visual-identity-v2-iron-editorial.md.
+     ========================================================================== */
+
+  /* EMBER = training interaction / training identity ONLY (Start, log-set, live
+     progress, next-up, program covers, best endpoints, active-tab tick). NEVER
+     body risk / body score / warning / error — those remain success / caution /
+     error / atmosphere. Ember actions use an ink/dark foreground (--mb-on-ember)
+     by default; a white foreground is used only where an independently
+     contrast-tested combination passes. No live surface consumes ember yet. */
+  --mb-ember: 232 67 15;          /* #E8430F light-context ember */
+  --mb-ember-hover: 209 60 13;
+  --mb-on-ember: 11 12 15;        /* ink foreground; AA on ember in both themes */
+
+  /* Canonical Iron Editorial anchor palette — theme-independent frozen constants.
+     C2.1 assigns these to the live ground tokens (--mb-page/surface/inset/ink)
+     and the dark-context indigo as surfaces migrate. Nothing consumes them yet. */
+  --mb-ink-0: 11 12 15;           /* #0B0C0F page (dark) */
+  --mb-ink-1: 20 22 27;           /* #14161B surface (dark) */
+  --mb-ink-2: 28 31 38;           /* #1C1F26 inset (dark) */
+  --mb-bone: 236 234 226;         /* #ECEAE2 text on ink */
+  --mb-bone-muted: 169 168 160;   /* #A9A8A0 muted on ink */
+  --mb-paper: 245 242 235;        /* #F5F2EB page (light, the "print edition") */
+  --mb-indigo-dark: 139 135 240;  /* #8B87F0 dark-context indigo (C2.1 dark action) */
+
+  /* Iron Editorial typographic roles. Production-safe, SIL-OFL, self-hosted via
+     @fontsource (see src/fonts.ts). Defined as role tokens now but NOT applied to
+     any live surface — Inter/Georgia rendering is unchanged. C2.1 repoints display,
+     coach, and numeral usage onto these and retires the Georgia coach-voice
+     fallback. Structure stays Inter (already shipped); the serif is the coach's
+     voice alone (its sole non-prose use is the coach monogram). */
+  --mb-font-display: 'Archivo Black', 'Arial Black', ui-sans-serif, system-ui, sans-serif;
+  --mb-font-coach: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --mb-font-numeral: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
   /* Radius */
   --mb-radius-surface: 14px;
   --mb-radius-inset: 10px;
@@ -154,6 +193,10 @@
 
   --mb-shadow-surface: none;
   --mb-shadow-overlay: 0 12px 40px rgb(0 0 0 / 0.5);
+
+  /* Ember brightens on ink; --mb-on-ember (ink) inherits and stays AA (~6.2:1). */
+  --mb-ember: 255 90 40;          /* #FF5A28 dark-context ember */
+  --mb-ember-hover: 240 74 22;
 }
 
 /* Re-assert the light theme-dependent tokens for an explicitly light-scoped region,
@@ -180,6 +223,10 @@
 
   --mb-shadow-surface: 0 1px 3px rgb(15 23 42 / 0.10);
   --mb-shadow-overlay: 0 12px 40px rgb(15 23 42 / 0.18);
+
+  /* Re-assert light ember for a light-scoped region under a dark ancestor. */
+  --mb-ember: 232 67 15;          /* #E8430F light-context ember */
+  --mb-ember-hover: 209 60 13;
 }
 
 @layer base {

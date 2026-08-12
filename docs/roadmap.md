@@ -85,6 +85,15 @@ scoring, endpoint, schema, or business-logic changes.
   → C2.4 check-in ritual → C2.5 progress + exercise reference/body map → C2.6 media
   maturation. Presentation only — no scoring, endpoint, schema, or business-logic change;
   the one approved enabling capability (C2.2) is read-only and authorization-preserving.
+- **C2.0 — identity foundation — implemented (visually neutral).** The Iron Editorial
+  token substrate (ember accent + canonical ground/type anchors), the production-safe
+  self-hosted type faces (Archivo Black / Source Serif 4 / IBM Plex Mono via
+  `@fontsource`), the role-aware Light/Dark/System theme resolution, and the durable
+  theme-preference plumbing (on the existing `UserPreferences.theme` +
+  `GET`/`PUT /me/preferences`; no backend change) are in place as an additive,
+  tree-shaken foundation. It changes nothing a user sees — no new navigation, shell,
+  theme control, or restyled surface. Detail:
+  [design/components.md](design/components.md) (C2.0 section). **C2.1 has not started.**
 - **Not in scope:** exercise substitution, program generation, marketplace, and
   social/streak/badge mechanics remain explicit anti-goals.
 

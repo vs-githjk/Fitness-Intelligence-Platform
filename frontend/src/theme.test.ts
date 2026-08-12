@@ -5,6 +5,8 @@ import {
   getStoredThemePreference,
   isThemePreference,
   resolveTheme,
+  resolveThemeForRole,
+  roleDefaultResolved,
   storeThemePreference,
   THEME_STORAGE_KEY,
 } from './theme'
@@ -87,5 +89,27 @@ describe('theme foundation', () => {
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
     applyResolvedTheme('light')
     expect(document.documentElement.getAttribute('data-theme')).toBe('light')
+  })
+})
+
+// Iron Editorial role-aware resolution (C2.0). The mechanism C2.1 will wire into the
+// migrated shell; here it is verified in isolation. Frozen precedence: explicit
+// preference > role default (trainee dark / coach light) > OS.
+describe('resolveThemeForRole', () => {
+  it('applies role defaults when there is no explicit preference', () => {
+    expect(roleDefaultResolved('trainee')).toBe('dark')
+    expect(roleDefaultResolved('coach')).toBe('light')
+    expect(resolveThemeForRole(null, 'trainee', false)).toBe('dark')
+    expect(resolveThemeForRole(null, 'coach', true)).toBe('light')
+  })
+
+  it('honors an explicit light/dark preference over the role default', () => {
+    expect(resolveThemeForRole('light', 'trainee', true)).toBe('light')
+    expect(resolveThemeForRole('dark', 'coach', false)).toBe('dark')
+  })
+
+  it('follows the OS only when the preference is explicitly system', () => {
+    expect(resolveThemeForRole('system', 'coach', true)).toBe('dark')
+    expect(resolveThemeForRole('system', 'trainee', false)).toBe('light')
   })
 })

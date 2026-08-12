@@ -7,6 +7,8 @@
 // before. When migrated surfaces begin consuming the --mb-* tokens, the
 // default can move to 'system' without any change to this module.
 
+import type { Role } from './types'
+
 export type ThemePreference = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
@@ -27,6 +29,28 @@ export function prefersDark(): boolean {
 export function resolveTheme(preference: ThemePreference): ResolvedTheme {
   if (preference === 'system') return prefersDark() ? 'dark' : 'light'
   return preference
+}
+
+// Iron Editorial role defaults (Experience Cycle 2, C2.0): trainee → dark,
+// coach → light. This is the resolution mechanism the migrated shell (C2.1) will
+// use; it is NOT yet wired into the live ThemeProvider, whose applied default stays
+// 'light' (DEFAULT_THEME_PREFERENCE) so the current app is visually unchanged.
+export function roleDefaultResolved(role: Role): ResolvedTheme {
+  return role === 'trainee' ? 'dark' : 'light'
+}
+
+// Frozen precedence (visual-identity-v2 §8): explicit user preference > role default
+// > OS. 'system' is the explicit opt-in to the OS; a null/absent preference falls to
+// the role default (so a trainee with no stored choice resolves dark regardless of
+// OS, a coach light). `osDark` is injected for deterministic testing.
+export function resolveThemeForRole(
+  preference: ThemePreference | null,
+  role: Role,
+  osDark: boolean = prefersDark(),
+): ResolvedTheme {
+  if (preference === 'light' || preference === 'dark') return preference
+  if (preference === 'system') return osDark ? 'dark' : 'light'
+  return roleDefaultResolved(role)
 }
 
 // Storage is dependency-injected (matching auth.ts's loadStoredUser) so the

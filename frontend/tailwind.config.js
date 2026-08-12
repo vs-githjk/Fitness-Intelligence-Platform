@@ -32,6 +32,10 @@ export default {
           hairline: 'var(--mb-hairline-color)',
           action: 'rgb(var(--mb-action) / <alpha-value>)',
           'action-hover': 'rgb(var(--mb-action-hover) / <alpha-value>)',
+          // Iron Editorial training accent (C2.0). Training interaction/identity only.
+          ember: 'rgb(var(--mb-ember) / <alpha-value>)',
+          'ember-hover': 'rgb(var(--mb-ember-hover) / <alpha-value>)',
+          'on-ember': 'rgb(var(--mb-on-ember) / <alpha-value>)',
           success: 'rgb(var(--mb-success) / <alpha-value>)',
           caution: 'rgb(var(--mb-caution) / <alpha-value>)',
           error: 'rgb(var(--mb-error) / <alpha-value>)',
@@ -64,6 +68,11 @@ export default {
         structure: 'var(--mb-font-structure)',
         voice: 'var(--mb-font-voice)',
         stat: 'var(--mb-font-stat)',
+        // Iron Editorial typographic roles (C2.0). Not applied to any live surface
+        // yet; C2.1 adopts them per migrated surface. Coach serif = coach voice only.
+        display: 'var(--mb-font-display)',
+        coach: 'var(--mb-font-coach)',
+        numeral: 'var(--mb-font-numeral)',
       },
       fontSize: {
         'mb-display-xl': ['3rem', { lineHeight: '3.25rem', letterSpacing: '-0.02em', fontWeight: '700' }],

@@ -370,3 +370,77 @@ click on the end-of-screen disclosure at 320 / 390×700 / 390×844).
 - **Deferred Today states unchanged (Phase D).** The not-checked-in invitation
   (including its baseline Health Index reference), loading, and error branches are
   kept exactly as before so those deferred states stay stable.
+
+## Experience Cycle 2 — C2.0 Iron Editorial identity foundation (shipped)
+
+C2.0 lays the substrate for the frozen Iron Editorial identity
+([visual-identity-v2-iron-editorial.md](visual-identity-v2-iron-editorial.md)) so
+C2.1 can migrate the trainee shell and Today without another token/theme/type
+refactor. It is **additive and visually neutral**: no existing `--mb-*` value
+changes, the new utilities are tree-shaken until a surface consumes them, and no
+live surface is repointed. `--mb-*` is treated as the Iron Editorial seed — one
+evolving system (EXTEND → ALIAS → MIGRATE → RETIRE), not a third parallel one.
+
+### Token substrate (`index.css`, `tailwind.config.js`)
+
+- **Ember** — the one genuinely new semantic role: `--mb-ember` (`#E8430F` light /
+  `#FF5A28` dark) with `--mb-ember-hover` and `--mb-on-ember` (ink foreground, the
+  default action contract — AA on ember in both themes: ≈4.9:1 light, ≈6.3:1 dark).
+  Tailwind `mb-ember` / `mb-ember-hover` / `mb-on-ember`. **Training interaction and
+  identity only; never body risk / body score / warning / error** (a test asserts
+  ember is never reused by the error/caution values).
+- **Canonical anchor palette** — theme-independent frozen constants C2.1 assigns to
+  the live ground/accent tokens as surfaces migrate: `--mb-ink-0/1/2`
+  (`#0B0C0F`/`#14161B`/`#1C1F26`), `--mb-bone` (`#ECEAE2`), `--mb-bone-muted`
+  (`#A9A8A0`), `--mb-paper` (`#F5F2EB`), `--mb-indigo-dark` (`#8B87F0`, the
+  dark-context indigo the current single-ramp `--mb-action` lacks).
+- **Typographic roles** — `--mb-font-display` (Archivo Black), `--mb-font-coach`
+  (Source Serif 4), `--mb-font-numeral` (IBM Plex Mono), plus Tailwind `font-display`
+  / `font-coach` / `font-numeral`. Structure stays Inter (unchanged). The live
+  `--mb-font-voice` (Georgia fallback) is left as-is; C2.1 repoints coach voice onto
+  `--mb-font-coach` and retires the Georgia fallback. The serif is the coach's voice
+  alone; its sole non-prose use is the coach monogram.
+
+### Typography loading (`src/fonts.ts`, imported by `main.tsx`)
+
+Self-hosted **SIL OFL** faces via `@fontsource` (`archivo-black`, `source-serif-4`,
+`ibm-plex-mono`) — no CDN, CSP-safe, offline-capable, no paid dependency; the build
+bundles the woff2. Importing them registers the `@font-face` rules but changes
+nothing rendered: no live font-family references these families, so browsers do not
+even fetch the woff2 until C2.1 uses them. Inter is deliberately **not** bundled
+(it is first in the app-wide sans stack, so bundling it would restyle every legacy
+screen — an audited activation deferred to C2.1).
+
+### Theme model + persistence plumbing (visually inert in C2.0)
+
+- **Role-aware resolution** (`theme.ts`): `resolveThemeForRole(preference, role,
+  osDark)` and `roleDefaultResolved(role)` encode the frozen precedence — explicit
+  preference > role default (trainee **dark** / coach **light**) > OS. `'system'` is
+  the explicit opt-in to the OS. This is the mechanism C2.1 wires into the migrated
+  shell; it is **not** yet driving the live `ThemeProvider`, whose applied default
+  stays `light` (`DEFAULT_THEME_PREFERENCE`) so the app is unchanged.
+- **Durable persistence** (`lib/themePreference.ts`): the backend already persists
+  the preference — `UserPreferences.theme` (nullable `String(20)`, Alembic head 0017
+  / ADR-0012) with `GET`/`PUT /me/preferences`. **No backend change is required.**
+  `fetchThemePreference()` / `persistThemePreference()` read/write it; the PUT is a
+  partial update (`exclude_unset`), so it touches only `theme`. Unknown/legacy stored
+  values parse to `null` ("no explicit preference"). Not mounted at runtime yet —
+  C2.1 hydrates on login and saves from the Settings control (the existing "Theme —
+  Coming soon" card is the slot).
+- **Two resolvers coexist by design this phase.** `ThemeProvider` (global,
+  `<html>`, default light — effectively inert today) and `useMorningBriefTheme`
+  (route-scoped, Today's deployed dark) are both kept; C2.1 unifies them onto the
+  role-aware resolver and removes the route-scoped seam. Neither is changed here, so
+  Today's exact behavior is preserved (ADR-0019).
+
+### Register foundation (`lib/registers.ts`)
+
+`Register = 'calm' | 'live' | 'human'` plus `registerProps(register)` emitting a
+`data-register` attribute — a documented styling convention, not a component
+framework. No consumer yet; C2.1+ adopt it.
+
+### C2.0 non-goals
+
+No four-tab nav, no shell/Today/Program/Progress/Execution/Check-in redesign, no
+Settings theme control, no app-wide dark flip, no generated posters, no Iron Line
+glyphs, no backend route/schema/migration. Those are C2.1+.

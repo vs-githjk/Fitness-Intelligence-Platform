@@ -6,6 +6,8 @@ import App from './App'
 import { AuthProvider } from './auth'
 import { ThemeProvider } from './ThemeProvider'
 import './index.css'
+// Iron Editorial faces (C2.0): bundled but not yet applied to any surface.
+import './fonts'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } })
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><QueryClientProvider client={queryClient}><BrowserRouter><AuthProvider><App/></AuthProvider></BrowserRouter></QueryClientProvider></ThemeProvider></React.StrictMode>)
