@@ -458,3 +458,9 @@ its authoritative documentation.
   rest flag / assignment `COMPLETED` status now — deferred (out of this phase's scope);
   shipping "Log how you feel" on rest — rejected (duplicate action); a global dark flip
   or an in-app theme switch — rejected (breaks legacy surfaces / expands scope).
+- **Superseded in part (2026-08-12):** the **theming** decision above — route-scoped dark
+  and the rejection of app-wide dark / an in-app theme switch — is superseded by the Iron
+  Editorial freeze, which makes app-wide theming with a Light/Dark/System preference the
+  Cycle-2 destination (C2.1). See
+  [../design/visual-identity-v2-iron-editorial.md](../design/visual-identity-v2-iron-editorial.md)
+  §8 and §34. The **rest-day integrity and copy rulings** in this ADR remain binding.

@@ -169,6 +169,22 @@ diff unless a screenshot change is intended.
 - Record accepted contracts in [docs/decisions/README.md](docs/decisions/README.md).
 - Update [docs/roadmap.md](docs/roadmap.md) only when scope/ordering is approved.
 
+## Visual/experience authority
+
+The frozen visual identity is
+[docs/design/visual-identity-v2-iron-editorial.md](docs/design/visual-identity-v2-iron-editorial.md)
+(Iron Editorial, approved 2026-08-12). It is the design authority for Experience
+Cycle 2 and supersedes the earlier exploration/convergence artifacts; it does **not**
+override the frozen per-screen/domain/security specs where it says they remain binding.
+[docs/design-system.md](docs/design-system.md) describes the **as-built v0.5.0** system
+and is superseded surface-by-surface as Cycle 2 migrates each screen.
+
+> **Before modifying** any trainee/coach visual experience, shell, navigation, theme,
+> typography, media presentation, or a Cycle-2 surface, read Visual Identity v2 **and**
+> the applicable per-screen/domain specification (see [docs/design/](docs/design/)).
+> Statuses in that document — `[FROZEN]` / `[FLEX]` / `[FUTURE]` / `[DECISION]` / `[LAW]`
+> — are binding; only founder/product may change a `[FROZEN]` or `[LAW]` item.
+
 ## Release gates
 
 Full detail in [docs/operations/release-runbook.md](docs/operations/release-runbook.md).

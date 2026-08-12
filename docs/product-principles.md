@@ -20,6 +20,18 @@ boundaries below and are checked explicitly in the Product Experience review.
 Worked, per-screen applications of these principles live under
 [design/](design/) — e.g. [design/trainee-today.md](design/trainee-today.md).
 
+### Visual identity
+
+The frozen visual identity is
+[design/visual-identity-v2-iron-editorial.md](design/visual-identity-v2-iron-editorial.md)
+(Iron Editorial, approved 2026-08-12). Its north star: **FitIntel should feel like
+premium strength-training software with serious intelligence and a real coach behind it —
+training should be seen, not merely described.** That document carries the binding visual/
+product laws (training seen not described; implementation vocabulary vs. user intent;
+visual traceability; authorship honesty; no-media completeness) and the Calm / Live /
+Human register system, and it is the design authority for Experience Cycle 2. It refines
+presentation; it does not relax any boundary principle below.
+
 ### Guidance over metrics
 
 - **Guidance is the product; metrics justify it.** Users open FitIntel 360 to learn

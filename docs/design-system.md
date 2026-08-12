@@ -1,5 +1,17 @@
 # FitIntel 360 design system
 
+> **This document describes the as-built v0.5.0 (v1) design system** — light-mode-only,
+> single sans-serif, indigo primary actions, and the pre-Cycle-2 navigation. It remains
+> accurate for surfaces that have not yet been migrated.
+>
+> **It is not the forward direction.** The approved visual identity is
+> [design/visual-identity-v2-iron-editorial.md](design/visual-identity-v2-iron-editorial.md)
+> (Iron Editorial), which introduces dark-first theming, the ember-for-training / indigo-
+> for-interaction color contract, four typographic roles, and the four-tab trainee IA
+> (Today / Train / Progress / You). Experience Cycle 2 supersedes the sections below
+> **surface by surface** as each screen migrates; where the two disagree about the target
+> design, Visual Identity v2 wins. Read it before changing any Cycle-2 visual surface.
+
 ## Brand identity
 
 FitIntel 360 uses an elegant ink wordmark, warm cream field, and restrained gold 360-degree arc. The compact `FI · 360` mark is used in navigation and at favicon sizes; detailed horizontal artwork is reserved for larger surfaces. The light and dark SVG variants live in `frontend/public/brand/`, while browser and platform raster icons are generated from the compact vector source. Product UI must not substitute generic gym, flame, heartbeat, or dumbbell imagery for the brand mark.

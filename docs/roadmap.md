@@ -66,6 +66,28 @@ scoring, endpoint, schema, or business-logic changes.
   pre-existing date-sensitive workout-execution e2e flake; component-evidence grouping
   deferred pending validation of user-facing category meaning.
 
+### Experience Cycle 2 — Iron Editorial visual identity — APPROVED SHAPE / NOT STARTED
+
+- **Status:** Experience Cycle 1 is closed. Iron Editorial is the approved and frozen
+  FitIntel visual identity; the canonical design authority is
+  [design/visual-identity-v2-iron-editorial.md](design/visual-identity-v2-iron-editorial.md).
+  **No Cycle-2 implementation has occurred.** This roadmap entry records approved scope
+  and ordering only; it does not mark any phase started.
+- **Approved product decisions (2026-08-12):** four-tab trainee IA
+  (TODAY / TRAIN / PROGRESS / YOU, a consolidation, not feature removal); a narrow,
+  read-only, authorization-preserving trainee-readable exercise knowledge/media surface
+  (product need approved; backend design deferred to phase C2.2); and a deterministic
+  muscle-vocabulary → body-region presentation mapping (broad values stay broad; unknown
+  values are never guessed).
+- **Approved phase shape (sequence frozen; each phase's start still requires explicit
+  go-ahead):** C2.0 identity foundation → C2.1 shell + four-tab IA + app-wide theming →
+  C2.2 execution / Gym Mode + the trainee exercise-read capability → C2.3 program identity
+  → C2.4 check-in ritual → C2.5 progress + exercise reference/body map → C2.6 media
+  maturation. Presentation only — no scoring, endpoint, schema, or business-logic change;
+  the one approved enabling capability (C2.2) is read-only and authorization-preserving.
+- **Not in scope:** exercise substitution, program generation, marketplace, and
+  social/streak/badge mechanics remain explicit anti-goals.
+
 ## Milestone 2C — deployment and synthetic beta readiness
 
 ### Documentation deliverables
