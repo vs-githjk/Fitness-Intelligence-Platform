@@ -136,6 +136,31 @@ describe('MorningBriefToday', () => {
     expect(screen.getAllByRole('link', { name: /start workout/i })).toHaveLength(1)
   })
 
+  it('shows the generated session poster on a high-readiness workout day (ready/maintain)', () => {
+    // maintain is the fixture default; the session becomes the poster.
+    const { rerender } = renderToday({ score: score({ readiness_state: 'maintain' }), workspace: withWorkout() })
+    expect(screen.getByText(/today.?s session/i)).toBeInTheDocument()
+    rerender(
+      <MemoryRouter>
+        <MorningBriefToday user={user} score={score({ readiness_state: 'ready_to_push' })} workspace={withWorkout()} />
+      </MemoryRouter>,
+    )
+    expect(screen.getByText(/today.?s session/i)).toBeInTheDocument()
+    // The verdict and the Start action are always present, poster or not.
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /start workout/i })).toBeInTheDocument()
+  })
+
+  it('keeps the quiet SessionSlip (no poster) on reduce/recovery days', () => {
+    for (const state of ['reduce_intensity', 'recovery_recommended'] as const) {
+      const { unmount } = renderToday({ score: score({ readiness_state: state }), workspace: withWorkout() })
+      expect(screen.queryByText(/today.?s session/i)).toBeNull()
+      // Still a real workout with its name and a Start action, just calmer.
+      expect(screen.getByRole('link', { name: /start workout/i })).toBeInTheDocument()
+      unmount()
+    }
+  })
+
   it('shows coach authorship and the verbatim note when a coach is assigned', () => {
     const coach: CoachRelationship = { assignment_status: 'active', coach_name: 'Jordan Ellis' }
     renderToday({ score: score(), coach, workspace: withWorkout({ trainee_instructions: 'Focus on control.' }) })

@@ -10,7 +10,7 @@ import { ArrowRight, Pencil } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { CoachAttribution, CoachMessage } from '../components/coach'
 import { GuidanceHero } from '../components/guidance'
-import { SessionSlip, StatStrip } from '../components/session'
+import { SessionPoster, SessionSlip, StatStrip } from '../components/session'
 import { ctaClassName, DisclosureBlock, EvidenceRow, mbFocusRing, NoteLine, Score, SectionHeader, SystemBanner } from '../components/ui'
 import { componentPresentation } from '../lib/dailyComponents'
 import {
@@ -101,23 +101,23 @@ const REST_REASON = "You've earned it. Rest is when the work pays off."
 // the slot collapses cleanly (no empty SessionSlip). The caller owns routing.
 function planSession(
   plan: CheckedInPlan,
-  ctx: { coachName?: string | null; coachAvatar?: string | null; isDemo: boolean; online: boolean; localToday?: string },
+  ctx: { coachName?: string | null; coachAvatar?: string | null; isDemo: boolean; online: boolean; localToday?: string; strong?: boolean },
 ) {
   const coachMessage = (note: string | null) => (
     <CoachMessage note={note} name={ctx.coachName} avatarUrl={ctx.coachAvatar} demo={ctx.isDemo} />
   )
   if (plan.kind === 'workout') {
     const w = plan.workout
-    return (
-      <SessionSlip
-        variant="workout"
-        name={w.workout_template_version.name}
-        context={workoutContext(w)}
-        stat={<StatStrip durationMinutes={w.planned_duration_minutes} targetEffort={w.target_session_rpe} />}
-        coachMessage={coachMessage(w.trainee_instructions)}
-        action={w.id ? <StartAction id={w.id} online={ctx.online} demo={ctx.isDemo} /> : undefined}
-      />
-    )
+    const shared = {
+      name: w.workout_template_version.name,
+      context: workoutContext(w),
+      stat: <StatStrip durationMinutes={w.planned_duration_minutes} targetEffort={w.target_session_rpe} />,
+      coachMessage: coachMessage(w.trainee_instructions),
+      action: w.id ? <StartAction id={w.id} online={ctx.online} demo={ctx.isDemo} /> : undefined,
+    }
+    // Readiness-weighted session object (frozen §14): on high-readiness days the session
+    // becomes the generated poster; the verdict, action, and hierarchy never move.
+    return ctx.strong ? <SessionPoster {...shared} /> : <SessionSlip variant="workout" {...shared} />
   }
   if (plan.kind === 'completed') {
     const w = plan.workout
@@ -149,14 +149,14 @@ function StartAction({ id, online, demo = false }: { id: string; online: boolean
   if (demo || !online) {
     const label = demo ? 'Start workout — disabled in the read-only demo' : 'Start workout — unavailable offline'
     return (
-      <button type="button" disabled aria-label={label} className={ctaClassName('filled')}>
+      <button type="button" disabled aria-label={label} className={ctaClassName('training')}>
         Start workout
         <ArrowRight aria-hidden="true" className="size-4" />
       </button>
     )
   }
   return (
-    <Link to={`/trainee/workouts/${id}`} className={ctaClassName('filled')}>
+    <Link to={`/trainee/workouts/${id}`} className={ctaClassName('training')}>
       Start workout
       <ArrowRight aria-hidden="true" className="size-4" />
     </Link>
@@ -196,12 +196,17 @@ export function MorningBriefToday({
   const verdict = isRest ? REST_VERDICT : presentation.verdict
   const reason = isRest ? REST_REASON : reasonLine(score.readiness_state)
 
+  // High-readiness workout days get the generated poster; reduce/recovery/rest keep the
+  // quiet SessionSlip. Rest is program intent (neutral), never "strong".
+  const strong = !isRest && (presentation.atmosphere === 'ready_to_push' || presentation.atmosphere === 'maintain')
+
   const session = planSession(plan, {
     coachName,
     coachAvatar,
     isDemo: user.is_demo,
     online,
     localToday: workspace?.local_today,
+    strong,
   })
 
   const editLink = user.is_demo ? undefined : (

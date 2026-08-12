@@ -10,4 +10,7 @@ import './index.css'
 import './fonts'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } })
-ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><QueryClientProvider client={queryClient}><BrowserRouter><AuthProvider><App/></AuthProvider></BrowserRouter></QueryClientProvider></ThemeProvider></React.StrictMode>)
+// ThemeProvider sits inside AuthProvider because the resolved theme is role-aware
+// (trainee dark / coach light); AuthProvider hydrates the user synchronously, so the
+// theme is correct on first paint.
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={queryClient}><BrowserRouter><AuthProvider><ThemeProvider><App/></ThemeProvider></AuthProvider></BrowserRouter></QueryClientProvider></React.StrictMode>)

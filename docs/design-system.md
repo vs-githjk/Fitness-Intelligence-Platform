@@ -1,8 +1,13 @@
 # FitIntel 360 design system
 
-> **This document describes the as-built v0.5.0 (v1) design system** — light-mode-only,
-> single sans-serif, indigo primary actions, and the pre-Cycle-2 navigation. It remains
-> accurate for surfaces that have not yet been migrated.
+> **This document describes the as-built v0.5.0 (v1) design system** — single
+> sans-serif, indigo primary actions, and the pre-Cycle-2 navigation. It remains
+> accurate for the structure of surfaces that have not yet been migrated, but is now
+> partly superseded: as of **Experience Cycle 2 · C2.1** the legacy `--color-*` /
+> `--status-*` tokens are theme-aware (they carry Iron Editorial dark values), the
+> trainee default is **dark**, filled controls use `--color-on-primary`, and the trainee
+> shell/navigation is the four-tab Iron Editorial shell. This doc is no longer
+> "light-mode only."
 >
 > **It is not the forward direction.** The approved visual identity is
 > [design/visual-identity-v2-iron-editorial.md](design/visual-identity-v2-iron-editorial.md)

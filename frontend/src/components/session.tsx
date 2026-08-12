@@ -46,6 +46,42 @@ export function StatStrip({
   )
 }
 
+// Generated session poster (Iron Editorial, C2.1) — the stronger athletic treatment of
+// the session object, used on high-readiness days (ready_to_push / maintain). Every
+// element derives from a real session field (name, context/week position, duration,
+// effort, coach); there is NO fabricated glyph, photograph, or random decoration. It is
+// the interim data-true typographic form until the commissioned Iron Line set lands.
+export function SessionPoster({
+  name,
+  context,
+  stat,
+  coachMessage,
+  action,
+  className = '',
+}: {
+  name: string
+  context?: string
+  stat?: ReactNode
+  coachMessage?: ReactNode
+  action?: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={`relative overflow-hidden rounded-mb-inset bg-mb-inset font-structure ${className}`}>
+      {/* Ember edge rule — the single training-identity accent, not decoration. */}
+      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-mb-ember" />
+      <div className="p-5 pl-6">
+        <p className="font-numeral text-[0.7rem] uppercase tracking-[0.2em] text-mb-ember">Today’s session</p>
+        <h3 className="mt-2 text-balance font-display text-3xl uppercase leading-[0.95] tracking-tight text-mb-ink sm:text-4xl">{name}</h3>
+        {context && <p className="mt-2 font-numeral text-mb-label uppercase tracking-[0.06em] text-mb-secondary">{context}</p>}
+        {stat && <div className="mt-3">{stat}</div>}
+        {coachMessage && <div className="mt-3">{coachMessage}</div>}
+        {action && <div className="mt-5">{action}</div>}
+      </div>
+    </div>
+  )
+}
+
 export type SessionSlipVariant = 'workout' | 'rest' | 'done' | 'compact-row'
 
 // The primary athletic object: a session as a physical, inset thing. Composes a

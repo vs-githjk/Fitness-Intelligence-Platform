@@ -13,6 +13,7 @@ export default {
         border: 'rgb(var(--color-border) / <alpha-value>)',
         primary: 'rgb(var(--color-primary) / <alpha-value>)',
         'primary-hover': 'rgb(var(--color-primary-hover) / <alpha-value>)',
+        'on-primary': 'rgb(var(--color-on-primary) / <alpha-value>)',
         positive: 'rgb(var(--color-positive) / <alpha-value>)',
         info: 'rgb(var(--color-info) / <alpha-value>)',
         attention: 'rgb(var(--color-attention) / <alpha-value>)',

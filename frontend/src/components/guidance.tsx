@@ -106,7 +106,10 @@ export function GuidanceHero({
       <div className="relative">
         {attribution && <div className="mb-4">{attribution}</div>}
         <p className="text-mb-label text-mb-secondary">{greeting}</p>
-        <h1 id={headingId} className="mt-1 text-balance text-mb-display text-mb-ink sm:text-mb-display-xl">
+        {/* Athletic display role (Iron Editorial §10): the verdict is the one place the
+            display face leads. Uppercase + tight tracking; the accessible text is
+            unchanged (CSS transform only). */}
+        <h1 id={headingId} className="mt-1 text-balance font-display uppercase tracking-tight text-mb-display text-mb-ink sm:text-mb-display-xl">
           {verdict}
         </h1>
         {reason && <p className="mt-3 max-w-mb-measure text-mb-body-lg text-mb-secondary">{reason}</p>}

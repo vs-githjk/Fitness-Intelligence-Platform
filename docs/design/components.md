@@ -444,3 +444,76 @@ framework. No consumer yet; C2.1+ adopt it.
 No four-tab nav, no shell/Today/Program/Progress/Execution/Check-in redesign, no
 Settings theme control, no app-wide dark flip, no generated posters, no Iron Line
 glyphs, no backend route/schema/migration. Those are C2.1+.
+
+## Experience Cycle 2 — C2.1 trainee shell + Iron Editorial activation (shipped)
+
+The first user-visible Iron Editorial migration: the four-tab trainee shell, app-wide
+role-aware theming, the upgraded Today, and activated typography — all preserving the
+frozen product truths (guidance-first, one dominant answer, coach-first, determinism,
+ADR-0019 rest integrity, the frozen verdict map, missing≠zero, ember-never-body-data).
+
+### Unified theme architecture
+
+- **One resolver, applied to `<html>`.** `ThemeProvider` (now mounted inside
+  `AuthProvider`) resolves the role-aware theme — explicit preference > role default
+  (trainee **dark** / coach **light**) > OS — and stamps `data-theme` on the document
+  root. The Cycle-1 route-scoped seam (`data-theme` on Today's `<main>`,
+  `useMorningBriefTheme`) is **retired and deleted**. `morningBrief` remains only as a
+  full-bleed layout flag.
+- **No flash:** `AuthProvider` hydrates the user synchronously and the stored preference
+  is read synchronously, so the correct theme is applied on first paint. localStorage is
+  the fast source; `/me/preferences` is the durable cross-device backup, reconciled
+  after sign-in.
+- **App-wide dark.** The legacy `--color-*` / `--status-*` tokens now carry Iron
+  Editorial dark values (`index.css`), so unmigrated trainee content pages get a coherent
+  dark skin via the token flip rather than a per-page redesign. Coach resolves light by
+  role and is visually unchanged. `--color-on-primary` (white light / ink dark) keeps
+  filled controls AA where `--color-primary` lightens to `#8B87F0` for legible links.
+
+### Four-tab trainee IA (`AppShell`)
+
+- **Today / Train / Progress / You** — a consolidation, not deletion. Matchers own
+  relocated routes (execution → Train; the analytics list → Progress). Mobile is a
+  single row of four with an ember active tick; the Cycle-1 two-row nav (and its calc
+  clearance gotcha) is gone. Desktop is a persistent sidebar with the same four, plus
+  indented secondary links under the active tab. A mobile-only in-content `SecondaryNav`
+  keeps Progress→(Daily, Workouts) and You→(Profile, Assessment, Settings) one tap away.
+- Coach navigation is untouched (legacy chrome, all seven items, 5-column mobile grid).
+
+### Settings theme control (`ProfileSettingsPages`)
+
+Replaces "Theme — Coming soon" with a real Light / Dark / System `SegmentedControl`
+wired to `ThemeProvider.setPreference` (persists to `/me/preferences`). It shows the
+current effective appearance; choosing one makes it explicit. No other Settings
+functionality changed.
+
+### Typography activation
+
+Role tokens repointed to the C2.0 bundled faces: coach voice → Source Serif 4 (retiring
+Georgia), session facts/instrumentation → IBM Plex Mono, and the Today **verdict** now
+leads in the athletic display face (Archivo Black, uppercase, CSS transform only — the
+accessible text is unchanged). Structure stays Inter. Body copy is never display.
+
+### Today: readiness-weighted session object
+
+The frozen content order and hierarchy (`trainee-today.md`) are unchanged. On
+**ready_to_push / maintain** the session becomes the generated **`SessionPoster`**
+(`session.tsx`) — an ember-accented, display-typeset object whose every element derives
+from a real field (name, week context, duration, effort, coach); on
+**reduce_intensity / recovery_recommended / rest** it stays the quiet `SessionSlip`.
+The verdict, coach authorship, primary action, and evidence disclosure never move — only
+the session object's visual temperature. The Start action is the **ember training CTA**
+(`ctaClassName('training')`, ink foreground); starting a check-in stays indigo.
+
+### Interim treatments / known debt (C2.1)
+
+- The `SessionPoster` is the **interim data-true typographic** form; the commissioned
+  Iron Line glyphs/figure (parallel track) replace the placeholder motif later. No fake
+  glyphs or photography are used.
+- Unmigrated trainee content pages (Progress, Program, Workouts analytics, Assessment,
+  Execution) render a **coherent dark skin via the token flip**; their full Iron
+  Editorial redesign remains C2.3–C2.5. Their dark AA rests on the shared-primitive
+  fixes (`--color-on-primary`, dark status pairs) rather than a per-screen visual review.
+- Trainee light mode uses the warm paper ground; a subtle ground-temperature difference
+  between the paper Today surface and the cool-white legacy card interiors on unmigrated
+  pages is acceptable interim (dark is the trainee default).

@@ -20,6 +20,10 @@
   --color-critical: 176 38 55;
   --color-disabled: 148 163 184;
   --color-focus: 79 70 229;
+  /* Foreground for filled primary controls. White on the light-theme deep indigo;
+     redefined to ink in dark (where primary lightens to #8B87F0 for legible links),
+     so filled buttons stay AA in both themes without per-page changes (C2.1). */
+  --color-on-primary: 255 255 255;
   --status-positive-bg: 237 248 243;
   --status-positive-border: 178 224 205;
   --status-info-bg: 239 246 255;
@@ -55,10 +59,10 @@
   --mb-action: var(--mb-indigo-600);
   --mb-action-hover: var(--mb-indigo-700);
 
-  /* Neutral grounds & text (light) */
-  --mb-page: 250 249 247;
-  --mb-surface: 255 255 255;
-  --mb-inset: 243 242 239;
+  /* Neutral grounds & text (light) — the "print edition": warm paper, true ink. */
+  --mb-page: 245 242 235;
+  --mb-surface: 255 254 251;
+  --mb-inset: 238 235 228;
   --mb-ink: 26 26 33;
   --mb-secondary: 82 82 94;
   --mb-muted: 138 138 150;
@@ -88,8 +92,11 @@
   /* Typography families — structure = product voice, voice = human-authored serif.
      Fallback stacks pending the font-licensing decision (see report). */
   --mb-font-structure: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --mb-font-voice: 'Signifier', Georgia, 'Times New Roman', serif;
-  --mb-font-stat: var(--mb-font-structure);
+  /* C2.1 typography activation: coach voice now renders in the bundled Source Serif 4
+     (retiring the accidental Georgia fallback); session facts/instrumentation render in
+     the engineered-numeral face. Structure stays Inter. */
+  --mb-font-voice: var(--mb-font-coach);
+  --mb-font-stat: var(--mb-font-numeral);
 
   /* ==========================================================================
      Iron Editorial substrate (Experience Cycle 2, C2.0). Additive only: no
@@ -173,12 +180,12 @@
 [data-theme='dark'] {
   color-scheme: dark;
 
-  --mb-page: 16 16 20;
-  --mb-surface: 23 23 29;
-  --mb-inset: 30 30 37;
-  --mb-ink: 242 241 238;
-  --mb-secondary: 168 168 180;
-  --mb-muted: 110 110 122;
+  --mb-page: 11 12 15;
+  --mb-surface: 20 22 27;
+  --mb-inset: 28 31 38;
+  --mb-ink: 236 234 226;
+  --mb-secondary: 178 177 168;
+  --mb-muted: 130 130 140;
   --mb-hairline: 255 255 255;
   --mb-hairline-alpha: 0.09;
 
@@ -197,6 +204,43 @@
   /* Ember brightens on ink; --mb-on-ember (ink) inherits and stays AA (~6.2:1). */
   --mb-ember: 255 90 40;          /* #FF5A28 dark-context ember */
   --mb-ember-hover: 240 74 22;
+
+  /* ==========================================================================
+     App-wide dark (Experience Cycle 2, C2.1). The legacy --color-* / --status-*
+     tokens now carry Iron Editorial dark values, so the whole trainee experience
+     (shell, Today, and not-yet-migrated content pages) shares one coherent resolved
+     theme instead of the Cycle-1 light-chrome / dark-Today seam. Coach surfaces are
+     resolved light by role, so they are unaffected. Primary lightens to #8B87F0 for
+     legible links/accents on ink; filled controls use --color-on-primary (ink) to
+     stay AA — a shared-primitive change, not a per-page redesign.
+     ========================================================================== */
+  --color-page: 11 12 15;         /* ink-0 */
+  --color-surface: 20 22 27;      /* ink-1 */
+  --color-elevated: 28 31 38;     /* ink-2 */
+  --color-foreground: 236 234 226; /* bone */
+  --color-secondary: 178 177 168;
+  --color-muted: 139 139 149;
+  --color-border: 44 47 56;
+  --color-primary: 139 135 240;   /* #8B87F0 — links / active / focus on ink */
+  --color-primary-hover: 165 162 246;
+  --color-on-primary: 11 12 15;   /* ink foreground on the lightened primary fill */
+  --color-positive: 87 185 142;
+  --color-info: 127 168 204;
+  --color-attention: 217 168 78;
+  --color-risk: 224 123 114;
+  --color-critical: 194 74 68;    /* deep enough that white button text stays AA */
+  --color-disabled: 92 94 104;
+  --color-focus: 139 135 240;
+  --status-positive-bg: 20 40 32;
+  --status-positive-border: 40 78 60;
+  --status-info-bg: 20 32 46;
+  --status-info-border: 42 66 92;
+  --status-attention-bg: 44 36 18;
+  --status-attention-border: 82 66 30;
+  --status-risk-bg: 46 27 25;
+  --status-risk-border: 92 52 48;
+  --status-critical-bg: 48 24 26;
+  --status-critical-border: 96 48 52;
 }
 
 /* Re-assert the light theme-dependent tokens for an explicitly light-scoped region,
@@ -204,9 +248,9 @@
 [data-theme='light'] {
   color-scheme: light;
 
-  --mb-page: 250 249 247;
-  --mb-surface: 255 255 255;
-  --mb-inset: 243 242 239;
+  --mb-page: 245 242 235;
+  --mb-surface: 255 254 251;
+  --mb-inset: 238 235 228;
   --mb-ink: 26 26 33;
   --mb-secondary: 82 82 94;
   --mb-muted: 138 138 150;
@@ -227,6 +271,36 @@
   /* Re-assert light ember for a light-scoped region under a dark ancestor. */
   --mb-ember: 232 67 15;          /* #E8430F light-context ember */
   --mb-ember-hover: 209 60 13;
+
+  /* Re-assert the legacy light palette so a light-scoped region (or the coach shell)
+     stays light even under a dark ancestor (mirrors the dark block). */
+  --color-page: 246 248 251;
+  --color-surface: 255 255 255;
+  --color-elevated: 250 251 253;
+  --color-foreground: 20 31 51;
+  --color-secondary: 64 78 101;
+  --color-muted: 100 116 139;
+  --color-border: 217 224 234;
+  --color-primary: 56 70 179;
+  --color-primary-hover: 42 53 151;
+  --color-on-primary: 255 255 255;
+  --color-positive: 34 122 88;
+  --color-info: 37 99 168;
+  --color-attention: 168 91 12;
+  --color-risk: 180 67 39;
+  --color-critical: 176 38 55;
+  --color-disabled: 148 163 184;
+  --color-focus: 79 70 229;
+  --status-positive-bg: 237 248 243;
+  --status-positive-border: 178 224 205;
+  --status-info-bg: 239 246 255;
+  --status-info-border: 191 219 254;
+  --status-attention-bg: 255 248 229;
+  --status-attention-border: 245 211 143;
+  --status-risk-bg: 255 244 239;
+  --status-risk-border: 244 194 174;
+  --status-critical-bg: 255 241 243;
+  --status-critical-border: 244 183 193;
 }
 
 @layer base {

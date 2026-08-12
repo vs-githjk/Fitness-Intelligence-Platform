@@ -61,7 +61,7 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; loading?: boolean }) {
   const variants = {
-    primary: 'bg-primary text-white hover:bg-primary-hover',
+    primary: 'bg-primary text-on-primary hover:bg-primary-hover',
     secondary: 'border border-border bg-surface text-foreground hover:bg-elevated hover:border-secondary/40',
     ghost: 'text-secondary hover:bg-elevated hover:text-foreground',
     danger: 'bg-critical text-white hover:bg-critical/90',
@@ -232,6 +232,10 @@ export const mbFocusRing =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mb-action focus-visible:ring-offset-2 focus-visible:ring-offset-mb-surface'
 
 const ctaVariants = {
+  // `training` is the Iron Editorial training action (Start workout, log set): ember
+  // with an ink foreground (the frozen contract — never white by default). `filled`
+  // stays indigo for non-training primary actions (e.g. start a check-in).
+  training: 'bg-mb-ember text-mb-on-ember hover:bg-mb-ember-hover active:translate-y-px',
   filled: 'bg-mb-action text-white hover:bg-mb-action-hover active:translate-y-px',
   ghost: 'border border-mb-hairline text-mb-ink hover:bg-mb-inset active:translate-y-px',
   text: 'text-mb-action underline-offset-4 hover:underline',
@@ -239,7 +243,7 @@ const ctaVariants = {
 
 // Shared CTA styling so a router Link can be rendered as the primary action with
 // correct link semantics, without coupling this presentational library to a router.
-export function ctaClassName(variant: 'filled' | 'ghost' | 'text' = 'filled', className = '') {
+export function ctaClassName(variant: 'training' | 'filled' | 'ghost' | 'text' = 'filled', className = '') {
   return `relative inline-flex min-h-12 scroll-mb-40 items-center justify-center gap-2 rounded-mb-control px-5 font-structure text-mb-body font-semibold transition duration-mb-micro ease-mb-standard disabled:cursor-not-allowed disabled:opacity-60 lg:scroll-mb-0 ${mbFocusRing} ${ctaVariants[variant]} ${className}`
 }
 

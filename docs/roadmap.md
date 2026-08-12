@@ -91,9 +91,19 @@ scoring, endpoint, schema, or business-logic changes.
   `@fontsource`), the role-aware Light/Dark/System theme resolution, and the durable
   theme-preference plumbing (on the existing `UserPreferences.theme` +
   `GET`/`PUT /me/preferences`; no backend change) are in place as an additive,
-  tree-shaken foundation. It changes nothing a user sees — no new navigation, shell,
-  theme control, or restyled surface. Detail:
-  [design/components.md](design/components.md) (C2.0 section). **C2.1 has not started.**
+  tree-shaken foundation. Detail: [design/components.md](design/components.md) (C2.0).
+- **C2.1 — trainee shell + Iron Editorial activation — implemented (first visible
+  migration).** Four-tab trainee IA (Today / Train / Progress / You; every former
+  destination still reachable within its tab), one unified role-aware theme applied to
+  `<html>` (trainee dark default / coach light; Light/Dark/System control in Settings;
+  the Cycle-1 route-scoped dark seam retired), app-wide dark via the legacy-token flip
+  (coach unchanged), activated typography (display verdict, coach serif, engineered
+  numerals), and the readiness-weighted Today session object (generated poster on
+  ready/maintain, quiet slip on reduce/recovery/rest). Presentation only — no scoring,
+  endpoint, schema, or migration change. Known interim: the poster is data-true
+  typographic pending the Iron Line commission; unmigrated trainee content pages get a
+  coherent dark skin (their full Iron Editorial pass is C2.3–C2.5).
+  **C2.2 has not started.**
 - **Not in scope:** exercise substitution, program generation, marketplace, and
   social/streak/badge mechanics remain explicit anti-goals.
 

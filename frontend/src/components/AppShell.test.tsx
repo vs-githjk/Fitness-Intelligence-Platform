@@ -35,18 +35,17 @@ describe('demo workspace shell', () => {
     expect(localStorage.getItem('access_token')).toBeNull()
   })
 
-  it('scopes the Today theme to the main content region, never the document root', () => {
-    // Route-scoped dark: morningBrief stamps data-theme on <main> only. The document
-    // root and the legacy chrome stay untouched, so unmigrated surfaces can never be
-    // dark-themed. Default (no stored preference, OS light in jsdom) resolves to light.
+  it('renders Today on the Iron Editorial mb-page ground without a route-scoped theme (C2.1)', () => {
+    // The Cycle-1 seam is retired: theme is resolved once and applied to <html> by
+    // ThemeProvider, so <main> carries no per-surface data-theme. morningBrief now only
+    // selects the full-bleed mb-page layout.
     renderWithQueryClient(<MemoryRouter initialEntries={['/trainee/today']}><AuthProvider><AppShell morningBrief><p>Today content</p></AppShell></AuthProvider></MemoryRouter>)
     const main = document.getElementById('main-content')!
-    expect(main).toHaveAttribute('data-theme')
+    expect(main).not.toHaveAttribute('data-theme')
     expect(main.className).toContain('bg-mb-page')
-    expect(document.documentElement).not.toHaveAttribute('data-theme', 'dark')
   })
 
-  it('leaves main unthemed outside morningBrief mode', () => {
+  it('never stamps a per-main data-theme (theme is global)', () => {
     renderWithQueryClient(<MemoryRouter initialEntries={['/trainee/progress']}><AuthProvider><AppShell><p>Legacy content</p></AppShell></AuthProvider></MemoryRouter>)
     expect(document.getElementById('main-content')!).not.toHaveAttribute('data-theme')
   })
@@ -62,6 +61,41 @@ describe('demo workspace shell', () => {
     expect(programming).toHaveLength(2)
     expect(programming.every(link => link.getAttribute('aria-current') === 'page')).toBe(true)
     expect(screen.queryByRole('link', { name: 'Programs' })).not.toBeInTheDocument()
+  })
+})
+
+describe('four-tab trainee IA (C2.1)', () => {
+  function shell(entry: string) {
+    return renderWithQueryClient(<MemoryRouter initialEntries={[entry]}><AuthProvider><AppShell><p>content</p></AppShell></AuthProvider></MemoryRouter>)
+  }
+
+  it('exposes exactly the four top-level trainee destinations', () => {
+    shell('/trainee/today')
+    for (const label of ['Today', 'Train', 'Progress', 'You']) {
+      expect(screen.getAllByRole('link', { name: label }).length).toBeGreaterThan(0)
+    }
+    // Retired top-level items (they now live inside a tab, not on the primary bar).
+    expect(screen.queryByRole('link', { name: 'Assessment' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Workouts' })).not.toBeInTheDocument()
+  })
+
+  it('keeps Workouts reachable under Progress', () => {
+    shell('/trainee/progress')
+    expect(screen.getAllByRole('link', { name: 'Workouts' })[0]).toHaveAttribute('href', '/trainee/workouts')
+    expect(screen.getAllByRole('link', { name: 'Daily' })[0]).toHaveAttribute('href', '/trainee/progress')
+  })
+
+  it('keeps Assessment, Profile, and Settings reachable under You', () => {
+    shell('/settings')
+    expect(screen.getAllByRole('link', { name: 'Assessment' })[0]).toHaveAttribute('href', '/onboarding')
+    expect(screen.getAllByRole('link', { name: 'Profile' })[0]).toHaveAttribute('href', '/profile')
+    expect(screen.getAllByRole('link', { name: 'Settings' })[0]).toHaveAttribute('href', '/settings')
+  })
+
+  it('marks the owning tab active for a relocated route (execution under Train)', () => {
+    shell('/trainee/workouts/w1')
+    const trainActive = screen.getAllByRole('link', { name: 'Train' }).some((l) => l.getAttribute('aria-current') === 'page')
+    expect(trainActive).toBe(true)
   })
 })
 

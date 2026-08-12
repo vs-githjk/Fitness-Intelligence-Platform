@@ -39,7 +39,8 @@ it('previews and confirms a coach Program assignment', async () => {
 it('renders the trainee current Program, today, calendar, deload, and read-only details', async () => {
   setSession('trainee', false); mockFetch(() => ok(workspace(true))); renderPage(<TraineeProgramPage />)
   expect(await screen.findByRole('heading', { name: 'Strength Foundation' })).toBeVisible()
-  expect(screen.getAllByRole('link', { name: 'Program' }).length).toBeGreaterThan(0)
+  // The trainee's program lives under the four-tab IA's "Train" destination (C2.1).
+  expect(screen.getAllByRole('link', { name: 'Train' }).length).toBeGreaterThan(0)
   expect(screen.getByRole('heading', { name: "Today's Workout" })).toBeVisible()
   expect(screen.getByRole('heading', { name: 'Workout Calendar' })).toBeVisible()
   expect(screen.getAllByText('Coach-authored deload').length).toBeGreaterThan(0)
