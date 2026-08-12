@@ -269,6 +269,71 @@ editing rather than stacking a second banner.
   assumes a not-yet-logged day; a checked-in rest day has already logged, so Today
   shows the quiet "Edit today's check-in" affordance instead of implying a re-log.
 
+## Final polish — release readiness (shipped)
+
+The last Trainee Today phase. No redesign, no new hierarchy — the same one screen,
+finished. Copy decisions are recorded in [ADR-0019](../decisions/README.md).
+
+### Route-scoped dark theme
+
+Today renders **first-class dark** (real `--mb-*` dark tokens, not inverted light).
+Dark is scoped to the Today content region via `data-theme` on `<main>`
+(`AppShell morningBrief` mode) rather than the document root, because Morning Brief
+primitives (e.g. `SessionSlip`) are reused on unmigrated, light-only legacy screens —
+a global flip would strand them. `useMorningBriefTheme` resolves the region's theme:
+an explicit stored preference wins, otherwise it follows the OS `prefers-color-scheme`
+(read synchronously, so no flash). There is **no in-app theme switch** (that would
+expand scope), so dark is reached today by a trainee whose device is in dark mode.
+- **User-reachable now:** dark Today for OS-dark trainees. **Not reachable:** an
+  in-app toggle, and dark on any non-Today / legacy surface.
+- **Protected:** the shared chrome (sidebar / mobile header / bottom nav) and all
+  legacy `--color-*` surfaces stay light. The CSS dark block matches
+  `:root[data-theme='dark'], [data-theme='dark']`; a `[data-theme='light']` block
+  re-asserts light so a light region survives under a dark ancestor.
+- The morningBrief `<main>` is a full-bleed `--mb-page` canvas framed by the light
+  chrome — a controlled migration state until the chrome itself migrates.
+
+### Atmosphere calibration (both themes)
+
+The whisper tint was almost invisible at light α 0.06. Light is now α **0.09** with a
+0.10 edge-light; dark is α **0.14** with a 0.28 edge (dark reads stronger). Each band
+keeps a distinct emotional temperature (gold = capable, blue = steady, amber = ease
+off, violet = care) but the WORD always carries meaning — the gradient is decorative,
+never status-loud, amber never alarming, gold never celebratory. Programmed rest stays
+**neutral** (no atmosphere) so strong readiness never reads as "override your rest".
+
+### Approved motion budget (`tailwind.config.js` keyframes)
+
+Only the approved motion, all collapsing to instant under `prefers-reduced-motion`
+(global reset + `motion-reduce:animate-none`), and no state ever carried by motion:
+- `mb-settle` — one entrance per screen (fade + 8px rise) on the Today spine / hero.
+- `mb-expand` — inline disclosure expansion.
+- `mb-breathe` — the GhostPlan loading breathe (opacity only, **no shimmer**).
+- `mb-check` — a one-time completed-session check settle, plus a subdued success
+  edge-light on the done slip (quiet, once — no confetti, no ambient loop).
+
+### Today's Details density
+
+Two clear tiers under the one disclosure: the four summary scores, then the
+per-component mechanics beneath a thin rule (a `<dl>` ledger with aligned scores and
+subordinated `text-mb-micro` explanations). Density is managed by **hierarchy and
+rhythm only** — no cards, no tiles, no invented taxonomy, and every deterministic
+explanation stays visible (nothing hidden behind a second disclosure).
+
+### Demo Start (truthful read-only)
+
+The demo backend enforces `403` on starting a workout, so Today no longer offers a
+live Start link that would only meet that refusal: for demo users `StartAction`
+renders a **disabled** control (same pattern as offline), consistent with the app-wide
+"changes are disabled" demo banner. Server enforcement is unchanged; no fake execution.
+
+### Mobile fixed-nav clearance
+
+`<main>` bottom padding is `calc(6rem + env(safe-area-inset-bottom))` and `html` carries
+`scroll-padding-bottom` of the nav height, so no interactive control is trapped beneath
+the fixed bottom nav and keyboard focus never lands obscured (verified by a real pointer
+click on the end-of-screen disclosure at 320 / 390×700 / 390×844).
+
 ## Deviations / decisions forced by repository reality
 
 - **Additive over in-place evolution.** `Button`, `Disclosure`, and `StatusNotice`

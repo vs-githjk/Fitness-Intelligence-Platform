@@ -72,13 +72,18 @@
   --mb-error: 180 69 62;
   --mb-info: 62 107 150;
 
-  /* Atmospheric readiness — band bases applied only as a whisper tint on guidance heroes */
-  --mb-atm-gold: 217 168 78;
-  --mb-atm-blue: 110 123 196;
-  --mb-atm-amber: 201 138 90;
-  --mb-atm-violet: 122 107 176;
-  --mb-atm-alpha: 0.06;
-  --mb-atm-edge-alpha: 0;
+  /* Atmospheric readiness — band bases applied only as a whisper tint on guidance
+     heroes. Each band carries a distinct emotional temperature (warm-bright gold =
+     capable, cool blue = steady, warm amber = ease off, cool violet = care), but the
+     WORD always carries meaning; this layer is decorative and never status-loud.
+     Light alpha lifted 0.06 → 0.09 (the 0.06 wash was reported almost invisible) and
+     given a whisper edge-light so states read as subtly different, never alarming. */
+  --mb-atm-gold: 214 170 96;
+  --mb-atm-blue: 108 124 198;
+  --mb-atm-amber: 202 142 96;
+  --mb-atm-violet: 128 112 182;
+  --mb-atm-alpha: 0.09;
+  --mb-atm-edge-alpha: 0.10;
 
   /* Typography families — structure = product voice, voice = human-authored serif.
      Fallback stacks pending the font-licensing decision (see report). */
@@ -114,12 +119,19 @@
   --mb-pad-inset: 16px;
 }
 
-/* Dark theme architecture. Applied by ThemeProvider via
-   data-theme="dark" (system preference is resolved in JS). Only the
-   theme-dependent --mb-* tokens are overridden; legacy --color-*
-   tokens are intentionally NOT redefined here, so unmigrated
-   surfaces stay light even under a dark root. */
-:root[data-theme='dark'] {
+/* Dark theme architecture. Only the theme-dependent --mb-* tokens are overridden;
+   legacy --color-* tokens are intentionally NOT redefined, so unmigrated surfaces
+   stay light even under a dark root.
+
+   The dark block matches BOTH the document root (`:root[data-theme='dark']`, used by
+   ThemeProvider) AND any element carrying `[data-theme='dark']`. Today scopes dark to
+   its own content region (a wrapper attribute) rather than the whole document, because
+   Morning Brief primitives (e.g. SessionSlip) are also reused on unmigrated,
+   light-only legacy screens — a global dark flip would strand them. Scoping keeps dark
+   strictly inside the migrated Today subtree. `[data-theme='light']` re-asserts the
+   light values so a light-scoped region stays light even under a dark ancestor. */
+:root[data-theme='dark'],
+[data-theme='dark'] {
   color-scheme: dark;
 
   --mb-page: 16 16 20;
@@ -136,16 +148,47 @@
   --mb-error: 224 123 114;
   --mb-info: 127 168 204;
 
-  --mb-atm-alpha: 0.10;
-  --mb-atm-edge-alpha: 0.35;
+  /* Dark atmosphere reads stronger on a dark ground; keep it a whisper, not a glow. */
+  --mb-atm-alpha: 0.14;
+  --mb-atm-edge-alpha: 0.28;
 
   --mb-shadow-surface: none;
   --mb-shadow-overlay: 0 12px 40px rgb(0 0 0 / 0.5);
 }
 
+/* Re-assert the light theme-dependent tokens for an explicitly light-scoped region,
+   so light survives under a dark ancestor (mirrors the dark block above). */
+[data-theme='light'] {
+  color-scheme: light;
+
+  --mb-page: 250 249 247;
+  --mb-surface: 255 255 255;
+  --mb-inset: 243 242 239;
+  --mb-ink: 26 26 33;
+  --mb-secondary: 82 82 94;
+  --mb-muted: 138 138 150;
+  --mb-hairline: 26 26 33;
+  --mb-hairline-alpha: 0.08;
+
+  --mb-success: 46 125 91;
+  --mb-caution: 176 120 24;
+  --mb-error: 180 69 62;
+  --mb-info: 62 107 150;
+
+  --mb-atm-alpha: 0.09;
+  --mb-atm-edge-alpha: 0.10;
+
+  --mb-shadow-surface: 0 1px 3px rgb(15 23 42 / 0.10);
+  --mb-shadow-overlay: 0 12px 40px rgb(15 23 42 / 0.18);
+}
+
 @layer base {
   * { @apply border-border; }
-  html { @apply bg-page; scroll-behavior: smooth; }
+  /* scroll-padding-bottom keeps keyboard focus and in-page anchors clear of the fixed
+     mobile bottom navigation, so a focused control at the end of a screen is never
+     scrolled to rest underneath it. Cleared at lg where the bottom nav is hidden. */
+  html { @apply bg-page; scroll-behavior: smooth; scroll-padding-bottom: calc(10rem + env(safe-area-inset-bottom)); }
+  @media (min-width: 1024px) { html { scroll-padding-bottom: 0; } }
   body { @apply m-0 min-w-[320px] bg-page font-sans text-foreground antialiased; }
   h1, h2, h3, h4 { @apply tracking-[-0.025em] text-foreground; }
   h2[tabindex="-1"]:focus { outline: none; }

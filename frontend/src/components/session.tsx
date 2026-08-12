@@ -88,10 +88,14 @@ export function SessionSlip({
 
   const isDone = variant === 'done'
   const isRest = variant === 'rest'
+  // Completed acknowledgement: a subdued success edge-light on the slip (quiet, once —
+  // no confetti). The check settles in a single motion; both collapse to instant under
+  // reduced motion, and completion is always carried by the "Done" text + SR label.
+  const doneEdge = isDone ? 'ring-1 ring-inset ring-mb-success/20' : ''
   return (
-    <div className={`p-4 ${surface}`}>
+    <div className={`p-4 ${surface} ${doneEdge}`}>
       <div className="flex items-start gap-2">
-        {isDone && <Check aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-mb-success" />}
+        {isDone && <Check aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-mb-success animate-mb-check motion-reduce:animate-none" />}
         <div className="min-w-0 flex-1">
           <h3 className="text-mb-heading font-semibold text-mb-ink">
             {isDone && <span className="sr-only">Completed workout: </span>}

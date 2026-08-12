@@ -272,6 +272,10 @@ describe('MorningBriefToday — Phase E states', () => {
     )
     expect(screen.getAllByText('Demo').length).toBeGreaterThan(0)
     expect(screen.queryByRole('link', { name: /edit today's check-in/i })).toBeNull()
+    // Start is presented truthfully: a disabled control, not a live link that would
+    // only meet a server 403. The UI never invites a mutation it knows is refused.
+    expect(screen.queryByRole('link', { name: /start workout/i })).toBeNull()
+    expect(screen.getByRole('button', { name: /start workout/i })).toBeDisabled()
   })
 
   it('when offline, shows an offline banner and disables Start rather than linking', () => {

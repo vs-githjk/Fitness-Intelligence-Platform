@@ -47,7 +47,7 @@ export function GhostPlan({ label = 'Getting today ready…' }: { label?: string
       <span className="sr-only">{label}</span>
       <section
         aria-hidden="true"
-        className="rounded-mb-surface border border-mb-hairline bg-mb-surface p-mb-pad-surface shadow-mb-surface font-structure"
+        className="rounded-mb-surface border border-mb-hairline bg-mb-surface p-mb-pad-surface shadow-mb-surface font-structure animate-mb-breathe motion-reduce:animate-none"
       >
         <div className="flex items-center gap-3">
           <div className="size-10 rounded-full bg-mb-inset" />

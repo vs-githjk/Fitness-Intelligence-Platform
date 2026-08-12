@@ -27,14 +27,22 @@ import { CoachRelationship, DailyScore, DailyTrends, HealthIndex, TrainingAssign
 
 const DISCLAIMER = 'This is coaching guidance from your check-in, not medical advice.'
 
+// Join the concern title and its recommended action the way the frozen spec writes it
+// (§8: "Soreness is a little high — ease into your warm-up") — an em dash, not a period,
+// so a lower-cased action clause never reads as a broken second sentence.
 function watchText(title: string, action: string): string {
-  return `${title}. ${action}`
+  return `${title} — ${action}`
 }
 
+// Today's details — the one evidence disclosure (frozen §17). Two clear tiers, so it
+// scans when curious and ignores when not: the four summary scores first, then the
+// per-component mechanics visibly subordinate beneath a thin rule. Density is managed
+// with hierarchy and rhythm only — no cards, no tiles, no invented grouping, and every
+// deterministic explanation stays visible (never hidden behind a second disclosure).
 function TodayDetails({ score, trends, baseline }: { score: DailyScore; trends?: DailyTrends; baseline?: HealthIndex }) {
   return (
     <DisclosureBlock summary="Today's details">
-      <div className="space-y-6">
+      <div className="space-y-7">
         <div>
           <SectionHeader as="h3">Your numbers today</SectionHeader>
           <div className="mt-1 divide-y divide-mb-hairline">
@@ -51,26 +59,27 @@ function TodayDetails({ score, trends, baseline }: { score: DailyScore; trends?:
           </div>
         </div>
 
-        <div>
+        <div className="border-t border-mb-hairline pt-6">
           <SectionHeader as="h3">Why today looks this way</SectionHeader>
-          <div className="mt-2 space-y-3">
+          <p className="mt-1 text-mb-micro text-mb-muted">The signals behind the numbers above — each scored deterministically from your check-in.</p>
+          <dl className="mt-3 divide-y divide-mb-hairline">
             {score.components.map((component) => {
               const { label, explanation } = componentPresentation(component.key)
               return (
-                <div key={component.key}>
+                <div key={component.key} className="py-2.5">
                   <div className="flex items-baseline justify-between gap-3">
-                    <span className="text-mb-body text-mb-ink">{label}</span>
-                    <Score banded={false} value={component.missing ? null : component.normalized_score} />
+                    <dt className="text-mb-body font-medium text-mb-ink">{label}</dt>
+                    <dd className="shrink-0"><Score banded={false} value={component.missing ? null : component.normalized_score} /></dd>
                   </div>
-                  {explanation && <p className="mt-0.5 text-mb-label text-mb-secondary">{explanation}</p>}
+                  {explanation && <p className="mt-0.5 text-mb-micro leading-5 text-mb-muted">{explanation}</p>}
                 </div>
               )
             })}
-          </div>
+          </dl>
         </div>
 
         {baseline && (
-          <div>
+          <div className="border-t border-mb-hairline pt-6">
             <SectionHeader as="h3">Your starting point</SectionHeader>
             <div className="mt-1">
               <EvidenceRow banded label="Health Index" value={baseline.overall_score} word={baseline.band} />
@@ -106,7 +115,7 @@ function planSession(
         context={workoutContext(w)}
         stat={<StatStrip durationMinutes={w.planned_duration_minutes} targetEffort={w.target_session_rpe} />}
         coachMessage={coachMessage(w.trainee_instructions)}
-        action={w.id ? <StartAction id={w.id} online={ctx.online} /> : undefined}
+        action={w.id ? <StartAction id={w.id} online={ctx.online} demo={ctx.isDemo} /> : undefined}
       />
     )
   }
@@ -132,12 +141,15 @@ function planSession(
   return undefined // plan_only — the session slot collapses.
 }
 
-// The primary action. When offline, starting a workout needs a connection, so we
-// render a genuinely disabled control rather than a link that implies it will work.
-function StartAction({ id, online }: { id: string; online: boolean }) {
-  if (!online) {
+// The primary action. It is a genuinely disabled control (never a live link) when the
+// action truly cannot proceed — offline (starting a workout needs a connection) or in
+// the read-only demo (the server enforces 403, so the UI must not invite a mutation it
+// already knows will be refused). Both are truthful, not decorative.
+function StartAction({ id, online, demo = false }: { id: string; online: boolean; demo?: boolean }) {
+  if (demo || !online) {
+    const label = demo ? 'Start workout — disabled in the read-only demo' : 'Start workout — unavailable offline'
     return (
-      <button type="button" disabled aria-label="Start workout — unavailable offline" className={ctaClassName('filled')}>
+      <button type="button" disabled aria-label={label} className={ctaClassName('filled')}>
         Start workout
         <ArrowRight aria-hidden="true" className="size-4" />
       </button>
@@ -195,7 +207,7 @@ export function MorningBriefToday({
   const editLink = user.is_demo ? undefined : (
     <Link
       to="/trainee/check-in"
-      className={`inline-flex min-h-11 items-center gap-1.5 rounded-mb-control text-mb-label font-medium text-mb-secondary underline-offset-4 hover:text-mb-ink hover:underline ${mbFocusRing}`}
+      className={`inline-flex min-h-11 scroll-mb-40 items-center gap-1.5 rounded-mb-control text-mb-label font-medium text-mb-secondary underline-offset-4 hover:text-mb-ink hover:underline lg:scroll-mb-0 ${mbFocusRing}`}
     >
       <Pencil aria-hidden="true" className="size-3.5" />
       Edit today's check-in
@@ -206,7 +218,7 @@ export function MorningBriefToday({
     // The guidance lives on one centred ~640px spine (max-w-mb-guidance); on wider
     // desktops the extra width becomes whitespace, never a second column. The hero,
     // session, and evidence all inherit this readable measure.
-    <div className="mx-auto w-full max-w-mb-guidance space-y-mb-section">
+    <div className="mx-auto w-full max-w-mb-guidance space-y-mb-section animate-mb-settle motion-reduce:animate-none">
       {/* The demo condition is already announced app-wide by AppShell's banner; Today
           adds the coach "Demo" attribution tag and disables editing rather than
           stacking a second banner. Offline is Today-specific, so it lives here. */}

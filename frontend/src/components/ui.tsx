@@ -240,7 +240,7 @@ const ctaVariants = {
 // Shared CTA styling so a router Link can be rendered as the primary action with
 // correct link semantics, without coupling this presentational library to a router.
 export function ctaClassName(variant: 'filled' | 'ghost' | 'text' = 'filled', className = '') {
-  return `relative inline-flex min-h-12 items-center justify-center gap-2 rounded-mb-control px-5 font-structure text-mb-body font-semibold transition duration-mb-micro ease-mb-standard disabled:cursor-not-allowed disabled:opacity-60 ${mbFocusRing} ${ctaVariants[variant]} ${className}`
+  return `relative inline-flex min-h-12 scroll-mb-40 items-center justify-center gap-2 rounded-mb-control px-5 font-structure text-mb-body font-semibold transition duration-mb-micro ease-mb-standard disabled:cursor-not-allowed disabled:opacity-60 lg:scroll-mb-0 ${mbFocusRing} ${ctaVariants[variant]} ${className}`
 }
 
 // The one prominent action on a surface. Filled variant is the single primary;
@@ -303,12 +303,12 @@ export function DisclosureBlock({ summary, children, defaultOpen = false, classN
         aria-expanded={open}
         aria-controls={contentId}
         onClick={() => setOpen(value => !value)}
-        className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-mb-control font-structure text-mb-body font-medium text-mb-secondary transition-colors duration-mb-micro hover:text-mb-ink ${mbFocusRing}`}
+        className={`flex min-h-11 w-full scroll-mb-40 items-center justify-between gap-3 rounded-mb-control font-structure text-mb-body font-medium text-mb-secondary transition-colors duration-mb-micro hover:text-mb-ink lg:scroll-mb-0 ${mbFocusRing}`}
       >
         <span>{summary}</span>
         <ChevronDown aria-hidden="true" className={`size-4 transition-transform duration-mb-structural ${open ? 'rotate-180' : ''}`} />
       </button>
-      <div id={contentId} hidden={!open} className="pt-3">{open && children}</div>
+      <div id={contentId} hidden={!open} className="pt-3 animate-mb-expand motion-reduce:animate-none">{open && children}</div>
     </div>
   )
 }

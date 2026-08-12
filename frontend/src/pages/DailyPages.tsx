@@ -94,7 +94,7 @@ export function CoachRelationshipCard({ relationship, loading = false, error = f
 // A calm 640px spine wrapper shared by the non-plan Today states (invitation,
 // error, offline), so their spatial memory matches the checked-in composition.
 function TodaySpine({ children }: { children: ReactNode }) {
-  return <div className="mx-auto w-full max-w-mb-guidance space-y-4">{children}</div>
+  return <div className="mx-auto w-full max-w-mb-guidance space-y-4 animate-mb-settle motion-reduce:animate-none">{children}</div>
 }
 
 export function TodayPage() {
@@ -123,22 +123,22 @@ export function TodayPage() {
 
   // There is no persisted query cache, so a reload while offline has nothing to show.
   if (!online && !coreData && (coreErrored || coreLoading)) {
-    return <AppShell><TodaySpine><StateSurface icon={WifiOff} title="You’re offline" body="We can’t reach FitIntel right now. Reconnect and we’ll load today’s guidance." action={<PrimaryCTA onClick={retryCore}>Try again</PrimaryCTA>} /></TodaySpine></AppShell>
+    return <AppShell morningBrief><TodaySpine><StateSurface icon={WifiOff} title="You’re offline" body="We can’t reach FitIntel right now. Reconnect and we’ll load today’s guidance." action={<PrimaryCTA onClick={retryCore}>Try again</PrimaryCTA>} /></TodaySpine></AppShell>
   }
-  if (coreLoading) return <AppShell><GhostPlan /></AppShell>
+  if (coreLoading) return <AppShell morningBrief><GhostPlan /></AppShell>
   if (coreErrored) {
-    return <AppShell><TodaySpine><StateSurface icon={AlertCircle} title="We couldn’t load today" body="Something went wrong on our side. Please try again." action={<PrimaryCTA onClick={retryCore}>Try again</PrimaryCTA>} /></TodaySpine></AppShell>
+    return <AppShell morningBrief><TodaySpine><StateSurface icon={AlertCircle} title="We couldn’t load today" body="Something went wrong on our side. Please try again." action={<PrimaryCTA onClick={retryCore}>Try again</PrimaryCTA>} /></TodaySpine></AppShell>
   }
 
   // Checked in: the Morning Brief guidance experience, re-weighted per resolved state.
   if (coreData && user) {
-    return <AppShell><MorningBriefToday user={user} score={score.data!} coach={coach.data} workspace={workspace.data} trends={trends.data} baseline={baseline.data} online={online} /></AppShell>
+    return <AppShell morningBrief><MorningBriefToday user={user} score={score.data!} coach={coach.data} workspace={workspace.data} trends={trends.data} baseline={baseline.data} online={online} /></AppShell>
   }
 
   // Not checked in: the frozen invitation (§9). No metrics, no baseline, no coach
   // card, no readiness atmosphere before any check-in exists.
   return (
-    <AppShell>
+    <AppShell morningBrief>
       <TodaySpine>
         <StateSurface
           eyebrow={user ? greetingFor(user.first_name) : undefined}

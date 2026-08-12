@@ -97,6 +97,38 @@ export default {
       transitionTimingFunction: {
         'mb-standard': 'var(--mb-ease-standard)',
       },
+      // The approved Morning Brief motion budget. Durations trace to the --mb-dur-*
+      // tokens; all collapse to instant under prefers-reduced-motion (handled globally
+      // in index.css), and no state is ever communicated by motion alone.
+      keyframes: {
+        // Entrance settle — one per screen: a gentle fade + small rise.
+        'mb-settle': {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        // Inline disclosure expansion.
+        'mb-expand': {
+          '0%': { opacity: '0', transform: 'translateY(-4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        // Loading — a calm breathe (opacity only; never a shimmer sweep).
+        'mb-breathe': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.55' },
+        },
+        // Completed acknowledgement — a quiet one-time check settle (no confetti).
+        'mb-check': {
+          '0%': { opacity: '0', transform: 'scale(0.7)' },
+          '60%': { opacity: '1', transform: 'scale(1.06)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+      },
+      animation: {
+        'mb-settle': 'mb-settle var(--mb-dur-entrance) var(--mb-ease-standard) both',
+        'mb-expand': 'mb-expand var(--mb-dur-structural) var(--mb-ease-standard) both',
+        'mb-breathe': 'mb-breathe 1800ms var(--mb-ease-standard) infinite',
+        'mb-check': 'mb-check var(--mb-dur-completion) var(--mb-ease-standard) both',
+      },
       maxWidth: {
         app: '90rem',
         'mb-guidance': '40rem',

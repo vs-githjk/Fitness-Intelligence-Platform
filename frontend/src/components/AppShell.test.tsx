@@ -35,6 +35,22 @@ describe('demo workspace shell', () => {
     expect(localStorage.getItem('access_token')).toBeNull()
   })
 
+  it('scopes the Today theme to the main content region, never the document root', () => {
+    // Route-scoped dark: morningBrief stamps data-theme on <main> only. The document
+    // root and the legacy chrome stay untouched, so unmigrated surfaces can never be
+    // dark-themed. Default (no stored preference, OS light in jsdom) resolves to light.
+    renderWithQueryClient(<MemoryRouter initialEntries={['/trainee/today']}><AuthProvider><AppShell morningBrief><p>Today content</p></AppShell></AuthProvider></MemoryRouter>)
+    const main = document.getElementById('main-content')!
+    expect(main).toHaveAttribute('data-theme')
+    expect(main.className).toContain('bg-mb-page')
+    expect(document.documentElement).not.toHaveAttribute('data-theme', 'dark')
+  })
+
+  it('leaves main unthemed outside morningBrief mode', () => {
+    renderWithQueryClient(<MemoryRouter initialEntries={['/trainee/progress']}><AuthProvider><AppShell><p>Legacy content</p></AppShell></AuthProvider></MemoryRouter>)
+    expect(document.getElementById('main-content')!).not.toHaveAttribute('data-theme')
+  })
+
   it('adds responsive coach Programming navigation without future Programs', () => {
     const storage = new MemoryStorage()
     storage.setItem('access_token', 'coach-token')

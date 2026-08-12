@@ -409,3 +409,52 @@ its authoritative documentation.
   rejected in favor of reusing `MediaAsset`; storing media on a mutable exercise-level
   record — rejected because media must be frozen with the immutable version; widening
   the owner-only media route for trainees — deferred with its runner UX.
+
+## ADR-0019 — Trainee Today (Morning Brief) completion: rest-day integrity, copy, and route-scoped dark
+
+- **Status:** accepted
+- **Date:** 2026-08-12
+- **Context:** Experience Cycle 1 completed the guidance-first Trainee Today
+  ([../design/trainee-today.md](../design/trainee-today.md)). Finishing it surfaced
+  three decisions worth recording: whether "no workout today" can honestly be shown as
+  a coach-authored rest day; how to resolve the two copy items the frozen spec left
+  open (§23 #4 and the §8 rest action) without silently approving `proposed` text; and
+  how to render the approved dark treatment without breaking the still-light app.
+- **Decision:**
+  - **Rest-day integrity (Coach First).** The domain has no rest flag or rest session
+    type — per the product model an empty weekday *within* a program's date range is a
+    rest day, and the whole program is materialized eagerly at assignment time. But
+    `TrainingAssignmentStatus` has no `COMPLETED` state, so an assignment stays `ACTIVE`
+    indefinitely after its last workout (and `effective_end_date` is null for a live
+    one). Today therefore shows the frozen rest state **only while the current program
+    still has an actionable session ahead of today** (`resolveCheckedInPlan` /
+    `hasRemainingProgram`, existing data only). A lapsed program, or a gap whose only
+    future sessions belong to an *upcoming* assignment, degrades to guidance-only
+    (`plan_only`) rather than fabricating "take today off — on purpose." No backend
+    change; a proper programmed-rest signal is deferred to a future domain feature.
+  - **Rest primary action.** The frozen §8 lists "Log how you feel →", which assumes a
+    not-yet-logged day. A rest state only renders **after** the daily score exists (the
+    trainee has checked in), so that action would duplicate a completed check-in. Today
+    shows the quiet "Edit today's check-in" affordance instead. Copy substance is
+    unchanged; only the redundant action is dropped.
+  - **Completed-workout copy (§23 #4, open).** No approved closure sentence exists, so
+    Today ships the stable Done state (SessionSlip `done`: check + "Done" + retained
+    coach note, no Start) and invents **no** motivational copy for the empty space.
+  - **Route-scoped dark theme.** Dark is applied via `data-theme` on the Today content
+    region only (`AppShell morningBrief` + `useMorningBriefTheme`, following the OS
+    `prefers-color-scheme`; no in-app switch). Morning Brief primitives are reused on
+    unmigrated light-only screens, so a document-root flip would strand them; scoping
+    keeps dark strictly inside the migrated subtree and leaves the shared legacy chrome
+    light. Reachable today by a trainee whose device is in dark mode; app-wide dark
+    awaits migrating the shared chrome.
+- **Consequences:** Today never claims coach intent the domain cannot substantiate; the
+  two open copy items are resolved conservatively and recorded here rather than left
+  `proposed`; dark is real and verified but deliberately not app-wide. Presentation
+  only — no scoring, endpoint, band, or schema change. See
+  [../design/components.md](../design/components.md) and
+  [../design/trainee-today.md](../design/trainee-today.md).
+- **Alternatives considered:** inferring rest from "active program + empty today"
+  alone — rejected (misreads a finished program as authored rest); adding a backend
+  rest flag / assignment `COMPLETED` status now — deferred (out of this phase's scope);
+  shipping "Log how you feel" on rest — rejected (duplicate action); a global dark flip
+  or an in-app theme switch — rejected (breaks legacy surfaces / expands scope).
