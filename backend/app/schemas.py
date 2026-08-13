@@ -670,6 +670,36 @@ class ExerciseDetailOut(ExerciseSummaryOut):
     versions: list[ExerciseVersionOut]
 
 
+class TraineeExerciseKnowledgeOut(BaseModel):
+    """Read-only exercise knowledge for a trainee (C2.2, §30).
+
+    A trimmed, published-only view of an ``ExerciseVersion`` the trainee is authorized to
+    see through a workout session they own. Deliberately excludes draft internals,
+    ownership, content hashes, and authoring URLs; media resolves through the trainee
+    delivery route. Read-only: this grants no authoring, substitution, or catalog access.
+    """
+
+    id: uuid.UUID
+    exercise_id: uuid.UUID
+    name: str
+    description: str | None
+    tracking_mode: ExerciseTrackingMode
+    category: str
+    movement_pattern: str
+    equipment: list[str]
+    primary_muscle_groups: list[str]
+    secondary_muscle_groups: list[str]
+    unilateral: bool
+    difficulty: ExerciseDifficulty | None
+    instructions: str
+    safety_cues: list[str]
+    coaching_cues: list[str]
+    common_mistakes: list[str]
+    primary_image: ExerciseMediaOut | None = None
+    secondary_image: ExerciseMediaOut | None = None
+    demonstration_video: ExerciseMediaOut | None = None
+
+
 class WorkoutSetPrescriptionData(BaseModel):
     set_number: int = Field(ge=1, le=100)
     set_type: WorkoutSetType = WorkoutSetType.WORKING
