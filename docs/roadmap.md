@@ -103,7 +103,34 @@ scoring, endpoint, schema, or business-logic changes.
   endpoint, schema, or migration change. Known interim: the poster is data-true
   typographic pending the Iron Line commission; unmigrated trainee content pages get a
   coherent dark skin (their full Iron Editorial pass is C2.3–C2.5).
-  **C2.2 has not started.**
+- **C2.1 fidelity correction — implemented.** A visual-fidelity pass on top of C2.1 to
+  raise the identity from "old FitIntel, but dark" to premium simplicity: a typographic
+  Iron Editorial wordmark (retiring the disconnected raster logo on the front door and
+  trainee shell); an Iron Editorial front door (ink editorial cover, display promise
+  centred on plan + coach + training, the data-true movement-glyph "Iron Line" index,
+  quiet mono provenance; sign-in stays the indigo non-training action); a more authored
+  trainee shell (wordmark masthead, ember active-tab glyph, mono identity/demo metadata,
+  layered surfaces); a composed pre-check-in morning invitation (frozen copy, editorial
+  composition, honest movement-library signature — no scaffolding); and a stronger
+  generated session poster (duotone grade, larger display, optional data-true glyph
+  watermark rendered only where a real `movement_pattern` is available). New shared
+  primitives: `components/iron/MovementGlyph` (15 interim data-true movement glyphs),
+  `Wordmark`, `Editorial` (eyebrow/rule), and the `lib/muscles` §20 precision map.
+- **C2.2 — execution / Gym Mode + trainee exercise read — implemented.** Workout
+  Execution migrated to the Iron Editorial Live register: one movement at a time with the
+  set log as the protagonist (engineered numerals, ember training actions, ghosted target
+  reference — never target-shaming), a full-state **rest timer** (dominant surface, large
+  numerals, next-up context, +30s / skip; not a toast), and read-only **exercise
+  knowledge** (movement glyph, muscle chips honoring the §20 precision law, coaching cues,
+  common mistakes, authorized media). Gym Mode is the trainee's dark-first default via the
+  app theme — no route-scoped theme hack; an explicit Light preference is respected. The
+  execution contract is unchanged (explicit saves with `expected_session_revision`, 409
+  conflict preservation, immutable snapshots, permanently-reachable calm safety entry).
+  Backend: the approved enabling capability (§30) ships as a minimal read-only route
+  (`GET /trainee/exercise-versions/{id}` + trainee-scoped media delivery) authorized
+  through a workout session the trainee owns — published-only, cross-account/unknown →
+  404, demo may read; it completes ADR-0018's deferred trainee-scoped delivery walk. No
+  schema/migration/scoring change. **C2.3 (Program identity) has not started.**
 - **Not in scope:** exercise substitution, program generation, marketplace, and
   social/streak/badge mechanics remain explicit anti-goals.
 
