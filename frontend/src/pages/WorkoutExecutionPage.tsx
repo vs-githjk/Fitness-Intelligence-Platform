@@ -1,17 +1,35 @@
+// Workout Execution — Iron Editorial Live register (Experience Cycle 2, C2.2).
+//
+// One movement at a time; the set log is the protagonist. Gym Mode is the trainee's
+// dark-first default via the app theme (no route-scoped theme hack — an explicit Light
+// preference is respected because the whole shell follows it). Engineered numerals,
+// large thumb targets, ember training actions, a full-state rest timer, ghosted target
+// reference (not target-shaming), and read-only exercise knowledge from the approved
+// trainee read route (§30). Safety entry stays permanently calm and reachable.
+//
+// Behaviour is unchanged from Cycle 1: explicit saves carry expected_session_revision,
+// 409 conflicts preserve unsaved values, snapshots are immutable, and every mutation is
+// demo-guarded server-side. This phase changes presentation and adds the rest timer +
+// knowledge panel; it does not alter the execution contract.
+
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ArrowRight, CheckCircle2, CircleStop, Plus, RefreshCw, Save, ShieldAlert, SkipForward } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2, CircleStop, Plus, Play, RefreshCw, Save, ShieldAlert, SkipForward, Timer } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAccountQueryScope, useAuth } from '../auth'
 import { AppShell } from '../components/AppShell'
-import { Badge, Button, Card, EmptyState, ErrorState, Field, LoadingState, Modal, PageHeader, SelectInput, StatusNotice, TextArea, TextInput } from '../components/ui'
+import { Badge, Button, Card, EmptyState, ErrorState, Field, LoadingState, Modal, PageHeader, SelectInput, StatusNotice, TextArea, TextInput, ctaClassName } from '../components/ui'
+import { Eyebrow } from '../components/iron/Editorial'
+import { MovementGlyph } from '../components/iron/MovementGlyph'
 import { ReadinessContextCard } from '../components/workouts/ReadinessContextCard'
-import { SafetyCategory, SafetySeverity, ScheduledWorkout, TrainingAssignmentWorkspace, WorkoutSafetyReport, WorkoutSession, WorkoutSessionExercise, WorkoutSetLog } from '../types'
+import { classifyMuscles } from '../lib/muscles'
+import { SafetyCategory, SafetySeverity, ScheduledWorkout, TraineeExerciseKnowledge, TrainingAssignmentWorkspace, WorkoutSafetyReport, WorkoutSession, WorkoutSessionExercise, WorkoutSetLog } from '../types'
 
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error' | 'conflict'
 type ActualValues = Record<string, string>
 type SafetyDraft = { category: SafetyCategory; severity: SafetySeverity; note: string; activityStopped: boolean }
+type RestState = { key: number; seconds: number; nextLabel: string }
 const initialSafetyDraft: SafetyDraft = { category: 'pain', severity: 'moderate', note: '', activityStopped: true }
 const criticalCategories: SafetyCategory[] = ['chest_discomfort', 'breathing_difficulty', 'dizziness_or_faintness']
 const formatDate = (value: string) => new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${value}T12:00:00`))
@@ -22,14 +40,17 @@ export function WorkoutExecutionPage() {
   const { user } = useAuth()
   const cache = useQueryClient()
   const scope = useAccountQueryScope()
-  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [startedSessionId, setStartedSessionId] = useState<string | null>(null)
   const workspace = useQuery({ queryKey: [...scope, 'my-training-program'], queryFn: () => api<TrainingAssignmentWorkspace>('/trainee/program') })
   const workout = workspace.data?.scheduled_workouts.find(item => item.id === scheduledWorkoutId)
-  useEffect(() => { if (workout?.workout_session_id) setSessionId(workout.workout_session_id) }, [workout?.workout_session_id])
+  // Resolve the session id synchronously (started-this-render, else the schedule's saved
+  // session) so an already-started workout goes straight to the live session and never
+  // flashes the scheduled overview.
+  const sessionId = startedSessionId ?? workout?.workout_session_id ?? null
   const session = useQuery({ queryKey: [...scope, 'workout-session', sessionId], queryFn: () => api<WorkoutSession>(`/trainee/workout-sessions/${sessionId}`), enabled: Boolean(sessionId) })
   const start = useMutation({
     mutationFn: () => api<WorkoutSession>(`/trainee/workouts/${scheduledWorkoutId}/start`, { method: 'POST' }),
-    onSuccess: value => { setSessionId(value.id); cache.setQueryData([...scope, 'workout-session', value.id], value) },
+    onSuccess: value => { setStartedSessionId(value.id); cache.setQueryData([...scope, 'workout-session', value.id], value) },
   })
   if (workspace.isLoading) return <AppShell><LoadingState label="Loading workout" /></AppShell>
   if (workspace.error) return <AppShell><ErrorState title="Workout unavailable" description={workspace.error.message} onRetry={() => workspace.refetch()} /></AppShell>
@@ -42,7 +63,7 @@ export function WorkoutExecutionPage() {
 
 function ScheduledOverview({ workout, programName, programVersion, demo, starting, error, onStart }: { workout: ScheduledWorkout; programName: string; programVersion: number; demo: boolean; starting: boolean; error: Error | null; onStart: () => void }) {
   const blocked = workout.status === 'cancelled' || workout.status === 'superseded'
-  return <AppShell><div className="mx-auto max-w-3xl space-y-5"><PageHeader eyebrow="FitIntel 360 · Workout" title={workout.workout_template_version.name} description={`${programName} · version ${programVersion} · ${formatDate(workout.scheduled_date)}`} />{demo && <StatusNotice tone="info" title="Demo workspace — changes are disabled.">Inspect this scheduled workout without starting or changing it.</StatusNotice>}{blocked && <StatusNotice tone="attention" title={`Workout ${workout.status}`}>This schedule entry cannot be started.</StatusNotice>}{error && <StatusNotice tone="risk" title="Workout could not start">{error.message}</StatusNotice>}<ReadinessContextCard context={workout.readiness_context} /><Card><div className="grid grid-cols-2 gap-3 sm:grid-cols-4"><Metric label="Duration" value={workout.planned_duration_minutes ? `${workout.planned_duration_minutes} min` : 'Not set'} /><Metric label="Target RPE" value={workout.target_session_rpe ?? 'Not set'} /><Metric label="Exercises" value={workout.workout_template_version.exercise_count} /><Metric label="Status" value={title(workout.status)} /></div>{workout.trainee_instructions && <p className="mt-5 text-sm leading-6 text-secondary">{workout.trainee_instructions}</p>}<Button className="mt-6 w-full sm:w-auto" loading={starting} disabled={demo || blocked || workout.status !== 'scheduled'} onClick={onStart}>Start workout</Button></Card></div></AppShell>
+  return <AppShell><div className="mx-auto max-w-2xl space-y-5 font-structure"><PageHeader eyebrow="FitIntel 360 · Workout" title={workout.workout_template_version.name} description={`${programName} · version ${programVersion} · ${formatDate(workout.scheduled_date)}`} />{demo && <StatusNotice tone="info" title="Demo workspace — changes are disabled.">Inspect this scheduled workout without starting or changing it.</StatusNotice>}{blocked && <StatusNotice tone="attention" title={`Workout ${workout.status}`}>This schedule entry cannot be started.</StatusNotice>}{error && <StatusNotice tone="risk" title="Workout could not start">{error.message}</StatusNotice>}<ReadinessContextCard context={workout.readiness_context} /><Card><div className="grid grid-cols-2 gap-3 sm:grid-cols-4"><Metric label="Duration" value={workout.planned_duration_minutes ? `${workout.planned_duration_minutes} min` : 'Not set'} /><Metric label="Target RPE" value={workout.target_session_rpe ?? 'Not set'} /><Metric label="Exercises" value={workout.workout_template_version.exercise_count} /><Metric label="Status" value={title(workout.status)} /></div>{workout.trainee_instructions && <p className="mt-5 text-sm leading-6 text-secondary">{workout.trainee_instructions}</p>}<button type="button" className={`mt-6 w-full sm:w-auto ${ctaClassName('training')}`} disabled={demo || blocked || starting || workout.status !== 'scheduled'} onClick={onStart}><Play aria-hidden="true" className="size-4" />Start workout</button></Card></div></AppShell>
 }
 
 function SessionExperience({ session, onChange, onReload, demo }: { session: WorkoutSession; onChange: (value: WorkoutSession) => void; onReload: () => Promise<unknown>; demo: boolean }) {
@@ -52,6 +73,7 @@ function SessionExperience({ session, onChange, onReload, demo }: { session: Wor
   const [conflict, setConflict] = useState(false)
   const [safetyOpen, setSafetyOpen] = useState(false)
   const [safetyDraft, setSafetyDraft] = useState<SafetyDraft>(initialSafetyDraft)
+  const [rest, setRest] = useState<RestState | null>(null)
   const reports = useQuery({ queryKey: [...scope, 'workout-safety-reports', session.id], queryFn: () => api<WorkoutSafetyReport[]>(`/trainee/workout-sessions/${session.id}/safety-reports`) })
   const exercise = session.exercises[index]
   const terminal = session.status !== 'in_progress'
@@ -63,8 +85,41 @@ function SessionExperience({ session, onChange, onReload, demo }: { session: Wor
     await onReload()
     setSafetyOpen(false)
   }
+  // A logged set with a prescribed rest opens the full-state rest timer (§15/§3A).
+  function onLogged(restSeconds: number | null, nextLabel: string) {
+    if (restSeconds && restSeconds > 0) setRest({ key: Date.now(), seconds: restSeconds, nextLabel })
+  }
   if (terminal) return <CompletionSummary session={session} reports={reports.data ?? []} />
-  return <AppShell><div className="mx-auto max-w-3xl space-y-5"><PageHeader eyebrow="FitIntel 360 · Active workout" title={session.workout_name} description={`${session.program_name} · version ${session.program_version_number} · ${formatDate(session.scheduled_date)}`} action={<Button variant="danger" disabled={demo} onClick={() => setSafetyOpen(true)}><ShieldAlert aria-hidden="true" className="size-4" />Report a safety concern</Button>} />{demo && <StatusNotice tone="info" title="Demo workspace — changes are disabled.">This synthetic execution example is read-only.</StatusNotice>}{conflict && <StatusNotice tone="attention" title="Workout updated elsewhere">Your unsaved entries remain on this page. Reload the latest session before saving again.<Button variant="secondary" className="mt-3" onClick={() => { void onReload(); setConflict(false) }}><RefreshCw aria-hidden="true" className="size-4" />Reload latest session</Button></StatusNotice>}<ReadinessContextCard context={session.readiness_context} /><Card><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">{completedSets} of {totalSets} sets resolved</p><p className="mt-1 text-xs text-muted">Session revision {session.revision}</p></div><Badge tone="info">In progress</Badge></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-elevated"><div className="h-full bg-primary" style={{ width: `${totalSets ? (completedSets / totalSets) * 100 : 0}%` }} /></div></Card>{reports.data?.length ? <SafetyHistory reports={reports.data} /> : null}{paused && <StatusNotice tone="risk" title="Exercise paused for safety">Do not continue logging this exercise. Skip it, end the workout, or submit another safety report if the situation changed.</StatusNotice>}{exercise && <ExercisePanel key={exercise.id} session={session} exercise={exercise} demo={demo} onChange={onChange} onConflict={() => setConflict(true)} />}{!paused && <div className="flex items-center justify-between gap-3"><Button variant="secondary" disabled={index === 0} onClick={() => setIndex(value => value - 1)}><ArrowLeft aria-hidden="true" className="size-4" />Previous</Button><span className="text-xs font-semibold text-muted">Exercise {index + 1} of {session.exercises.length}</span><Button variant="secondary" disabled={index === session.exercises.length - 1} onClick={() => setIndex(value => value + 1)}>Next<ArrowRight aria-hidden="true" className="size-4" /></Button></div>}<FinishPanel session={session} demo={demo} onChange={onChange} onConflict={() => setConflict(true)} /><SafetyReportDialog open={safetyOpen} session={session} exercise={exercise} draft={safetyDraft} demo={demo} onDraft={setSafetyDraft} onClose={() => setSafetyOpen(false)} onReported={reported} /></div></AppShell>
+  return <AppShell><div className="mx-auto max-w-2xl space-y-5 font-structure">{rest && <RestTimer key={rest.key} seconds={rest.seconds} nextLabel={rest.nextLabel} onDismiss={() => setRest(null)} />}<header className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><Eyebrow>Active workout</Eyebrow><h1 className="mt-1.5 text-balance font-display text-3xl uppercase leading-[0.95] tracking-tight text-mb-ink sm:text-4xl">{session.workout_name}</h1><p className="mt-2 font-numeral text-mb-label uppercase tracking-[0.06em] text-mb-secondary">{session.program_name} · v{session.program_version_number} · {formatDate(session.scheduled_date)}</p></div><button type="button" disabled={demo} onClick={() => setSafetyOpen(true)} className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-mb-control border border-mb-error/40 px-3 text-mb-label font-semibold text-mb-error transition-colors hover:bg-mb-error/10 disabled:cursor-not-allowed disabled:opacity-60"><ShieldAlert aria-hidden="true" className="size-4" />Report a safety concern</button></header>{demo && <StatusNotice tone="info" title="Demo workspace — changes are disabled.">This synthetic execution example is read-only.</StatusNotice>}{conflict && <StatusNotice tone="attention" title="Workout updated elsewhere">Your unsaved entries remain on this page. Reload the latest session before saving again.<Button variant="secondary" className="mt-3" onClick={() => { void onReload(); setConflict(false) }}><RefreshCw aria-hidden="true" className="size-4" />Reload latest session</Button></StatusNotice>}<ReadinessContextCard context={session.readiness_context} /><div className="rounded-mb-inset bg-mb-inset p-4"><div className="flex items-center justify-between gap-3"><p className="font-numeral text-mb-label uppercase tracking-[0.08em] text-mb-ink">{completedSets} of {totalSets} sets resolved</p><span className="font-numeral text-[0.65rem] uppercase tracking-[0.18em] text-mb-muted">rev {session.revision}</span></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-mb-hairline"><div className="h-full rounded-full bg-mb-ember transition-[width] duration-mb-structural" style={{ width: `${totalSets ? (completedSets / totalSets) * 100 : 0}%` }} /></div></div>{reports.data?.length ? <SafetyHistory reports={reports.data} /> : null}{paused && <StatusNotice tone="risk" title="Exercise paused for safety">Do not continue logging this exercise. Skip it, end the workout, or submit another safety report if the situation changed.</StatusNotice>}{exercise && <ExercisePanel key={exercise.id} session={session} exercise={exercise} demo={demo} onChange={onChange} onConflict={() => setConflict(true)} onLogged={onLogged} />}{!paused && <div className="flex items-center justify-between gap-3"><Button variant="secondary" disabled={index === 0} onClick={() => setIndex(value => value - 1)}><ArrowLeft aria-hidden="true" className="size-4" />Previous</Button><span className="font-numeral text-[0.7rem] uppercase tracking-[0.12em] text-mb-muted">Exercise {index + 1} / {session.exercises.length}</span><Button variant="secondary" disabled={index === session.exercises.length - 1} onClick={() => setIndex(value => value + 1)}>Next<ArrowRight aria-hidden="true" className="size-4" /></Button></div>}<FinishPanel session={session} demo={demo} onChange={onChange} onConflict={() => setConflict(true)} /><SafetyReportDialog open={safetyOpen} session={session} exercise={exercise} draft={safetyDraft} demo={demo} onDraft={setSafetyDraft} onClose={() => setSafetyOpen(false)} onReported={reported} /></div></AppShell>
+}
+
+// Full-state rest timer (§15, §3A). The dominant surface after a logged set: large
+// engineered numerals, next-up context, extend / skip. Not a toast. Countdown is
+// aria-hidden (a per-second live region would spam a screen reader, §24); the surface
+// carries a static timer role and its controls remain reachable. Motion is limited to
+// the numeral update — nothing ambient — and reduced motion is unaffected (no animation).
+function RestTimer({ seconds, nextLabel, onDismiss }: { seconds: number; nextLabel: string; onDismiss: () => void }) {
+  const [remaining, setRemaining] = useState(seconds)
+  useEffect(() => {
+    if (remaining <= 0) return
+    const id = window.setInterval(() => setRemaining(value => (value <= 1 ? 0 : value - 1)), 1000)
+    return () => window.clearInterval(id)
+  }, [remaining])
+  const mm = Math.floor(Math.max(remaining, 0) / 60)
+  const ss = Math.max(remaining, 0) % 60
+  const done = remaining <= 0
+  return (
+    <section role="timer" aria-label="Rest timer" className="relative overflow-hidden rounded-mb-surface bg-mb-ink-1 p-6 text-mb-bone">
+      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-mb-ember" />
+      <div className="flex items-center gap-2"><Timer aria-hidden="true" className="size-4 text-mb-ember" /><Eyebrow>{done ? 'Rest complete' : 'Rest'}</Eyebrow></div>
+      <p aria-hidden="true" className="mt-2 font-numeral text-6xl font-semibold tabular-nums tracking-tight text-mb-bone sm:text-7xl">{mm}:{String(ss).padStart(2, '0')}</p>
+      <p className="mt-2 font-numeral text-mb-label uppercase tracking-[0.08em] text-mb-bone-muted">Up next · {nextLabel}</p>
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button type="button" onClick={() => setRemaining(value => value + 30)} className="inline-flex min-h-11 items-center gap-1.5 rounded-mb-control border border-mb-bone/25 px-4 text-mb-label font-semibold text-mb-bone hover:bg-mb-bone/10">+30 sec</button>
+        <button type="button" onClick={onDismiss} className={ctaClassName('training')}>{done ? 'Start next set' : 'Skip rest'}<ArrowRight aria-hidden="true" className="size-4" /></button>
+      </div>
+    </section>
+  )
 }
 
 function SafetyReportDialog({ open, session, exercise, draft, demo, onDraft, onClose, onReported }: { open: boolean; session: WorkoutSession; exercise?: WorkoutSessionExercise; draft: SafetyDraft; demo: boolean; onDraft: (value: SafetyDraft) => void; onClose: () => void; onReported: (report: WorkoutSafetyReport) => Promise<void> }) {
@@ -82,7 +137,74 @@ function SafetyHistory({ reports }: { reports: WorkoutSafetyReport[] }) {
   return <Card as="section"><h2 className="text-lg font-semibold">Safety reports</h2><div className="mt-3 space-y-3">{reports.map(report => <div key={report.id} className="rounded-xl border border-[rgb(var(--status-attention-border))] bg-[rgb(var(--status-attention-bg))] p-3"><div className="flex flex-wrap items-center gap-2"><Badge tone="attention">{title(report.category)}</Badge><Badge tone="neutral">{report.status}</Badge></div><p className="mt-2 text-sm leading-6 text-secondary">{report.guidance}</p>{report.note && <p className="mt-2 text-sm">{report.note}</p>}</div>)}</div></Card>
 }
 
-function ExercisePanel({ session, exercise, demo, onChange, onConflict }: { session: WorkoutSession; exercise: WorkoutSessionExercise; demo: boolean; onChange: (value: WorkoutSession) => void; onConflict: () => void }) {
+// Read-only exercise knowledge from the approved trainee read route (§30). Collapses
+// silently when unavailable (unstarted / 404) and only renders for a real knowledge
+// payload. Coaching cues here are structured exercise knowledge (not the coach's serif
+// voice, which is reserved for coach-authored prose, §13).
+function ExerciseKnowledge({ versionId }: { versionId: string }) {
+  const scope = useAccountQueryScope()
+  const knowledge = useQuery({ queryKey: [...scope, 'exercise-knowledge', versionId], queryFn: () => api<TraineeExerciseKnowledge>(`/trainee/exercise-versions/${versionId}`), enabled: Boolean(versionId), retry: false, staleTime: 5 * 60 * 1000 })
+  const data = knowledge.data
+  // Only render for a genuine knowledge payload (guards against non-knowledge responses).
+  if (!data || !Array.isArray(data.primary_muscle_groups)) return null
+  const primary = classifyMuscles(data.primary_muscle_groups)
+  const secondary = classifyMuscles(data.secondary_muscle_groups)
+  const image = data.primary_image ?? data.secondary_image
+  return (
+    <div className="mt-5 border-t border-mb-hairline pt-5">
+      <div className="flex items-start gap-4">
+        <span className="grid size-12 shrink-0 place-items-center rounded-mb-inset bg-mb-inset text-mb-ember"><MovementGlyph pattern={data.movement_pattern} className="size-7" /></span>
+        <div className="min-w-0">
+          <Eyebrow className="text-mb-muted">Movement</Eyebrow>
+          <p className="mt-1 font-numeral text-mb-label uppercase tracking-[0.06em] text-mb-secondary">{titleCase(data.movement_pattern)}{data.difficulty ? ` · ${titleCase(data.difficulty)}` : ''}{data.equipment.length ? ` · ${data.equipment.map(titleCase).join(', ')}` : ''}</p>
+        </div>
+      </div>
+      {(primary.length > 0 || secondary.length > 0) && (
+        <div className="mt-4">
+          <MuscleChips primary={primary} secondary={secondary} />
+        </div>
+      )}
+      {data.coaching_cues.length > 0 && (
+        <div className="mt-4">
+          <Eyebrow className="text-mb-muted">Coaching cues</Eyebrow>
+          <ul className="mt-2 space-y-1.5">{data.coaching_cues.map(cue => <li key={cue} className="flex gap-2 text-mb-body text-mb-secondary"><span aria-hidden="true" className="mt-2 size-1 shrink-0 rounded-full bg-mb-ember" />{cue}</li>)}</ul>
+        </div>
+      )}
+      {data.common_mistakes.length > 0 && (
+        <div className="mt-4">
+          <Eyebrow className="text-mb-muted">Common mistakes</Eyebrow>
+          <ul className="mt-2 space-y-1.5">{data.common_mistakes.map(mistake => <li key={mistake} className="flex gap-2 text-mb-body text-mb-secondary"><span aria-hidden="true" className="mt-2 size-1 shrink-0 rounded-full bg-mb-muted" />{mistake}</li>)}</ul>
+        </div>
+      )}
+      {image && (
+        <img src={image.content_url} alt={`${data.name} demonstration`} loading="lazy" className="mt-4 w-full rounded-mb-inset border border-mb-hairline object-cover" />
+      )}
+    </div>
+  )
+}
+
+// Muscle chips honoring the §20 precision law: direct strings read as filled region
+// chips; broad strings ("lower body" / "legs" / "spine") stay visibly broad; unknown /
+// coach free-text renders as plain text with no anatomical highlight, never guessed.
+function MuscleChips({ primary, secondary }: { primary: ReturnType<typeof classifyMuscles>; secondary: ReturnType<typeof classifyMuscles> }) {
+  const chip = (m: ReturnType<typeof classifyMuscles>[number], emphasis: boolean) => {
+    if (m.precision === 'unknown') return <span key={m.label} className="font-numeral text-[0.7rem] uppercase tracking-[0.08em] text-mb-muted">{m.label}</span>
+    const base = 'inline-flex items-center rounded-mb-tag px-2 py-0.5 font-numeral text-[0.7rem] uppercase tracking-[0.08em]'
+    if (m.precision === 'broad') return <span key={m.label} className={`${base} border border-dashed border-mb-hairline text-mb-secondary`}>{m.label}</span>
+    return <span key={m.label} className={`${base} ${emphasis ? 'bg-mb-ember/15 text-mb-ink' : 'bg-mb-inset text-mb-secondary'}`}>{m.label}</span>
+  }
+  return (
+    <div>
+      <Eyebrow className="text-mb-muted">Works</Eyebrow>
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {primary.map(m => chip(m, true))}
+        {secondary.map(m => chip(m, false))}
+      </div>
+    </div>
+  )
+}
+
+function ExercisePanel({ session, exercise, demo, onChange, onConflict, onLogged }: { session: WorkoutSession; exercise: WorkoutSessionExercise; demo: boolean; onChange: (value: WorkoutSession) => void; onConflict: () => void; onLogged: (restSeconds: number | null, nextLabel: string) => void }) {
   const [reason, setReason] = useState('time_constraint')
   const [note, setNote] = useState('')
   const [message, setMessage] = useState('')
@@ -90,16 +212,19 @@ function ExercisePanel({ session, exercise, demo, onChange, onConflict }: { sess
   const loggingDisabled = demo || immutable || exercise.status === 'paused_for_safety'
   const skip = useMutation({ mutationFn: () => api<WorkoutSession>(`/trainee/workout-sessions/${session.id}/exercises/${exercise.id}/skip`, { method: 'POST', body: JSON.stringify({ expected_session_revision: session.revision, reason, note: note || null }) }), onSuccess: onChange, onError: caught => handleError(caught, setMessage, onConflict) })
   const add = useMutation({ mutationFn: () => api<WorkoutSession>(`/trainee/workout-sessions/${session.id}/sets`, { method: 'POST', body: JSON.stringify({ expected_session_revision: session.revision, idempotency_key: crypto.randomUUID(), workout_session_exercise_id: exercise.id, set_type: 'working', status: 'planned' }) }), onSuccess: onChange, onError: caught => handleError(caught, setMessage, onConflict) })
-  return <Card><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-primary">{title(exercise.section)}</p><h2 className="mt-1 text-2xl font-semibold">{exercise.exercise_name}</h2><p className="mt-1 text-sm text-secondary">{title(exercise.tracking_mode)}</p></div><Badge tone={exercise.status === 'skipped' || exercise.status === 'paused_for_safety' || exercise.status === 'safety_stopped' ? 'attention' : exercise.status === 'completed' ? 'positive' : 'neutral'}>{title(exercise.status)}</Badge></div>{exercise.trainee_instructions && <p className="mt-4 text-sm leading-6 text-secondary">{exercise.trainee_instructions}</p>}{exercise.safety_cues.length > 0 && <div className="mt-4 rounded-xl bg-elevated p-4"><p className="text-xs font-bold uppercase tracking-wider text-muted">Safety cues</p><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-secondary">{exercise.safety_cues.map(cue => <li key={cue}>{cue}</li>)}</ul></div>}<div className="mt-5 space-y-4">{exercise.sets.map(item => <SetEditor key={item.id} session={session} item={item} demo={loggingDisabled} onChange={onChange} onConflict={onConflict} />)}</div>{message && <p role="alert" className="mt-3 text-sm text-risk">{message}</p>}<div className="mt-5"><Button variant="secondary" disabled={loggingDisabled} loading={add.isPending} onClick={() => add.mutate()}><Plus aria-hidden="true" className="size-4" />Add set</Button></div><div className="mt-5 border-t pt-5"><Field label="Skip reason">{({ id }) => <SelectInput id={id} value={reason} disabled={demo || immutable} onChange={event => setReason(event.target.value)}><option value="time_constraint">Time constraint</option><option value="equipment_unavailable">Equipment unavailable</option><option value="recovery_concern">Recovery concern</option><option value="discomfort">Discomfort</option><option value="coach_instruction">Coach instruction</option><option value="other">Other</option></SelectInput>}</Field><Field label="Optional skip note">{({ id }) => <TextArea id={id} maxLength={500} value={note} disabled={demo || immutable} onChange={event => setNote(event.target.value)} />}</Field><Button variant="danger" disabled={demo || immutable} loading={skip.isPending} onClick={() => skip.mutate()}><SkipForward aria-hidden="true" className="size-4" />Skip exercise</Button></div></Card>
+  const statusTone = exercise.status === 'skipped' || exercise.status === 'paused_for_safety' || exercise.status === 'safety_stopped' ? 'attention' : exercise.status === 'completed' ? 'positive' : 'neutral'
+  return <div className="rounded-mb-surface border border-mb-hairline bg-mb-surface p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><Eyebrow>{title(exercise.section)}</Eyebrow><h2 className="mt-1.5 text-balance font-display text-2xl uppercase leading-[0.98] tracking-tight text-mb-ink sm:text-3xl">{exercise.exercise_name}</h2><p className="mt-1 font-numeral text-mb-label uppercase tracking-[0.06em] text-mb-secondary">{title(exercise.tracking_mode)}</p></div><Badge tone={statusTone}>{title(exercise.status)}</Badge></div>{exercise.trainee_instructions && <p className="mt-4 text-mb-body leading-6 text-mb-secondary">{exercise.trainee_instructions}</p>}{exercise.safety_cues.length > 0 && <div className="mt-4 rounded-mb-inset bg-mb-inset p-4"><Eyebrow className="text-mb-caution">Safety cues</Eyebrow><ul className="mt-2 space-y-1 text-mb-body text-mb-secondary">{exercise.safety_cues.map(cue => <li key={cue} className="flex gap-2"><span aria-hidden="true" className="mt-2 size-1 shrink-0 rounded-full bg-mb-caution" />{cue}</li>)}</ul></div>}<ExerciseKnowledge versionId={exercise.exercise_version_id} /><div className="mt-5 space-y-3">{exercise.sets.map((item, position) => <SetEditor key={item.id} session={session} item={item} demo={loggingDisabled} onChange={onChange} onConflict={onConflict} onLogged={onLogged} nextLabel={position + 1 < exercise.sets.length ? `Set ${exercise.sets[position + 1].set_number}` : 'Next exercise'} />)}</div>{message && <p role="alert" className="mt-3 text-mb-body text-mb-error">{message}</p>}<div className="mt-5"><Button variant="secondary" disabled={loggingDisabled} loading={add.isPending} onClick={() => add.mutate()}><Plus aria-hidden="true" className="size-4" />Add set</Button></div><div className="mt-5 border-t border-mb-hairline pt-5"><Field label="Skip reason">{({ id }) => <SelectInput id={id} value={reason} disabled={demo || immutable} onChange={event => setReason(event.target.value)}><option value="time_constraint">Time constraint</option><option value="equipment_unavailable">Equipment unavailable</option><option value="recovery_concern">Recovery concern</option><option value="discomfort">Discomfort</option><option value="coach_instruction">Coach instruction</option><option value="other">Other</option></SelectInput>}</Field><Field label="Optional skip note">{({ id }) => <TextArea id={id} maxLength={500} value={note} disabled={demo || immutable} onChange={event => setNote(event.target.value)} />}</Field><Button variant="danger" disabled={demo || immutable} loading={skip.isPending} onClick={() => skip.mutate()}><SkipForward aria-hidden="true" className="size-4" />Skip exercise</Button></div></div>
 }
 
-function SetEditor({ session, item, demo, onChange, onConflict }: { session: WorkoutSession; item: WorkoutSetLog; demo: boolean; onChange: (value: WorkoutSession) => void; onConflict: () => void }) {
+function SetEditor({ session, item, demo, onChange, onConflict, onLogged, nextLabel }: { session: WorkoutSession; item: WorkoutSetLog; demo: boolean; onChange: (value: WorkoutSession) => void; onConflict: () => void; onLogged: (restSeconds: number | null, nextLabel: string) => void; nextLabel: string }) {
   const [values, setValues] = useState<ActualValues>(() => actualValues(item))
   const [state, setState] = useState<SaveState>('idle')
   const [message, setMessage] = useState('')
-  const update = useMutation({ mutationFn: (status: 'completed' | 'skipped') => api<WorkoutSession>(`/trainee/workout-sessions/${session.id}/sets/${item.id}`, { method: 'PUT', body: JSON.stringify({ expected_session_revision: session.revision, status, ...(status === 'completed' ? payload(values) : {}) }) }), onMutate: () => { setState('saving'); setMessage('') }, onSuccess: value => { setState('saved'); onChange(value) }, onError: caught => { if (caught instanceof ApiError && caught.status === 409) { setState('conflict'); onConflict() } else { setState('error'); setMessage(caught instanceof Error ? caught.message : 'Set could not be saved.') } } })
+  const update = useMutation({ mutationFn: (status: 'completed' | 'skipped') => api<WorkoutSession>(`/trainee/workout-sessions/${session.id}/sets/${item.id}`, { method: 'PUT', body: JSON.stringify({ expected_session_revision: session.revision, status, ...(status === 'completed' ? payload(values) : {}) }) }), onMutate: () => { setState('saving'); setMessage('') }, onSuccess: (value, status) => { setState('saved'); onChange(value); if (status === 'completed') onLogged(item.planned_rest_seconds, nextLabel) }, onError: caught => { if (caught instanceof ApiError && caught.status === 409) { setState('conflict'); onConflict() } else { setState('error'); setMessage(caught instanceof Error ? caught.message : 'Set could not be saved.') } } })
   const change = (key: string, value: string) => { setValues(current => ({ ...current, [key]: value })); setState('dirty') }
-  return <div className="rounded-xl border bg-elevated/40 p-4"><div className="flex items-center justify-between gap-2"><div><p className="font-semibold">Set {item.set_number} · {title(item.set_type)}</p><p className="mt-1 text-xs text-muted">{plannedLabel(item)}</p></div><Badge tone={item.status === 'completed' ? 'positive' : item.status === 'skipped' ? 'attention' : 'neutral'}>{item.status}</Badge></div><div className="mt-4 grid gap-3 sm:grid-cols-2">{trackingFields(item, values, change, demo)}</div><p aria-live="polite" className="mt-3 text-xs font-semibold text-muted">{state === 'dirty' ? 'Unsaved changes' : state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved' : state === 'conflict' ? 'Revision conflict' : state === 'error' ? message : 'Ready'}</p><div className="mt-3 flex flex-wrap gap-2"><Button disabled={demo} loading={update.isPending} onClick={() => update.mutate('completed')}><Save aria-hidden="true" className="size-4" />Save completed set</Button><Button variant="secondary" disabled={demo} onClick={() => update.mutate('skipped')}>Skip set</Button></div></div>
+  const target = plannedLabel(item)
+  const statusTone = item.status === 'completed' ? 'positive' : item.status === 'skipped' ? 'attention' : 'neutral'
+  return <div className="rounded-mb-inset bg-mb-inset p-4"><div className="flex items-center justify-between gap-2"><div className="flex items-baseline gap-2.5"><span className="font-numeral text-2xl font-semibold tabular-nums text-mb-ink">{item.set_number}</span><div><p className="font-numeral text-[0.7rem] uppercase tracking-[0.12em] text-mb-secondary">{title(item.set_type)} set</p><p className="mt-0.5 font-numeral text-[0.7rem] uppercase tracking-[0.06em] text-mb-muted">Target · {target}</p></div></div><Badge tone={statusTone}>{item.status}</Badge></div><div className="mt-4 grid gap-3 sm:grid-cols-2">{trackingFields(item, values, change, demo)}</div><p aria-live="polite" className="mt-3 font-numeral text-[0.7rem] uppercase tracking-[0.1em] text-mb-muted">{state === 'dirty' ? 'Unsaved changes' : state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved' : state === 'conflict' ? 'Revision conflict' : state === 'error' ? message : 'Ready'}</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={demo || update.isPending} onClick={() => update.mutate('completed')} className={ctaClassName('training')}><Save aria-hidden="true" className="size-4" />Save completed set</button><Button variant="secondary" disabled={demo} onClick={() => update.mutate('skipped')}>Skip set</Button></div></div>
 }
 
 function FinishPanel({ session, demo, onChange, onConflict }: { session: WorkoutSession; demo: boolean; onChange: (value: WorkoutSession) => void; onConflict: () => void }) {
@@ -111,17 +236,18 @@ function FinishPanel({ session, demo, onChange, onConflict }: { session: Workout
   const [message, setMessage] = useState('')
   const complete = useMutation({ mutationFn: () => api<WorkoutSession>(`/trainee/workout-sessions/${session.id}/complete`, { method: 'POST', body: JSON.stringify({ expected_session_revision: session.revision, actual_duration_minutes: Number(duration), session_rpe: Number(rpe), trainee_note: note || null, confirmed }) }), onSuccess: onChange, onError: caught => handleError(caught, setMessage, onConflict) })
   const end = useMutation({ mutationFn: () => api<WorkoutSession>(`/trainee/workout-sessions/${session.id}/end-incomplete`, { method: 'POST', body: JSON.stringify({ expected_session_revision: session.revision, reason: endReason, note: note || null }) }), onSuccess: onChange, onError: caught => handleError(caught, setMessage, onConflict) })
-  return <Card><h2 className="text-xl font-semibold">Finish workout</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="Actual duration (minutes)">{({ id }) => <TextInput id={id} type="number" min="1" max="1440" value={duration} disabled={demo} onChange={event => setDuration(event.target.value)} />}</Field><Field label="Session RPE (0–10)">{({ id }) => <TextInput id={id} type="number" min="0" max="10" step="0.5" value={rpe} disabled={demo} onChange={event => setRpe(event.target.value)} />}</Field></div><Field label="Trainee note">{({ id }) => <TextArea id={id} maxLength={2000} value={note} disabled={demo} onChange={event => setNote(event.target.value)} />}</Field><label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={confirmed} disabled={demo} onChange={event => setConfirmed(event.target.checked)} />I confirm this workout is ready to complete.</label>{message && <p role="alert" className="mt-3 text-sm text-risk">{message}</p>}<Button className="mt-4 w-full sm:w-auto" disabled={demo || !duration || !rpe || !confirmed} loading={complete.isPending} onClick={() => complete.mutate()}><CheckCircle2 aria-hidden="true" className="size-4" />Complete workout</Button><div className="mt-6 border-t pt-5"><Field label="Reason for ending incomplete">{({ id }) => <SelectInput id={id} value={endReason} disabled={demo} onChange={event => setEndReason(event.target.value)}><option value="time_constraint">Time constraint</option><option value="recovery_concern">Recovery concern</option><option value="discomfort">Discomfort</option><option value="equipment_issue">Equipment issue</option><option value="other">Other</option></SelectInput>}</Field><Button variant="danger" disabled={demo} loading={end.isPending} onClick={() => end.mutate()}><CircleStop aria-hidden="true" className="size-4" />End workout incomplete</Button></div></Card>
+  return <div className="rounded-mb-surface border border-mb-hairline bg-mb-surface p-5"><h2 className="font-display text-xl uppercase tracking-tight text-mb-ink">Finish workout</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="Actual duration (minutes)">{({ id }) => <TextInput id={id} type="number" min="1" max="1440" value={duration} disabled={demo} onChange={event => setDuration(event.target.value)} />}</Field><Field label="Session RPE (0–10)">{({ id }) => <TextInput id={id} type="number" min="0" max="10" step="0.5" value={rpe} disabled={demo} onChange={event => setRpe(event.target.value)} />}</Field></div><Field label="Trainee note">{({ id }) => <TextArea id={id} maxLength={2000} value={note} disabled={demo} onChange={event => setNote(event.target.value)} />}</Field><label className="flex min-h-11 items-center gap-3 text-sm font-semibold text-mb-ink"><input type="checkbox" checked={confirmed} disabled={demo} onChange={event => setConfirmed(event.target.checked)} />I confirm this workout is ready to complete.</label>{message && <p role="alert" className="mt-3 text-mb-body text-mb-error">{message}</p>}<button type="button" className={`mt-4 w-full sm:w-auto ${ctaClassName('training')}`} disabled={demo || !duration || !rpe || !confirmed || complete.isPending} onClick={() => complete.mutate()}><CheckCircle2 aria-hidden="true" className="size-4" />Complete workout</button><div className="mt-6 border-t border-mb-hairline pt-5"><Field label="Reason for ending incomplete">{({ id }) => <SelectInput id={id} value={endReason} disabled={demo} onChange={event => setEndReason(event.target.value)}><option value="time_constraint">Time constraint</option><option value="recovery_concern">Recovery concern</option><option value="discomfort">Discomfort</option><option value="equipment_issue">Equipment issue</option><option value="other">Other</option></SelectInput>}</Field><Button variant="danger" disabled={demo} loading={end.isPending} onClick={() => end.mutate()}><CircleStop aria-hidden="true" className="size-4" />End workout incomplete</Button></div></div>
 }
 
 function CompletionSummary({ session, reports }: { session: WorkoutSession; reports: WorkoutSafetyReport[] }) {
   const exercises = session.exercises
   const sets = exercises.flatMap(item => item.sets)
   const safetyEnded = session.status === 'safety_ended'
-  return <AppShell><div className="mx-auto max-w-3xl space-y-5"><PageHeader eyebrow="FitIntel 360 · Workout summary" title={session.workout_name} description={`${session.program_name} · ${formatDate(session.scheduled_date)}`} /><StatusNotice tone={session.status === 'completed' ? 'positive' : safetyEnded ? 'risk' : 'attention'} title={session.status === 'completed' ? 'Workout completed' : safetyEnded ? 'Workout stopped for safety' : 'Workout ended incomplete'}>{safetyEnded ? 'This session was ended after a safety report and is now immutable. If symptoms are severe, worsening, or continue, seek urgent professional medical assistance.' : 'This execution is now immutable.'}</StatusNotice><ReadinessContextCard context={session.readiness_context} />{reports.length > 0 && <SafetyHistory reports={reports} />}<Card><div className="grid grid-cols-2 gap-4 sm:grid-cols-4"><Metric label="Completed exercises" value={exercises.filter(item => item.status === 'completed').length} /><Metric label="Skipped exercises" value={exercises.filter(item => item.status === 'skipped').length} /><Metric label="Completed sets" value={sets.filter(item => item.status === 'completed').length} /><Metric label="Skipped sets" value={sets.filter(item => item.status === 'skipped').length} /><Metric label="Duration" value={session.actual_duration_minutes ? `${session.actual_duration_minutes} min` : 'Not recorded'} /><Metric label="Session RPE" value={session.session_rpe ?? 'Not recorded'} /></div>{session.trainee_note && <p className="mt-5 text-sm leading-6 text-secondary">{session.trainee_note}</p>}</Card></div></AppShell>
+  return <AppShell><div className="mx-auto max-w-2xl space-y-5 font-structure"><header><Eyebrow>Workout summary</Eyebrow><h1 className="mt-1.5 text-balance font-display text-3xl uppercase leading-[0.95] tracking-tight text-mb-ink sm:text-4xl">{session.workout_name}</h1><p className="mt-2 font-numeral text-mb-label uppercase tracking-[0.06em] text-mb-secondary">{session.program_name} · {formatDate(session.scheduled_date)}</p></header><StatusNotice tone={session.status === 'completed' ? 'positive' : safetyEnded ? 'risk' : 'attention'} title={session.status === 'completed' ? 'Workout completed' : safetyEnded ? 'Workout stopped for safety' : 'Workout ended incomplete'}>{safetyEnded ? 'This session was ended after a safety report and is now immutable. If symptoms are severe, worsening, or continue, seek urgent professional medical assistance.' : 'This execution is now immutable.'}</StatusNotice><ReadinessContextCard context={session.readiness_context} />{reports.length > 0 && <SafetyHistory reports={reports} />}<div className="rounded-mb-surface border border-mb-hairline bg-mb-surface p-5"><div className="grid grid-cols-2 gap-4 sm:grid-cols-4"><Metric label="Completed exercises" value={exercises.filter(item => item.status === 'completed').length} /><Metric label="Skipped exercises" value={exercises.filter(item => item.status === 'skipped').length} /><Metric label="Completed sets" value={sets.filter(item => item.status === 'completed').length} /><Metric label="Skipped sets" value={sets.filter(item => item.status === 'skipped').length} /><Metric label="Duration" value={session.actual_duration_minutes ? `${session.actual_duration_minutes} min` : 'Not recorded'} /><Metric label="Session RPE" value={session.session_rpe ?? 'Not recorded'} /></div>{session.trainee_note && <p className="mt-5 text-mb-body leading-6 text-mb-secondary">{session.trainee_note}</p>}</div></div></AppShell>
 }
 
-function Metric({ label, value }: { label: string; value: string | number }) { return <div><dt className="text-xs text-muted">{label}</dt><dd className="mt-1 font-semibold capitalize">{value}</dd></div> }
+function Metric({ label, value }: { label: string; value: string | number }) { return <div><dt className="font-numeral text-[0.65rem] uppercase tracking-[0.14em] text-mb-muted">{label}</dt><dd className="mt-1 font-numeral text-mb-body font-semibold tabular-nums text-mb-ink">{value}</dd></div> }
+function titleCase(value: string) { return value.replace(/\b\w/g, letter => letter.toUpperCase()) }
 function actualValues(item: WorkoutSetLog): ActualValues { return Object.fromEntries(['actual_repetitions', 'actual_load_original_value', 'actual_load_original_unit', 'actual_assistance_original_value', 'actual_assistance_original_unit', 'actual_duration_seconds', 'actual_distance_value', 'actual_distance_unit', 'actual_rpe', 'actual_rir'].map(key => [key, String(item[key as keyof WorkoutSetLog] ?? '')])) }
 function payload(values: ActualValues) { return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== '').map(([key, value]) => [key, key.endsWith('_unit') ? value : Number(value)])) }
 function plannedLabel(item: WorkoutSetLog) { if (item.planned_repetitions_min) return `${item.planned_repetitions_min}–${item.planned_repetitions_max} reps${item.planned_load_original_value ? ` · ${item.planned_load_original_value} ${item.planned_load_original_unit}` : ''}${item.planned_assistance_original_value ? ` · ${item.planned_assistance_original_value} ${item.planned_assistance_original_unit} assistance` : ''}`; if (item.planned_distance_value) return `${item.planned_distance_value} ${item.planned_distance_unit} · ${item.planned_duration_seconds}s`; return item.planned_duration_seconds ? `${item.planned_duration_seconds}s` : 'Trainee-added set' }
