@@ -37,6 +37,14 @@ export default {
           ember: 'rgb(var(--mb-ember) / <alpha-value>)',
           'ember-hover': 'rgb(var(--mb-ember-hover) / <alpha-value>)',
           'on-ember': 'rgb(var(--mb-on-ember) / <alpha-value>)',
+          // Fixed Iron Editorial anchors — theme-INDEPENDENT (always dark ink / bone).
+          // For fixed-dark surfaces that do not flip with the app theme: the login cover
+          // and Gym Mode's dark instrument ground (C2.1-fidelity / C2.2).
+          'ink-0': 'rgb(var(--mb-ink-0) / <alpha-value>)',
+          'ink-1': 'rgb(var(--mb-ink-1) / <alpha-value>)',
+          'ink-2': 'rgb(var(--mb-ink-2) / <alpha-value>)',
+          bone: 'rgb(var(--mb-bone) / <alpha-value>)',
+          'bone-muted': 'rgb(var(--mb-bone-muted) / <alpha-value>)',
           success: 'rgb(var(--mb-success) / <alpha-value>)',
           caution: 'rgb(var(--mb-caution) / <alpha-value>)',
           error: 'rgb(var(--mb-error) / <alpha-value>)',

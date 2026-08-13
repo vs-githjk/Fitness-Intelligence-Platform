@@ -38,6 +38,8 @@ import {
   StatusNotice,
   TextInput,
 } from '../components/ui'
+import { Eyebrow } from '../components/iron/Editorial'
+import { MovementGlyph } from '../components/iron/MovementGlyph'
 import { formatDate, titleize } from '../lib/format'
 import { checkInSchema } from '../lib/dailyValidation'
 import { greetingFor } from '../lib/today'
@@ -135,19 +137,46 @@ export function TodayPage() {
     return <AppShell morningBrief><MorningBriefToday user={user} score={score.data!} coach={coach.data} workspace={workspace.data} trends={trends.data} baseline={baseline.data} online={online} /></AppShell>
   }
 
-  // Not checked in: the frozen invitation (§9). No metrics, no baseline, no coach
-  // card, no readiness atmosphere before any check-in exists.
+  // Not checked in: the frozen invitation (§9, trainee-today.md). No metrics, no
+  // baseline, no coach card, no readiness atmosphere before any check-in exists — the
+  // whole screen is the one warm invitation, composed as the start of a morning ritual.
   return (
     <AppShell morningBrief>
       <TodaySpine>
-        <StateSurface
-          eyebrow={user ? greetingFor(user.first_name) : undefined}
-          title="Let’s plan your day."
-          body="Two minutes on how you slept and moved, and I’ll tell you exactly how to train today."
-          action={<Link to="/trainee/check-in" className={ctaClassName('filled')}>Start check-in<ArrowRight aria-hidden="true" className="size-4" /></Link>}
-        />
+        <CheckInInvitation greeting={user ? greetingFor(user.first_name) : undefined} />
       </TodaySpine>
     </AppShell>
+  )
+}
+
+// The pre-check-in morning invitation (register: Calm). Frozen copy (greeting →
+// "Let's plan your day." → the two-minute promise → "Start check-in →"); the Iron
+// Editorial upgrade is composition only — display verdict, ember editorial rule, an
+// honest movement-library identity signature (not user data, not scaffolding), and
+// deliberate space so the canvas reads intentional rather than empty. Check-in is a
+// non-training action → indigo filled CTA (never ember).
+function CheckInInvitation({ greeting }: { greeting?: string }) {
+  return (
+    <section aria-labelledby="today-invitation" className="font-structure">
+      {greeting && <Eyebrow className="text-mb-secondary">{greeting}</Eyebrow>}
+      <h1 id="today-invitation" className="mt-3 text-balance font-display text-4xl uppercase leading-[0.95] tracking-tight text-mb-ink sm:text-5xl">
+        Let’s plan your day.
+      </h1>
+      <span aria-hidden="true" className="mt-5 block h-0.5 w-16 bg-mb-ember" />
+      <p className="mt-5 max-w-mb-measure text-mb-body-lg leading-7 text-mb-secondary">
+        Two minutes on how you slept and moved, and I’ll tell you exactly how to train today.
+      </p>
+      <div className="mt-7">
+        <Link to="/trainee/check-in" className={ctaClassName('filled')}>
+          Start check-in<ArrowRight aria-hidden="true" className="size-4" />
+        </Link>
+      </div>
+      <div className="mt-12 flex items-center gap-4 text-mb-muted" aria-hidden="true">
+        {['squat', 'hinge', 'horizontal push', 'vertical pull', 'lunge', 'hang'].map((pattern) => (
+          <MovementGlyph key={pattern} pattern={pattern} className="size-6 shrink-0" strokeWidth={1.75} />
+        ))}
+      </div>
+    </section>
   )
 }
 

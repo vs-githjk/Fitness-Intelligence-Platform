@@ -6,6 +6,7 @@
 
 import { Check } from 'lucide-react'
 import { ReactNode } from 'react'
+import { MovementGlyph } from './iron/MovementGlyph'
 
 // The factual prescription layer inside an athletic object. Facts only — no
 // readiness interpretation, no scores, no status colours, no fake precision.
@@ -57,6 +58,8 @@ export function SessionPoster({
   stat,
   coachMessage,
   action,
+  pattern,
+  eyebrow = 'Today’s session',
   className = '',
 }: {
   name: string
@@ -64,19 +67,28 @@ export function SessionPoster({
   stat?: ReactNode
   coachMessage?: ReactNode
   action?: ReactNode
+  // Real movement_pattern of the session's lead movement, when available (Execution /
+  // C2.2). Drives a data-true glyph watermark (§4.2 traceability). Omitted where the
+  // payload carries no pattern (e.g. Today), so no glyph is ever fabricated.
+  pattern?: string | null
+  eyebrow?: string
   className?: string
 }) {
   return (
-    <div className={`relative overflow-hidden rounded-mb-inset bg-mb-inset font-structure ${className}`}>
+    <div className={`relative overflow-hidden rounded-mb-surface bg-gradient-to-br from-mb-inset to-mb-surface font-structure ${className}`}>
       {/* Ember edge rule — the single training-identity accent, not decoration. */}
       <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-mb-ember" />
-      <div className="p-5 pl-6">
-        <p className="font-numeral text-[0.7rem] uppercase tracking-[0.2em] text-mb-ember">Today’s session</p>
-        <h3 className="mt-2 text-balance font-display text-3xl uppercase leading-[0.95] tracking-tight text-mb-ink sm:text-4xl">{name}</h3>
-        {context && <p className="mt-2 font-numeral text-mb-label uppercase tracking-[0.06em] text-mb-secondary">{context}</p>}
-        {stat && <div className="mt-3">{stat}</div>}
-        {coachMessage && <div className="mt-3">{coachMessage}</div>}
-        {action && <div className="mt-5">{action}</div>}
+      {/* Ghosted movement glyph — identity watermark, only when a real pattern is given. */}
+      {pattern && (
+        <MovementGlyph pattern={pattern} className="pointer-events-none absolute -right-6 -top-6 size-44 text-mb-ember/10" strokeWidth={1.5} />
+      )}
+      <div className="relative p-6 pl-7">
+        <p className="font-numeral text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-mb-ember">{eyebrow}</p>
+        <h3 className="mt-2 text-balance font-display text-4xl uppercase leading-[0.92] tracking-tight text-mb-ink sm:text-5xl">{name}</h3>
+        {context && <p className="mt-2.5 font-numeral text-mb-label uppercase tracking-[0.08em] text-mb-secondary">{context}</p>}
+        {stat && <div className="mt-4">{stat}</div>}
+        {coachMessage && <div className="mt-4">{coachMessage}</div>}
+        {action && <div className="mt-6">{action}</div>}
       </div>
     </div>
   )

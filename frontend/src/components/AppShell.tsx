@@ -21,6 +21,8 @@ import { UserProfile } from '../types'
 import { Avatar } from './Avatar'
 import { Brand } from './Brand'
 import { EnvironmentBanner } from './EnvironmentBanner'
+import { Wordmark } from './iron/Wordmark'
+import { Eyebrow } from './iron/Editorial'
 
 type SubItem = { to: string; label: string }
 type NavItem = {
@@ -116,7 +118,7 @@ function DesktopNav({ items, pathname, trainee }: { items: NavItem[]; pathname: 
           <div key={to}>
             <Link to={to} aria-current={isActive ? 'page' : undefined} className={`relative flex min-h-11 items-center gap-3 rounded-mb-control px-3 text-mb-body font-semibold transition-colors ${isActive ? 'bg-mb-inset text-mb-ink' : 'text-mb-secondary hover:bg-mb-inset hover:text-mb-ink'}`}>
               {isActive && <span aria-hidden="true" className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-mb-ember" />}
-              <Icon aria-hidden="true" className="size-[1.125rem]" />
+              <Icon aria-hidden="true" className={`size-[1.125rem] ${isActive ? 'text-mb-ember' : ''}`} />
               {label}
             </Link>
             {isActive && item.children && item.children.length > 1 && (
@@ -190,7 +192,14 @@ export function AppShell({ children, morningBrief = false }: { children: ReactNo
       <EnvironmentBanner inAppShell />
       <a href="#main-content" className="fixed left-3 top-3 z-50 -translate-y-24 rounded-lg bg-foreground px-4 py-2 text-sm font-semibold text-white transition-transform focus:translate-y-0">Skip to main content</a>
       <aside className={`fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r px-4 py-5 lg:flex ${panel}`}>
-        <Link to={brandHome} className="rounded-xl p-2"><Brand dark={isDark} /></Link>
+        {trainee ? (
+          <Link to={brandHome} className="block rounded-mb-control px-2 py-1">
+            <Wordmark size="md" />
+            <Eyebrow className="mt-1.5 text-mb-muted">Strength intelligence</Eyebrow>
+          </Link>
+        ) : (
+          <Link to={brandHome} className="rounded-xl p-2"><Brand dark={isDark} /></Link>
+        )}
         <DesktopNav items={items} pathname={location.pathname} trainee={trainee} />
         {role === 'coach' && (
           <div className="mt-8 rounded-xl border bg-elevated p-4">
@@ -203,7 +212,11 @@ export function AppShell({ children, morningBrief = false }: { children: ReactNo
             <Avatar name={fullName} src={avatarSrc} size="md" />
             <div className="min-w-0 flex-1">
               <p className={`truncate text-sm font-semibold ${trainee ? 'text-mb-ink' : ''}`}>{user.first_name} {user.last_name}</p>
-              <p className={`truncate text-xs capitalize ${trainee ? 'text-mb-muted' : 'text-muted'}`}>{role}{user.is_demo ? ' demo' : ''}</p>
+              {trainee ? (
+                <p className="truncate font-numeral text-[0.65rem] uppercase tracking-[0.18em] text-mb-muted">{user.is_demo ? 'Demo · trainee' : 'Trainee'}</p>
+              ) : (
+                <p className="truncate text-xs capitalize text-muted">{role}{user.is_demo ? ' demo' : ''}</p>
+              )}
             </div>
             <button type="button" onClick={signOut} aria-label={exitLabel} className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-xs font-semibold ${trainee ? 'text-mb-muted hover:bg-mb-inset hover:text-mb-ink' : 'text-muted hover:bg-elevated hover:text-foreground'}`}>
               <LogOut aria-hidden="true" className="size-[1.125rem]" />{user.is_demo && <span>Exit</span>}
@@ -213,7 +226,7 @@ export function AppShell({ children, morningBrief = false }: { children: ReactNo
       </aside>
       <header className={`sticky top-0 z-20 border-b backdrop-blur lg:hidden ${trainee ? 'border-mb-hairline bg-mb-surface/95' : 'border-border bg-surface/95'}`}>
         <div className="flex min-h-16 items-center justify-between px-4 sm:px-6">
-          <Link to={brandHome} aria-label="FitIntel 360 home"><Brand compact dark={isDark} /></Link>
+          <Link to={brandHome} aria-label="FitIntel 360 home">{trainee ? <Wordmark size="sm" /> : <Brand compact dark={isDark} />}</Link>
           <div className="flex items-center gap-2">
             <Avatar name={fullName} src={avatarSrc} size="sm" />
             <span className={`max-w-28 truncate text-sm font-semibold ${trainee ? 'text-mb-ink' : ''}`}>{user.first_name}</span>
@@ -225,9 +238,9 @@ export function AppShell({ children, morningBrief = false }: { children: ReactNo
       </header>
       <main id="main-content" tabIndex={-1} className={mainBase}>
         {user.is_demo && (
-          <div role="status" aria-label="Demo workspace" className="mb-6 rounded-xl border border-[rgb(var(--status-info-border))] bg-[rgb(var(--status-info-bg))] px-4 py-3 text-sm text-info">
-            <p className="font-semibold text-foreground">Demo workspace — changes are disabled.</p>
-            <p className="mt-1 text-xs text-secondary">All people and health information shown here are synthetic.</p>
+          <div role="status" aria-label="Demo workspace" className={`mb-6 rounded-mb-inset border px-4 py-3 ${trainee ? 'border-mb-hairline bg-mb-inset' : 'border-[rgb(var(--status-info-border))] bg-[rgb(var(--status-info-bg))]'}`}>
+            <p className={`font-numeral text-[0.65rem] uppercase tracking-[0.18em] ${trainee ? 'text-mb-muted' : 'text-info'}`}>Demo workspace · read-only</p>
+            <p className={`mt-1.5 text-sm ${trainee ? 'text-mb-secondary' : 'text-secondary'}`}>All people and health information shown here are synthetic — changes are disabled.</p>
           </div>
         )}
         {detailContext && <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted">Trainee record</p>}
