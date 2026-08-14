@@ -17,13 +17,18 @@ from __future__ import annotations
 
 import csv
 import io
+import zipfile
 from dataclasses import dataclass, field
+from xml.etree import ElementTree as ET
 
 from app.exercise_search import SearchableExercise, normalize, score_query
 
 # Bounds (Part 61): keep imports small and predictable.
 MAX_ROWS = 200
 MAX_BYTES = 512 * 1024  # 512 KB of CSV text
+MAX_XLSX_BYTES = 2 * 1024 * 1024  # 2 MB compressed .xlsx upload
+# Guard against a decompression bomb: refuse a member that expands beyond this.
+MAX_XLSX_MEMBER_BYTES = 24 * 1024 * 1024
 
 # Canonical import columns and the header aliases coaches might reasonably use.
 _COLUMN_ALIASES: dict[str, str] = {
@@ -127,6 +132,124 @@ def parse_csv(content: str) -> ParsedImport:
     except csv.Error:
         result.errors.append("We couldn't read this file as CSV. Check the formatting.")
         return result
+    return _rows_to_parsed(rows)
+
+
+def parse_xlsx(data: bytes) -> ParsedImport:
+    """Parse a coach's .xlsx workbook into the same structured rows as CSV.
+
+    Values-only and dependency-free: an .xlsx is a ZIP of XML, so we read cell values
+    (and shared strings) with the standard library and never evaluate a formula or touch
+    a macro (Part 36). Cached values of formula cells are used as-is; uncalculated
+    formulas read as blank. Bounded by size and row count; never raises on bad data.
+    """
+    result = ParsedImport()
+    if len(data) > MAX_XLSX_BYTES:
+        result.errors.append("This file is too large to import. Keep it under 2 MB.")
+        return result
+    try:
+        rows = _read_xlsx_matrix(data)
+    except _XlsxError as exc:
+        result.errors.append(str(exc))
+        return result
+    except Exception:  # malformed archive/XML — never leak internals to the coach
+        result.errors.append(
+            "We couldn't read this file as an .xlsx workbook. Re-export it, or use CSV."
+        )
+        return result
+    return _rows_to_parsed(rows)
+
+
+class _XlsxError(Exception):
+    """A coach-friendly problem reading an .xlsx workbook."""
+
+
+_SSML = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+
+
+def _col_index(ref: str) -> int:
+    """'A1' -> 0, 'B2' -> 1, 'AA3' -> 26. Falls back to 0 for a missing ref."""
+    letters = "".join(ch for ch in ref if ch.isalpha())
+    index = 0
+    for ch in letters:
+        index = index * 26 + (ord(ch.upper()) - ord("A") + 1)
+    return max(0, index - 1)
+
+
+def _trim_number(text: str) -> str:
+    """Render a spreadsheet number without a spurious '.0' so '3.0' reps stays '3'."""
+    try:
+        number = float(text)
+    except (TypeError, ValueError):
+        return text
+    return str(int(number)) if number.is_integer() else repr(number)
+
+
+def _cell_value(cell: ET.Element, shared: list[str]) -> str:
+    kind = cell.get("t")
+    if kind == "s":  # shared string
+        v = cell.find(f"{_SSML}v")
+        if v is None or v.text is None:
+            return ""
+        try:
+            index = int(v.text)
+        except ValueError:
+            return ""
+        return shared[index] if 0 <= index < len(shared) else ""
+    if kind == "inlineStr":
+        inline = cell.find(f"{_SSML}is")
+        return "".join(t.text or "" for t in inline.iter(f"{_SSML}t")) if inline is not None else ""
+    # number, boolean, or the cached value of a formula cell (the <f> is never evaluated)
+    v = cell.find(f"{_SSML}v")
+    if v is None or v.text is None:
+        return ""
+    if kind == "b":
+        return "1" if v.text == "1" else "0"
+    if kind in (None, "n"):
+        return _trim_number(v.text)
+    return v.text
+
+
+def _read_xlsx_bytes(zf: zipfile.ZipFile, name: str) -> bytes:
+    info = zf.getinfo(name)
+    if info.file_size > MAX_XLSX_MEMBER_BYTES:
+        raise _XlsxError("This workbook is too large to import.")
+    return zf.read(name)
+
+
+def _read_xlsx_matrix(data: bytes) -> list[list[str]]:
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        names = set(zf.namelist())
+        shared: list[str] = []
+        if "xl/sharedStrings.xml" in names:
+            root = ET.fromstring(_read_xlsx_bytes(zf, "xl/sharedStrings.xml"))
+            shared = ["".join(t.text or "" for t in si.iter(f"{_SSML}t")) for si in root]
+        sheets = sorted(
+            n for n in names if n.startswith("xl/worksheets/") and n.endswith(".xml")
+        )
+        if not sheets:
+            raise _XlsxError("This workbook has no worksheet to import.")
+        root = ET.fromstring(_read_xlsx_bytes(zf, sheets[0]))
+    sheet_data = root.find(f"{_SSML}sheetData")
+    if sheet_data is None:
+        return []
+    matrix: list[list[str]] = []
+    for row in sheet_data.findall(f"{_SSML}row"):
+        if len(matrix) > MAX_ROWS + 1:  # header + data; extra rows are ignored later
+            break
+        cells: dict[int, str] = {}
+        for auto, cell in enumerate(row.findall(f"{_SSML}c")):
+            ref = cell.get("r")
+            column = _col_index(ref) if ref else auto
+            cells[column] = _cell_value(cell, shared)
+        width = (max(cells) + 1) if cells else 0
+        matrix.append([cells.get(i, "") for i in range(width)])
+    return matrix
+
+
+def _rows_to_parsed(rows: list[list[str]]) -> ParsedImport:
+    """Shared row → structured-import logic for both CSV and XLSX matrices."""
+    result = ParsedImport()
     rows = [r for r in rows if any(cell.strip() for cell in r)]
     if not rows:
         result.errors.append("The file is empty.")

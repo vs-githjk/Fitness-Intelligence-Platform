@@ -1,10 +1,34 @@
 """End-to-end workout-import preview: parse + match against the coach library."""
 
+import base64
+import io
+import zipfile
+
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import User
+
+
+def _xlsx_b64(header: list[str], rows: list[list[str]]) -> str:
+    ns = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+    strings: list[str] = []
+    body = ""
+    for r, line in enumerate([header, *rows], start=1):
+        cells = ""
+        for c, val in enumerate(line):
+            if val not in strings:
+                strings.append(val)
+            cells += f'<c r="{chr(65 + c)}{r}" t="s"><v>{strings.index(val)}</v></c>'
+        body += f'<row r="{r}">{cells}</row>'
+    sheet = f'<worksheet xmlns="{ns}"><sheetData>{body}</sheetData></worksheet>'
+    shared = f'<sst xmlns="{ns}">' + "".join(f"<si><t>{s}</t></si>" for s in strings) + "</sst>"
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("xl/sharedStrings.xml", shared)
+        z.writestr("xl/worksheets/sheet1.xml", sheet)
+    return base64.b64encode(buf.getvalue()).decode("ascii")
 
 
 def _auth(token: str) -> dict[str, str]:
@@ -61,6 +85,25 @@ def test_preview_matches_known_exercises_and_flags_unknown(client: TestClient, d
     unknown = next(r for r in body["rows"] if r["exercise_name"] == "Totally Unknown Move")
     assert unknown["status"] == "not_found"
     assert unknown["matched"] is None
+
+
+def test_preview_accepts_an_xlsx_workbook(client: TestClient, db: Session):
+    coach = db.scalar(select(User).where(User.email == "coach@example.com"))
+    headers = _auth(_login(client, coach.email, "CoachPass123!"))
+    _publish(client, headers, slug="zz-xlsx-squat", name="Zz Xlsx Squat")
+    content = _xlsx_b64(["exercise", "sets", "reps", "load"], [["Zz Xlsx Squat", "3", "8-10", "40"]])
+    res = client.post(
+        "/api/v1/coach/workout-imports/preview",
+        json={"content": content, "template_name": "Sheet import", "format": "xlsx"},
+        headers=headers,
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["summary"]["total"] == 1
+    matched = body["rows"][0]
+    assert matched["status"] == "matched"
+    assert matched["prescription"]["repetitions_min"] == 8
+    assert matched["prescription"]["target_load_original_value"] == "40"
 
 
 def test_preview_reports_a_friendly_error_for_a_missing_exercise_column(

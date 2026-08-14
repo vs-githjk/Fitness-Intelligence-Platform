@@ -799,10 +799,16 @@ class WorkoutTemplateCreateRequest(WorkoutTemplateDraftData):
 
 
 class WorkoutImportRequest(BaseModel):
-    """Raw CSV text a coach wants to preview as a workout (read-only; creates nothing)."""
+    """A workout a coach wants to preview (read-only; creates nothing).
 
-    content: str = Field(min_length=1, max_length=600_000)
+    For CSV, ``content`` is the raw text. For XLSX, ``content`` is the base64-encoded
+    workbook bytes (binary can't travel as JSON text). The generous upper bound guards
+    the request; the parser enforces the real per-format size limits.
+    """
+
+    content: str = Field(min_length=1, max_length=4_000_000)
     template_name: str | None = Field(default=None, max_length=200)
+    format: Literal["csv", "xlsx"] = "csv"
 
 
 class WorkoutTemplateDraftReplaceRequest(WorkoutTemplateDraftData):

@@ -20,4 +20,4 @@ def preview(
     # Nothing is created here, so no demo guard is needed — a demo coach may preview.
     # The coach resolves matches in the UI, then the normal workout-template create
     # endpoint (demo-protected) builds the draft.
-    return preview_workout_import(db, coach, body.content, body.template_name)
+    return preview_workout_import(db, coach, body.content, body.template_name, body.format)

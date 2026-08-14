@@ -9,12 +9,21 @@ rows in the UI and then the normal workout-template create endpoint builds the d
 
 from __future__ import annotations
 
+import base64
+import binascii
+
 from sqlalchemy.orm import Session
 
 from app.exercise_services import _representative_version, _searchable
 from app.models import ExerciseVersionStatus, User
 from app.repositories.exercises import ExerciseRepository
-from app.workout_import import match_exercise, parse_csv, prescription_for
+from app.workout_import import (
+    ParsedImport,
+    match_exercise,
+    parse_csv,
+    parse_xlsx,
+    prescription_for,
+)
 
 
 def _published_catalog(db: Session, coach: User):
@@ -38,10 +47,23 @@ def _published_catalog(db: Session, coach: User):
     return searchables, meta
 
 
+def _parse(content: str, fmt: str) -> ParsedImport:
+    if fmt == "xlsx":
+        try:
+            data = base64.b64decode(content, validate=True)
+        except (binascii.Error, ValueError):
+            result = ParsedImport()
+            result.errors.append("The uploaded file could not be read. Re-upload it, or use CSV.")
+            return result
+        return parse_xlsx(data)
+    return parse_csv(content)
+
+
 def preview_workout_import(
-    db: Session, coach: User, content: str, template_name: str | None = None
+    db: Session, coach: User, content: str, template_name: str | None = None,
+    fmt: str = "csv",
 ) -> dict:
-    parsed = parse_csv(content)
+    parsed = _parse(content, fmt)
     searchables, meta = _published_catalog(db, coach)
 
     rows_out: list[dict] = []

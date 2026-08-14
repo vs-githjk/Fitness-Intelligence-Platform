@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleHelp, Download, FileUp, Upload, XCircle } from 'lucide-react'
+import { CheckCircle2, CircleHelp, Download, FileSpreadsheet, FileUp, Upload, X, XCircle } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../api'
@@ -57,6 +57,8 @@ export function ImportWorkout() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [content, setContent] = useState('')
+  const [format, setFormat] = useState<'csv' | 'xlsx'>('csv')
+  const [fileName, setFileName] = useState<string | null>(null)
   const [preview, setPreview] = useState<ImportPreview | null>(null)
   // line -> chosen exercise_version_id, '' (unresolved) or 'skip'.
   const [choice, setChoice] = useState<Record<number, string>>({})
@@ -67,7 +69,7 @@ export function ImportWorkout() {
     setBusy(true); setError(null)
     try {
       const result = await api<ImportPreview>('/coach/workout-imports/preview', {
-        method: 'POST', body: JSON.stringify({ content, template_name: name }),
+        method: 'POST', body: JSON.stringify({ content, template_name: name, format }),
       })
       setPreview(result)
       setName(prev => prev || result.template_name)
@@ -85,12 +87,23 @@ export function ImportWorkout() {
     }
   }
 
+  const isXlsx = (file: File) => /\.xlsx$/i.test(file.name) || file.type.includes('spreadsheetml')
+
   async function onFile(file: File | undefined) {
     if (!file) return
-    const text = await file.text()
-    setContent(text)
-    setName(prev => prev || file.name.replace(/\.csv$/i, ''))
+    setName(prev => prev || file.name.replace(/\.(csv|xlsx)$/i, ''))
+    if (isXlsx(file)) {
+      const bytes = new Uint8Array(await file.arrayBuffer())
+      let binary = ''
+      for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+      setContent(btoa(binary)); setFormat('xlsx'); setFileName(file.name)
+    } else {
+      setContent(await file.text()); setFormat('csv'); setFileName(null)
+    }
   }
+
+  function pasteCsv(value: string) { setContent(value); setFormat('csv'); setFileName(null) }
+  function clearFile() { setContent(''); setFormat('csv'); setFileName(null) }
 
   const resolvable = useMemo(() => {
     if (!preview) return []
@@ -129,23 +142,28 @@ export function ImportWorkout() {
     }
   }
 
-  return <ProgrammingShell title="Import a workout" description="Bring a workout you already have as a CSV. Nothing is created until you review the matches and confirm.">
+  return <ProgrammingShell title="Import a workout" description="Bring a workout you already have as a CSV or Excel file. Nothing is created until you review the matches and confirm.">
     <Card className="space-y-4">
       <Field id="import-name" label="Workout name">
         {({ id }) => <TextInput id={id} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Lower Body Strength" />}
       </Field>
       <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-center">
         <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border bg-surface px-4 text-sm font-semibold hover:bg-elevated">
-          <FileUp aria-hidden="true" className="size-4" />Choose CSV file
-          <input type="file" accept=".csv,text/csv" className="sr-only" onChange={e => onFile(e.target.files?.[0])} />
+          <FileUp aria-hidden="true" className="size-4" />Choose CSV or Excel file
+          <input type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="sr-only" onChange={e => onFile(e.target.files?.[0])} />
         </label>
         <a href={`data:text/csv;charset=utf-8,${encodeURIComponent(EXAMPLE_CSV)}`} download="vytal-workout-template.csv" className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
           <Download aria-hidden="true" className="size-4" />Download example template
         </a>
       </div>
-      <Field id="import-content" label="Or paste CSV rows" help="Columns: exercise (required), sets, reps, load, load_unit, duration, distance, distance_unit, rest_seconds, notes.">
-        {({ id, describedBy }) => <textarea id={id} aria-describedby={describedBy} value={content} onChange={e => setContent(e.target.value)} rows={5} className="w-full rounded-xl border bg-surface p-3 font-mono text-xs" placeholder={EXAMPLE_CSV} />}
-      </Field>
+      {format === 'xlsx'
+        ? <div className="flex items-center justify-between gap-3 rounded-xl border bg-elevated px-4 py-3">
+            <span className="flex min-w-0 items-center gap-2 text-sm font-semibold"><FileSpreadsheet aria-hidden="true" className="size-5 shrink-0 text-primary" /><span className="truncate">{fileName}</span><Badge tone="info">Excel</Badge></span>
+            <button type="button" onClick={clearFile} aria-label="Remove file" className="grid size-8 shrink-0 place-items-center rounded-lg text-muted hover:bg-surface hover:text-foreground"><X aria-hidden="true" className="size-4" /></button>
+          </div>
+        : <Field id="import-content" label="Or paste CSV rows" help="Columns: exercise (required), sets, reps, load, load_unit, duration, distance, distance_unit, rest_seconds, notes.">
+            {({ id, describedBy }) => <textarea id={id} aria-describedby={describedBy} value={content} onChange={e => pasteCsv(e.target.value)} rows={5} className="w-full rounded-xl border bg-surface p-3 font-mono text-xs" placeholder={EXAMPLE_CSV} />}
+          </Field>}
       <div className="flex justify-end">
         <Button onClick={runPreview} loading={busy && !preview} disabled={!content.trim()}><Upload aria-hidden="true" className="size-4" />Preview import</Button>
       </div>

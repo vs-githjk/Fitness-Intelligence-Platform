@@ -80,17 +80,24 @@ Program references never follow a template root's current version. Publishing a 
 therefore does not rewrite existing program history. Archived template roots remain readable
 through already-published programs but cannot be added to a new or replacement program draft.
 
-## Workout import (CSV)
+## Workout import (CSV / Excel)
 
-A coach can bring a workout they already have as a CSV instead of building it from
-scratch. `POST /api/v1/coach/workout-imports/preview` accepts `{content, template_name}`
-and returns a **review-before-save** preview — it creates nothing.
+A coach can bring a workout they already have as a CSV **or `.xlsx` Excel workbook**
+instead of building it from scratch. `POST /api/v1/coach/workout-imports/preview` accepts
+`{content, template_name, format}` (`format` is `csv` or `xlsx`) and returns a
+**review-before-save** preview — it creates nothing.
 
 - **Format.** A header row with at least an `exercise` column; optional `sets`, `reps`
   (e.g. `8` or `8-10`), `load`, `load_unit`, `duration` (`45` or `1:30`), `distance`,
   `distance_unit`, `rest_seconds`, `notes`. Header aliases are accepted (`name`→exercise,
-  `weight`→load, `time`→duration, …). Bounded to 200 rows / 512 KB with coach-friendly
-  errors (never parser stack traces).
+  `weight`→load, `time`→duration, …). CSV is bounded to 200 rows / 512 KB; XLSX to 2 MB
+  compressed (with a per-member decompression-bomb guard). Coach-friendly errors only —
+  never parser stack traces.
+- **XLSX safety.** An `.xlsx` is parsed **values-only** with the Python standard library
+  (`zipfile` + `ElementTree`): cell values and shared strings are read, formulas are never
+  evaluated (cached values are used as-is; uncalculated formulas read blank) and macros are
+  never touched. `content` carries the workbook as base64; the same deterministic matching
+  and prescription mapping then apply. No third-party spreadsheet dependency is added.
 - **Matching** reuses the deterministic exercise search engine over the coach's visible
   **published** library only (so it never matches another coach's private exercise). An
   exact name match is `matched`; anything else is `needs_review` with ranked candidates for

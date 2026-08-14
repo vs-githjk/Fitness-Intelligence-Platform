@@ -65,4 +65,25 @@ describe('ImportWorkout', () => {
     expect(createBody!.exercises.map(e => e.exercise_version_id)).toEqual(['v1', 'v2'])
     expect(createBody!.exercises[0].sets).toHaveLength(3)
   })
+
+  it('uploads an .xlsx file as base64 with the xlsx format flag', async () => {
+    let previewBody: { content: string; format: string } | undefined
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes('/workout-imports/preview')) { previewBody = JSON.parse(String(init?.body)); return Promise.resolve(new Response(JSON.stringify(PREVIEW), { status: 200, headers: { 'Content-Type': 'application/json' } })) }
+      return Promise.resolve(new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    }))
+
+    render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={['/coach/programming/import']}><AuthProvider><Routes>
+      <Route path="/coach/programming/import" element={<ImportWorkout />} />
+    </Routes></AuthProvider></MemoryRouter></QueryClientProvider>)
+
+    const file = new File([new Uint8Array([80, 75, 3, 4, 1, 2, 3])], 'lower-body.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    fireEvent.change(screen.getByLabelText('Choose CSV or Excel file'), { target: { files: [file] } })
+    expect(await screen.findByText('lower-body.xlsx')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Preview import' }))
+
+    expect(await screen.findByText('1 matched · 1 to review · 1 not found')).toBeVisible()
+    expect(previewBody!.format).toBe('xlsx')
+    expect(previewBody!.content).toBe(btoa(String.fromCharCode(80, 75, 3, 4, 1, 2, 3)))
+  })
 })
