@@ -27,8 +27,14 @@ from app.exercise_search import SearchableExercise, normalize, score_query
 MAX_ROWS = 200
 MAX_BYTES = 512 * 1024  # 512 KB of CSV text
 MAX_XLSX_BYTES = 2 * 1024 * 1024  # 2 MB compressed .xlsx upload
-# Guard against a decompression bomb: refuse a member that expands beyond this.
+# Decompression-bomb guards: a single member, the whole archive's uncompressed total, and
+# the number of entries are all bounded so a tiny upload can't expand without limit.
 MAX_XLSX_MEMBER_BYTES = 24 * 1024 * 1024
+MAX_XLSX_TOTAL_UNCOMPRESSED = 48 * 1024 * 1024
+MAX_XLSX_ENTRIES = 512
+# A workout has a handful of columns; ignore anything past this so a cell reference like
+# "XFD1" (column 16384) can't force a giant sparse row to be materialized.
+MAX_XLSX_COLS = 64
 
 # Canonical import columns and the header aliases coaches might reasonably use.
 _COLUMN_ALIASES: dict[str, str] = {
@@ -210,6 +216,20 @@ def _cell_value(cell: ET.Element, shared: list[str]) -> str:
     return v.text
 
 
+def _reject_dtd(raw: bytes) -> None:
+    """Refuse any XML that declares a DTD or entities. Valid OOXML never does; rejecting
+    it defuses XXE and internal-entity ("billion laughs") expansion before parsing. A DTD
+    must precede the root element, so a bounded prefix scan is sufficient and cheap."""
+    head = raw[:65536].lower()
+    if b"<!doctype" in head or b"<!entity" in head:
+        raise _XlsxError("This workbook contains unsupported XML and was not imported.")
+
+
+def _parse_xml(raw: bytes) -> ET.Element:
+    _reject_dtd(raw)
+    return ET.fromstring(raw)
+
+
 def _read_xlsx_bytes(zf: zipfile.ZipFile, name: str) -> bytes:
     info = zf.getinfo(name)
     if info.file_size > MAX_XLSX_MEMBER_BYTES:
@@ -217,19 +237,28 @@ def _read_xlsx_bytes(zf: zipfile.ZipFile, name: str) -> bytes:
     return zf.read(name)
 
 
+def _guard_archive(zf: zipfile.ZipFile) -> None:
+    infos = zf.infolist()
+    if len(infos) > MAX_XLSX_ENTRIES:
+        raise _XlsxError("This workbook has too many parts to import.")
+    if sum(info.file_size for info in infos) > MAX_XLSX_TOTAL_UNCOMPRESSED:
+        raise _XlsxError("This workbook is too large to import.")
+
+
 def _read_xlsx_matrix(data: bytes) -> list[list[str]]:
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        _guard_archive(zf)
         names = set(zf.namelist())
         shared: list[str] = []
         if "xl/sharedStrings.xml" in names:
-            root = ET.fromstring(_read_xlsx_bytes(zf, "xl/sharedStrings.xml"))
+            root = _parse_xml(_read_xlsx_bytes(zf, "xl/sharedStrings.xml"))
             shared = ["".join(t.text or "" for t in si.iter(f"{_SSML}t")) for si in root]
         sheets = sorted(
             n for n in names if n.startswith("xl/worksheets/") and n.endswith(".xml")
         )
         if not sheets:
             raise _XlsxError("This workbook has no worksheet to import.")
-        root = ET.fromstring(_read_xlsx_bytes(zf, sheets[0]))
+        root = _parse_xml(_read_xlsx_bytes(zf, sheets[0]))
     sheet_data = root.find(f"{_SSML}sheetData")
     if sheet_data is None:
         return []
@@ -241,6 +270,8 @@ def _read_xlsx_matrix(data: bytes) -> list[list[str]]:
         for auto, cell in enumerate(row.findall(f"{_SSML}c")):
             ref = cell.get("r")
             column = _col_index(ref) if ref else auto
+            if column >= MAX_XLSX_COLS:  # ignore far-right columns (e.g. a stray "XFD1")
+                continue
             cells[column] = _cell_value(cell, shared)
         width = (max(cells) + 1) if cells else 0
         matrix.append([cells.get(i, "") for i in range(width)])
