@@ -12,7 +12,10 @@ import type { Role } from './types'
 export type ThemePreference = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
-export const THEME_STORAGE_KEY = 'fitintel-theme'
+export const THEME_STORAGE_KEY = 'vytal-theme'
+// Retired brand key. Read once and migrated forward so the rename does not silently
+// discard a user's saved theme preference (see getStoredThemePreference).
+const LEGACY_THEME_STORAGE_KEY = 'fitintel-theme'
 export const DEFAULT_THEME_PREFERENCE: ThemePreference = 'light'
 
 const PREFERENCES: readonly ThemePreference[] = ['light', 'dark', 'system']
@@ -70,7 +73,20 @@ export function getStoredThemePreference(
   if (!storage) return null
   try {
     const raw = storage.getItem(THEME_STORAGE_KEY)
-    return isThemePreference(raw) ? raw : null
+    if (isThemePreference(raw)) return raw
+    // One-time migration from the retired brand key, so an existing user keeps their
+    // saved theme across the Vytal rename instead of reverting to the role default.
+    const legacy = storage.getItem(LEGACY_THEME_STORAGE_KEY)
+    if (isThemePreference(legacy)) {
+      try {
+        storage.setItem(THEME_STORAGE_KEY, legacy)
+        storage.removeItem(LEGACY_THEME_STORAGE_KEY)
+      } catch {
+        // Non-fatal: the value still applies for this session even if the copy fails.
+      }
+      return legacy
+    }
+    return null
   } catch {
     return null
   }

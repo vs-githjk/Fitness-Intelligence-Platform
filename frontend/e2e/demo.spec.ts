@@ -26,16 +26,16 @@ test('real coach roster never survives sign-out into the coach demo', async ({ p
 test('visitor explores read-only trainee and coach demo workspaces', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 })
   await page.goto('/login')
-  await expect(page).toHaveTitle('FitIntel 360')
+  await expect(page).toHaveTitle('Vytal')
   // The front door now carries the typographic Iron Editorial wordmark, not the raster
   // logo (C2.1). At mobile width the in-form wordmark link is the visible brand mark.
-  await expect(page.getByRole('link', { name: 'FitIntel 360' }).last()).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Vytal' }).last()).toBeVisible()
   await page.getByRole('link', { name: 'Explore Demo' }).click()
   await expect(page.getByRole('heading', { name: 'Explore the public demo' })).toBeVisible()
   await page.getByRole('button', { name: 'View as Trainee' }).click()
   await expect(page).toHaveURL(/\/trainee\/today$/)
   // Trainee shell masthead is the typographic wordmark (C2.1), reached via the home link.
-  await expect(page.getByRole('link', { name: 'FitIntel 360 home' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Vytal home' })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1)
   await expect(page.getByRole('status', { name: 'Demo workspace' })).toContainText('changes are disabled')
   // Morning Brief: coach presence is authorship (name), not a contact card.

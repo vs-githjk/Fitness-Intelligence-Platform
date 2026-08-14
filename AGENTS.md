@@ -1,15 +1,15 @@
 # AGENTS.md — Contributor and agent guidance
 
 This file orients any contributor — Claude Code, Codex, other coding agents, and
-humans — working in the FitIntel 360 repository. Read it before editing.
+humans — working in the Vytal repository. Read it before editing.
 
 > The repository and its tests are the source of truth. This document summarizes
 > conventions; when it disagrees with the code, the code wins and this file
 > should be corrected in a documentation change.
 
-## What FitIntel 360 is
+## What Vytal is
 
-FitIntel 360 is the user-facing brand for the Fitness Intelligence Platform: a
+Vytal is the user-facing brand for the Fitness Intelligence Platform: a
 role-aware coaching web application that combines an explainable baseline Health
 Index with deterministic daily recovery/activity/nutrition-compliance/readiness
 and trend intelligence, plus a Workout Intelligence layer (programming,

@@ -1,7 +1,7 @@
 # Product principles and boundaries
 
 These principles constrain every feature, calculation, and piece of copy in
-FitIntel 360. They are binding product contracts, not aspirations. When a proposed
+Vytal. They are binding product contracts, not aspirations. When a proposed
 change conflicts with a principle, the change needs an explicit approved decision
 (see [decisions/README.md](decisions/README.md)) — not a silent exception.
 
@@ -24,7 +24,7 @@ Worked, per-screen applications of these principles live under
 
 The frozen visual identity is
 [design/visual-identity-v2-iron-editorial.md](design/visual-identity-v2-iron-editorial.md)
-(Iron Editorial, approved 2026-08-12). Its north star: **FitIntel should feel like
+(Iron Editorial, approved 2026-08-12). Its north star: **Vytal should feel like
 premium strength-training software with serious intelligence and a real coach behind it —
 training should be seen, not merely described.** That document carries the binding visual/
 product laws (training seen not described; implementation vocabulary vs. user intent;
@@ -34,7 +34,7 @@ presentation; it does not relax any boundary principle below.
 
 ### Guidance over metrics
 
-- **Guidance is the product; metrics justify it.** Users open FitIntel 360 to learn
+- **Guidance is the product; metrics justify it.** Users open Vytal to learn
   what to do, not to read numbers. Every screen leads with a recommendation or next
   action; scores, charts, and breakdowns exist to explain and support it.
 - **Guidance wins conflicts.** When presenting more metrics competes with presenting

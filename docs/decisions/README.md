@@ -1,6 +1,6 @@
 # Decision log
 
-Lightweight record of major accepted product and platform contracts for FitIntel
+Lightweight record of major accepted product and platform contracts for Vytal
 360. These are the durable decisions that constrain future work; they are
 implemented in the code and detailed in the linked documents. Do not rewrite
 historical facts — supersede a decision with a new dated entry rather than editing

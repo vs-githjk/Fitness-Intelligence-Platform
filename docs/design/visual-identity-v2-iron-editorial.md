@@ -1,4 +1,4 @@
-# FitIntel Visual Identity v2 — Iron Editorial — Implementation Authority
+# Vytal Visual Identity v2 — Iron Editorial — Implementation Authority
 
 > **Status:** CANONICAL · FROZEN (founder/product sign-off 2026-08-12).
 > **Role:** the single design authority Experience Cycle 2 implements from.
@@ -134,7 +134,7 @@ Exploration, the Iron Editorial Visual Convergence, and the founder/product sign
 
 ## 2. North star — `[FROZEN]`
 
-**FitIntel should feel like premium strength-training software with serious
+**Vytal should feel like premium strength-training software with serious
 intelligence and a real coach behind it.**
 
 Athletic energy originates in training, but its visual identity should permeate the
@@ -321,7 +321,7 @@ weight combination independently meets the required threshold (§24).
 
 ## 11. Iron Line illustration system — `[FROZEN]`
 
-FitIntel's owned illustration direction: line-drawn, geometric, on one grid, in the
+Vytal's owned illustration direction: line-drawn, geometric, on one grid, in the
 identity's grade. It represents *training information*. Three families:
 
 1. **Movement-pattern glyphs** — one mark per `movement_pattern` value; the starter

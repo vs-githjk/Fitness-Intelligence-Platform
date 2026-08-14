@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a defect in FitIntel 360
+about: Report a defect in Vytal
 title: "[Bug] "
 labels: ["bug", "needs-triage"]
 ---

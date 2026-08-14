@@ -226,7 +226,7 @@ export function AppShell({ children, morningBrief = false }: { children: ReactNo
       </aside>
       <header className={`sticky top-0 z-20 border-b backdrop-blur lg:hidden ${trainee ? 'border-mb-hairline bg-mb-surface/95' : 'border-border bg-surface/95'}`}>
         <div className="flex min-h-16 items-center justify-between px-4 sm:px-6">
-          <Link to={brandHome} aria-label="FitIntel 360 home">{trainee ? <Wordmark size="sm" /> : <Brand compact dark={isDark} />}</Link>
+          <Link to={brandHome} aria-label="Vytal home">{trainee ? <Wordmark size="sm" /> : <Brand compact dark={isDark} />}</Link>
           <div className="flex items-center gap-2">
             <Avatar name={fullName} src={avatarSrc} size="sm" />
             <span className={`max-w-28 truncate text-sm font-semibold ${trainee ? 'text-mb-ink' : ''}`}>{user.first_name}</span>

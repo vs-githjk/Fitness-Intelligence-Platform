@@ -48,8 +48,12 @@ from app.workout_template_services import (
 )
 
 # Stable, non-login identity for the account that owns the curated starter library.
+# The email is an internal sentinel used as the lookup key for the system account in
+# already-seeded databases; it is never shown to users, so it is deliberately left on
+# the retired internal domain to avoid breaking lookups against existing data. The
+# display name is user-facing and carries the Vytal brand.
 SYSTEM_LIBRARY_EMAIL = "system.library@fitintel.internal"
-SYSTEM_LIBRARY_DISPLAY_NAME = "FitIntel Starter Library"
+SYSTEM_LIBRARY_DISPLAY_NAME = "Vytal Starter Library"
 
 _LEVELS = ("beginner", "intermediate", "advanced")
 PREVIEW_DISCLAIMER = (

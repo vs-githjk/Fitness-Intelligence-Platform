@@ -1,7 +1,7 @@
 {
-  "name": "FitIntel 360",
-  "short_name": "FitIntel 360",
-  "description": "Explainable fitness intelligence for coaches and trainees.",
+  "name": "Vytal",
+  "short_name": "Vytal",
+  "description": "Coaching software that makes excellent training easy to program and beautiful to execute.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8f7f6",

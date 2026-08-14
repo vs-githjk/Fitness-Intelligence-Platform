@@ -74,7 +74,7 @@ def reset_password(db: Session, email: str, new_password: str | None = None) -> 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Reset a FitIntel 360 login account's password (operator tool)."
+        description="Reset a Vytal login account's password (operator tool)."
     )
     parser.add_argument("--email", required=True, help="Email of the account to reset.")
     parser.add_argument(

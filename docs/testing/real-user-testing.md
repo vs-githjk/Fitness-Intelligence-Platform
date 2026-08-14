@@ -1,6 +1,6 @@
 # Real-user testing guide
 
-This guide governs controlled testing of FitIntel 360 with a small set of real
+This guide governs controlled testing of Vytal with a small set of real
 (non-demo) test users, running alongside ongoing development. It complements the
 synthetic [private-beta plan](private-beta-plan.md); where that plan describes a
 synthetic-only cohort, this guide covers the current small real-tester setup.
@@ -38,7 +38,7 @@ and does not authorize new AI, medical, or autonomous behavior.
 1. The coach registers with the backend-gated coach registration code (never
    shared in issues, screenshots, or chat) and signs in.
 2. The coach creates single-use trainee invitations and shares each code/link
-   privately with the intended tester (FitIntel 360 does not send invitation
+   privately with the intended tester (Vytal does not send invitation
    emails).
 3. Each trainee redeems their own invitation, completes onboarding, and is
    assigned to the coach.
@@ -133,7 +133,7 @@ Before a tester enters real information, make clear that:
 
 ## Emergency / support disclaimer
 
-FitIntel 360 is not a medical or emergency service. It does not monitor users, and
+Vytal is not a medical or emergency service. It does not monitor users, and
 safety reports are not watched in real time. For any medical concern, injury, or
 emergency, testers should seek appropriate professional or emergency help
 independently of this product.

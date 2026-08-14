@@ -1,6 +1,6 @@
 # Design authority index
 
-Per-screen and system design authorities for FitIntel 360. Read these alongside the
+Per-screen and system design authorities for Vytal. Read these alongside the
 binding [product-principles.md](../product-principles.md) before changing any visual
 surface.
 

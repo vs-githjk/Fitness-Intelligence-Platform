@@ -1,6 +1,6 @@
-# FitIntel 360
+# Vytal
 
-FitIntel 360 is the user-facing brand for the Fitness Intelligence Platform repository.
+Vytal is the user-facing brand for the Fitness Intelligence Platform repository.
 
 A role-aware coaching application that combines an explainable baseline Health Index with deterministic daily recovery, activity, nutrition-compliance, readiness, and longitudinal trend intelligence.
 
@@ -27,7 +27,7 @@ The responsive interface uses role-specific navigation, reusable semantic compon
 - [Design system and interaction rules](docs/design-system.md)
 - [Desktop and mobile visual verification](docs/screenshots)
 - Trainee routes: Today with current coach details, atomic daily check-in, Progress, onboarding, submitted-assessment review, assigned Program calendar, resumable workout execution, readiness context, workout safety reporting, and a read-only Workouts page with deterministic training-load, adherence, and recorded-best analytics
-- Coach routes: roster overview, private single-use trainee invitations, longitudinal trainee review, read-only workout session review with training-load and adherence analytics, Programming authoring, and date-only Program assignment. FitIntel 360 does not deliver invitation emails; coaches copy and share the one-time code or link manually.
+- Coach routes: roster overview, private single-use trainee invitations, longitudinal trainee review, read-only workout session review with training-load and adherence analytics, Programming authoring, and date-only Program assignment. Vytal does not deliver invitation emails; coaches copy and share the one-time code or link manually.
 - Public demo: backend-issued, short-lived coach or trainee sessions over a deterministic synthetic workspace; demo users are read-only
 
 ## Documentation

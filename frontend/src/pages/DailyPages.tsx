@@ -90,7 +90,7 @@ export function CoachRelationshipCard({ relationship, loading = false, error = f
   }
 
   const name = relationship.coach_name?.trim() || 'Assigned coach'
-  return <Card as="section" aria-labelledby="coach-relationship-heading" className="p-4"><div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><Avatar name={name} src={relationship.coach_avatar_url} size="lg" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 id="coach-relationship-heading" className="font-semibold">{demo ? 'Synthetic demo coach' : 'Your coach'}</h2><Badge tone={demo ? 'info' : 'positive'}>{demo ? 'Demo' : 'Connected'}</Badge></div><p className="mt-0.5 truncate text-sm font-medium">{name}</p>{relationship.coach_email && <a href={`mailto:${relationship.coach_email}`} aria-label={`Email ${name} outside FitIntel 360`} className="block break-all text-sm text-primary underline-offset-4 hover:underline">{relationship.coach_email}</a>}</div></div><p className="max-w-md text-xs leading-5 text-muted sm:text-right">{demo ? 'This is sample information from the read-only demo workspace.' : 'Connected through your current coaching assignment.'}</p></div></Card>
+  return <Card as="section" aria-labelledby="coach-relationship-heading" className="p-4"><div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><Avatar name={name} src={relationship.coach_avatar_url} size="lg" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 id="coach-relationship-heading" className="font-semibold">{demo ? 'Synthetic demo coach' : 'Your coach'}</h2><Badge tone={demo ? 'info' : 'positive'}>{demo ? 'Demo' : 'Connected'}</Badge></div><p className="mt-0.5 truncate text-sm font-medium">{name}</p>{relationship.coach_email && <a href={`mailto:${relationship.coach_email}`} aria-label={`Email ${name} outside Vytal`} className="block break-all text-sm text-primary underline-offset-4 hover:underline">{relationship.coach_email}</a>}</div></div><p className="max-w-md text-xs leading-5 text-muted sm:text-right">{demo ? 'This is sample information from the read-only demo workspace.' : 'Connected through your current coaching assignment.'}</p></div></Card>
 }
 
 // A calm 640px spine wrapper shared by the non-plan Today states (invitation,
@@ -125,7 +125,7 @@ export function TodayPage() {
 
   // There is no persisted query cache, so a reload while offline has nothing to show.
   if (!online && !coreData && (coreErrored || coreLoading)) {
-    return <AppShell morningBrief><TodaySpine><StateSurface icon={WifiOff} title="You’re offline" body="We can’t reach FitIntel right now. Reconnect and we’ll load today’s guidance." action={<PrimaryCTA onClick={retryCore}>Try again</PrimaryCTA>} /></TodaySpine></AppShell>
+    return <AppShell morningBrief><TodaySpine><StateSurface icon={WifiOff} title="You’re offline" body="We can’t reach Vytal right now. Reconnect and we’ll load today’s guidance." action={<PrimaryCTA onClick={retryCore}>Try again</PrimaryCTA>} /></TodaySpine></AppShell>
   }
   if (coreLoading) return <AppShell morningBrief><GhostPlan /></AppShell>
   if (coreErrored) {

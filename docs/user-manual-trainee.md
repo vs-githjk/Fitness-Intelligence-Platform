@@ -82,7 +82,7 @@ The invitation identifies the issuing coach. Successful registration consumes th
 
 ## 3. Sign in
 
-![FitIntel 360 sign-in page](screenshots/manual/login-desktop.png)
+![Vytal sign-in page](screenshots/manual/login-desktop.png)
 
 ### Procedure
 
@@ -515,7 +515,7 @@ The service also authorizes the assigned coach to retrieve the underlying date-b
 
 Coaches have read-only daily endpoints in the current implementation. They cannot edit your check-ins, change your submitted assessment, write a note into your record, resolve alerts through the interface, or send a message. They can assign a published Program version, which creates a read-only date schedule for you.
 
-The **Your coach** card on **Today** shows whether a coaching assignment is active, plus the available coach name, photo, and email. Selecting the email uses your device's external email application; FitIntel 360 has no in-app messaging. The relationship does not mean the coach continuously monitors the application, will respond immediately, holds verified credentials, or provides medical supervision. In the public demo, this card is explicitly labeled as synthetic sample information.
+The **Your coach** card on **Today** shows whether a coaching assignment is active, plus the available coach name, photo, and email. Selecting the email uses your device's external email application; Vytal has no in-app messaging. The relationship does not mean the coach continuously monitors the application, will respond immediately, holds verified credentials, or provides medical supervision. In the public demo, this card is explicitly labeled as synthetic sample information.
 
 Your own profile and photo are visible to your actively assigned coach and to you. If your coaching assignment is not active, your profile and photo are not shared. No unrelated coach or trainee can see them. See [Your profile, photo, and goals](#12c-your-profile-photo-and-goals).
 
@@ -597,7 +597,7 @@ table, and analytics never change your program, schedule, sets, or loads. See
 Open **Profile** to make your account feel like yours. Everything here is
 self-declared — nothing is verified.
 
-- **Preferred display name** — how your name appears across FitIntel 360. It defaults
+- **Preferred display name** — how your name appears across Vytal. It defaults
   to your account name when empty.
 - **Bio** — a short description of yourself. Avoid sensitive personal or health
   details.

@@ -1,6 +1,6 @@
 # Profiles and avatars
 
-FitIntel 360 exposes a polished, user-facing profile experience built directly on
+Vytal exposes a polished, user-facing profile experience built directly on
 the existing identity (`UserProfile`/`UserPreferences`) and media (`MediaAsset`)
 infrastructure. This phase adds no new storage subsystem and no second upload
 pipeline — it surfaces what already exists through role-aware pages and a single,

@@ -58,8 +58,8 @@ describe('role-aware registration', () => {
   it('does not ask for a role during login', () => {
     renderPage(<LoginPage />)
     // The front door now carries the typographic Iron Editorial wordmark (cover +
-    // mobile), not the raster logo — both expose the "FitIntel 360" accessible name.
-    expect(screen.getAllByLabelText('FitIntel 360')).toHaveLength(2)
+    // mobile), not the raster logo — both expose the "Vytal" accessible name.
+    expect(screen.getAllByLabelText('Vytal')).toHaveLength(2)
     expect(screen.getByLabelText('Email address')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.queryByText('What type of account are you creating?')).not.toBeInTheDocument()

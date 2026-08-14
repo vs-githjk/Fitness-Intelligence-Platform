@@ -1,6 +1,6 @@
 # Domain glossary
 
-Consistent definitions for FitIntel 360 domain terms. Use these terms — and only
+Consistent definitions for Vytal domain terms. Use these terms — and only
 these meanings — in code, UI copy, docs, and issues. See
 [product-principles.md](product-principles.md) for the boundaries behind them.
 

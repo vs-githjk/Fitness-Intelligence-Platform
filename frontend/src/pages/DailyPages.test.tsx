@@ -84,7 +84,7 @@ describe('trainee coach relationship', () => {
     render(<CoachRelationshipCard relationship={{ assignment_status: 'active', coach_name: 'Maya Coach', coach_email: 'maya@example.com' }} />)
     expect(screen.getByRole('heading', { name: 'Your coach' })).toBeVisible()
     expect(screen.getByText('Maya Coach')).toBeVisible()
-    expect(screen.getByRole('link', { name: 'Email Maya Coach outside FitIntel 360' })).toHaveAttribute('href', 'mailto:maya@example.com')
+    expect(screen.getByRole('link', { name: 'Email Maya Coach outside Vytal' })).toHaveAttribute('href', 'mailto:maya@example.com')
     expect(screen.getByText('Connected through your current coaching assignment.')).toBeVisible()
   })
 

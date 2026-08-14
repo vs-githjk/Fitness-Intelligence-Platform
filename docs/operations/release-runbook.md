@@ -1,6 +1,6 @@
 # Release runbook
 
-The end-to-end process for shipping a FitIntel 360 release. v0.5.0 (Workout
+The end-to-end process for shipping a Vytal release. v0.5.0 (Workout
 Intelligence) is used as the completed worked example; the steps apply to any
 version. Do not treat v0.5.0 as the only supported version.
 
@@ -64,7 +64,7 @@ post-completion correction deferred). Update the changelog if one exists.
 
 ## 6. Release commit
 
-Create exactly one commit `chore: prepare FitIntel 360 vX.Y.Z release` containing
+Create exactly one commit `chore: prepare Vytal vX.Y.Z release` containing
 only version updates, release notes, changelog, documentation alignment, and any
 narrow release-blocking fixes (with focused tests) found in the audit. No new
 product features. No `Co-Authored-By` trailer.
@@ -103,7 +103,7 @@ pass/fail.
 Only after the release commit is pushed, deployment succeeds, hosted verification
 passes, version and migration head are confirmed, the working tree is clean, and
 `origin/main == HEAD`: create an annotated tag `vX.Y.Z` on the release commit with
-message `FitIntel 360 vX.Y.Z — <milestone>` and push it. Do not create the tag
+message `Vytal vX.Y.Z — <milestone>` and push it. Do not create the tag
 before hosted verification. Do not move or recreate an existing tag.
 
 ## Rollback decision points

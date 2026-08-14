@@ -1,9 +1,9 @@
-// Iron Editorial typographic wordmark (Experience Cycle 2).
+// Iron Editorial typographic wordmark (Vytal).
 //
-// Replaces the disconnected raster-logo treatment on the front door and trainee shell
-// with the identity's own typography: the athletic-display face for FITINTEL, the
-// engineered-numeral face for the "360", ember as identity punctuation only (§9 — ember
-// = training interaction AND identity; §21 — login uses ember only as punctuation).
+// The identity's own typography carries the brand: the athletic-display face for the
+// VYTAL wordmark with ember as identity punctuation only (§9 — ember = training
+// interaction AND identity; §21 — login uses ember only as punctuation). This retires
+// the disconnected raster logo on the front door and trainee shell.
 // Themeable through the mb tokens; on a fixed-ink cover pass an explicit bone class.
 
 type Size = 'sm' | 'md' | 'lg'
@@ -14,10 +14,10 @@ const NAME_SIZE: Record<Size, string> = {
   lg: 'text-3xl sm:text-4xl',
 }
 
-const NUM_SIZE: Record<Size, string> = {
-  sm: 'text-[0.6rem]',
-  md: 'text-xs',
-  lg: 'text-sm',
+const TICK_SIZE: Record<Size, string> = {
+  sm: 'size-1',
+  md: 'size-1.5',
+  lg: 'size-2',
 }
 
 export function Wordmark({
@@ -25,17 +25,16 @@ export function Wordmark({
   className = 'text-mb-ink',
 }: {
   size?: Size
-  // Color for the FITINTEL mark; ember "360" is fixed identity punctuation.
+  // Color for the VYTAL mark; the ember tick is fixed identity punctuation.
   className?: string
 }) {
   return (
-    <span className="inline-flex items-baseline gap-1.5" aria-label="FitIntel 360">
+    <span className="inline-flex items-baseline gap-1" aria-label="Vytal">
       <span className={`font-display uppercase leading-none tracking-tight ${NAME_SIZE[size]} ${className}`} aria-hidden="true">
-        Fitintel
+        Vytal
       </span>
-      <span className={`font-numeral font-semibold leading-none tracking-tight text-mb-ember ${NUM_SIZE[size]}`} aria-hidden="true">
-        360
-      </span>
+      {/* Ember tick — the identity punctuation, echoing the active-tab tick. */}
+      <span className={`${TICK_SIZE[size]} translate-y-[-0.05em] rounded-[1px] bg-mb-ember`} aria-hidden="true" />
     </span>
   )
 }

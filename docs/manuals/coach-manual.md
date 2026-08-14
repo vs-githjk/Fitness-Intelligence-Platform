@@ -1,11 +1,11 @@
-# FitIntel 360 — Coach manual
+# Vytal — Coach manual
 
-Welcome to FitIntel 360. This is your practical guide to running the app as a coach:
+Welcome to Vytal. This is your practical guide to running the app as a coach:
 inviting trainees, reading their readiness and adherence, building training, and
 assigning it. It reflects what the app does **today**. It is written for coaches, not
 engineers — you never need to see code or use technical tools.
 
-> **Coaching support, not medical care.** FitIntel 360 helps you make coaching
+> **Coaching support, not medical care.** Vytal helps you make coaching
 > decisions. It does **not** diagnose conditions, provide medical clearance, or
 > replace a doctor, dietitian, physiotherapist, or other qualified professional. If a
 > trainee reports pain, chest discomfort, breathing difficulty, dizziness, or any
@@ -17,9 +17,9 @@ reference on a single topic, the linked topic pages under `docs/` go further.
 
 ---
 
-## 1. What FitIntel 360 does
+## 1. What Vytal does
 
-FitIntel 360 connects a **coach** with their **trainees**.
+Vytal connects a **coach** with their **trainees**.
 
 - **Trainees** complete a one-time onboarding assessment, then check in daily
   (sleep, recovery, activity, nutrition, and how they feel). They see the training
@@ -38,7 +38,7 @@ missing, the app says so — it never invents a number.
 
 ## 2. Signing in
 
-1. Open the FitIntel 360 web address you were given and choose **Sign in**.
+1. Open the Vytal web address you were given and choose **Sign in**.
 2. Enter your coach email and password. Use **Show password** if you need to check it.
 
 **Trying the demo first?** From the sign-in screen you can choose **Explore Demo →
@@ -137,7 +137,7 @@ about the trainee.
 
 ## 7. Programming overview — the required chain
 
-Assigning training in FitIntel 360 follows a fixed, layered chain. **Every layer must
+Assigning training in Vytal follows a fixed, layered chain. **Every layer must
 be published before the next can use it**, and you assign a *whole program*, never a
 loose exercise:
 
@@ -347,7 +347,7 @@ When a trainee runs a workout, each session ends in one of these states:
 **Adherence** compares what was completed against what was *required*, so optional
 work and legitimate skips are treated fairly rather than punishing the trainee.
 
-FitIntel 360 also distinguishes two different ideas you'll see in review:
+Vytal also distinguishes two different ideas you'll see in review:
 
 - **Training load / session effort** — a relative sense of how demanding a session
   was.
@@ -456,7 +456,7 @@ personal or health information into demo.**
 
 ## 17. Safe and appropriate use
 
-- FitIntel 360 **supports** coaching decisions; it does not make them for you.
+- Vytal **supports** coaching decisions; it does not make them for you.
 - It does **not** diagnose medical conditions or provide medical clearance.
 - Use your professional judgment; scores are inputs, not instructions.
 - While testing, avoid entering unnecessary sensitive personal or health data.
@@ -491,7 +491,7 @@ administrator approval. Open it from **Profile** in the navigation.
 
 On the **Profile** page you can set:
 
-- **Preferred display name** — how your name is shown across FitIntel 360. Defaults
+- **Preferred display name** — how your name is shown across Vytal. Defaults
   to your account name when empty.
 - **Headline** — a short professional tagline (for example, "Strength & conditioning
   coach").
@@ -549,4 +549,4 @@ triages by urgency: work-stopping problems first, then confusing or incorrect
 behavior, then smaller polish and ideas. You don't need to label the severity
 yourself — just describe the impact and we'll prioritize it.
 
-Thank you for helping test and improve FitIntel 360.
+Thank you for helping test and improve Vytal.

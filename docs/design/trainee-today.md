@@ -423,7 +423,7 @@ observation and usability testing — not analytics dashboards.
 
 ## Long-term vision — how Today evolves
 
-Today is FitIntel 360's **primary guidance surface**, and it remains so as the
+Today is Vytal's **primary guidance surface**, and it remains so as the
 platform grows. Future capability milestones (Stream A) feed **into** Today; they do
 not spawn competing surfaces:
 
@@ -454,7 +454,7 @@ change.
 metric-led Today created anxiety and buried the day's actual workout on another
 screen. (Product Principles: Guidance over Metrics, One Dominant Answer.)
 
-**Why coach-led framing.** FitIntel amplifies a human coach; guidance that reads as
+**Why coach-led framing.** Vytal amplifies a human coach; guidance that reads as
 algorithmic erodes the product's core value and trust. (Coach First.)
 
 **Why the alert wall was removed.** Alert fatigue trained users to ignore the screen;
