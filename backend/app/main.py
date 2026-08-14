@@ -58,9 +58,14 @@ _RATE_LIMITS: dict[tuple[str, str], RateLimiter] = {
 
 
 def _client_ip(request: Request) -> str:
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip() or "unknown"
+    # Behind a single trusted proxy, the rightmost X-Forwarded-For hop is the address the
+    # proxy actually observed — far less spoofable than the leftmost, client-supplied value.
+    # Without that trust flag, use the direct peer (correct for local/single-host).
+    if settings.rate_limit_trust_forwarded:
+        forwarded = request.headers.get("X-Forwarded-For", "")
+        hops = [part.strip() for part in forwarded.split(",") if part.strip()]
+        if hops:
+            return hops[-1]
     return request.client.host if request.client else "unknown"
 
 

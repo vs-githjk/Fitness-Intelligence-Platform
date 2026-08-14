@@ -1,5 +1,7 @@
 """Rate limiting — pure sliding-window logic and the deployed 429 path."""
 
+from types import SimpleNamespace
+
 import app.main as main
 from app.rate_limit import RateLimiter
 
@@ -26,6 +28,29 @@ def test_keys_are_independent():
     assert limiter.check("a")[0] is True
     assert limiter.check("b")[0] is True  # a different client is unaffected
     assert limiter.check("a")[0] is False
+
+
+def test_idle_keys_are_swept_to_bound_memory():
+    clock = {"t": 0.0}
+    limiter = RateLimiter(limit=5, window_seconds=10, clock=lambda: clock["t"], sweep_at=2)
+    limiter.check("a")
+    clock["t"] = 20.0  # a's window has fully expired
+    limiter.check("b")  # crossing the sweep threshold reclaims the idle "a"
+    assert "a" not in limiter._hits
+    assert limiter.tracked_keys() <= 2
+
+
+def _req(xff=None, peer="1.2.3.4"):
+    headers = {"X-Forwarded-For": xff} if xff else {}
+    return SimpleNamespace(headers=headers, client=SimpleNamespace(host=peer))
+
+
+def test_client_ip_uses_rightmost_forwarded_only_when_trusted(monkeypatch):
+    monkeypatch.setattr(main.settings, "rate_limit_trust_forwarded", False)
+    assert main._client_ip(_req("9.9.9.9, 5.5.5.5", peer="1.2.3.4")) == "1.2.3.4"
+    monkeypatch.setattr(main.settings, "rate_limit_trust_forwarded", True)
+    # rightmost hop (proxy-observed), never the leftmost client-claimed 9.9.9.9
+    assert main._client_ip(_req("9.9.9.9, 5.5.5.5", peer="1.2.3.4")) == "5.5.5.5"
 
 
 def test_deployed_login_returns_429_with_retry_after(client, monkeypatch):

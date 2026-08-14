@@ -69,6 +69,12 @@ class Settings(BaseSettings):
     )
     log_level: str = "INFO"
     port: int = Field(default=8000, ge=1, le=65535)
+    # Enable only when the app sits behind exactly one trusted reverse proxy that sets
+    # X-Forwarded-For (e.g. the platform load balancer). Then rate limiting keys off the
+    # rightmost forwarded hop (what the proxy observed) instead of the direct peer, which
+    # would otherwise be the proxy IP shared by every client. Left off, the direct peer is
+    # used — correct for local/single-host. Never trust the leftmost (client-claimed) value.
+    rate_limit_trust_forwarded: bool = False
 
     @field_validator("database_url", "migration_database_url", mode="before")
     @classmethod

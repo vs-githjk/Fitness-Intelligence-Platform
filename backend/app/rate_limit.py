@@ -17,11 +17,13 @@ from threading import Lock
 
 class RateLimiter:
     def __init__(
-        self, *, limit: int, window_seconds: float, clock: Callable[[], float] = time.monotonic
+        self, *, limit: int, window_seconds: float,
+        clock: Callable[[], float] = time.monotonic, sweep_at: int = 2048,
     ) -> None:
         self.limit = limit
         self.window = window_seconds
         self._clock = clock
+        self._sweep_at = sweep_at
         self._hits: dict[str, deque[float]] = defaultdict(deque)
         self._lock = Lock()
 
@@ -38,6 +40,29 @@ class RateLimiter:
             while hits and hits[0] <= cutoff:
                 hits.popleft()
             if len(hits) >= self.limit:
-                return False, max(1, int(self.window - (now - hits[0])) + 1)
-            hits.append(now)
-            return True, 0
+                allowed, retry = False, max(1, int(self.window - (now - hits[0])) + 1)
+            else:
+                hits.append(now)
+                allowed, retry = True, 0
+            if not self._hits[key]:  # never leave an empty deque behind
+                del self._hits[key]
+            self._maybe_sweep(now)
+            return allowed, retry
+
+    def _maybe_sweep(self, now: float) -> None:
+        """Bound memory: when the key set grows past a threshold, drop keys whose window
+        has fully expired. Idle clients (which never call check again) are reclaimed here
+        rather than accumulating forever. Caller holds the lock."""
+        if len(self._hits) < self._sweep_at:
+            return
+        cutoff = now - self.window
+        for key in list(self._hits):
+            hits = self._hits[key]
+            while hits and hits[0] <= cutoff:
+                hits.popleft()
+            if not hits:
+                del self._hits[key]
+
+    def tracked_keys(self) -> int:
+        with self._lock:
+            return len(self._hits)
