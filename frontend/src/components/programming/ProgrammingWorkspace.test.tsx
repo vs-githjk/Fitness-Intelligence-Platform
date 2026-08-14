@@ -11,6 +11,7 @@ import { TemplateBuilder } from './TemplateBuilder'
 import { TemplateExerciseEditor, newPrescription } from './TemplateExerciseEditor'
 import { TemplateLibrary } from './TemplateLibrary'
 import { TraineePreview } from './TraineePreview'
+import { WorkoutMuscleSummary } from './WorkoutMuscleSummary'
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>(); get length() { return this.values.size }
@@ -209,6 +210,21 @@ describe('Workout-template workspace', () => {
     const next = onChange.mock.calls[0][0] as WorkoutTemplateDraftData['exercises'][number]
     expect(next.sets).toHaveLength(2)
     expect(next.sets[1]).toMatchObject({ set_number: 2, repetitions_min: 8, repetitions_max: 12, rest_seconds: 75 })
+  })
+
+  it('summarizes primary working sets by muscle region', () => {
+    const squat = { ...version('sq', 'Back squat', 'repetitions_and_load'), primary_muscle_groups: ['quadriceps'], secondary_muscle_groups: ['glutes'] }
+    const press = { ...version('pr', 'Bench press', 'repetitions_and_load'), primary_muscle_groups: ['chest'], secondary_muscle_groups: [] }
+    const versions = new Map([[squat.id, squat], [press.id, press]])
+    const three = [0, 1, 2].map(() => newPrescription('repetitions_and_load'))
+    const exercises = [
+      { exercise_version_id: 'sq', section: 'main' as const, display_order: 1, coach_notes: null, trainee_instructions: null, sets: three },
+      { exercise_version_id: 'pr', section: 'main' as const, display_order: 2, coach_notes: null, trainee_instructions: null, sets: [newPrescription('repetitions_and_load')] },
+    ]
+    render(<WorkoutMuscleSummary exercises={exercises} versions={versions} />)
+    expect(screen.getByRole('heading', { name: 'Muscle focus' })).toBeVisible()
+    expect(within(screen.getByText('Quads').closest('div')!).getByText('3')).toBeVisible()
+    expect(within(screen.getByText('Chest').closest('div')!).getByText('1')).toBeVisible()
   })
 
   it('renders trainee preview without coach-only notes', () => {
