@@ -54,23 +54,43 @@ These are external inputs; they are intentionally **not invented** in the repo.
 3. **Production secrets (Part 58).** Fresh `JWT_SECRET`, database URL + TLS, coach registration
    code, media credentials — distinct from local/staging, provided via the platform secret store
    (`sync:false`), never committed.
-4. **Transactional email + self-service password reset (Parts 65–66).** No email provider is wired;
-   reset is operator-assisted today. Self-service reset needs an email provider + token flow
-   (hashed, expiring, single-use). Provider credentials are a launch input.
-5. **Production topology in `render.yaml` (Parts 50, 53).** Only staging is defined today. A
-   production web service + its own Postgres (never the staging DB) should be added once (1)–(3)
-   are available, so the committed manifest cannot imply a deployable production that would fail
-   config validation on media.
+4. **Transactional email + self-service password reset (Parts 65–66) — IMPLEMENTED; SMTP
+   credentials are the launch input.** An email provider seam (`app/email/`) selects
+   `console` (local preview) or `smtp` (stdlib `smtplib`, no new dependency) by environment;
+   a deployed environment **must not** use `console` and requires `EMAIL_SMTP_HOST`, a real
+   `EMAIL_FROM`, and an HTTPS `FRONTEND_BASE_URL` (fail-fast). Self-service reset
+   (`POST /auth/password-reset/request` + `/confirm`, `/forgot-password` + `/reset-password`
+   pages) issues hashed, expiring, single-use tokens with a generic no-enumeration response,
+   rate-limited, never logging the token. The operator CLI (`scripts/reset_password.py`)
+   remains. Remaining launch input: **an SMTP provider (host + credentials + sender)**.
+5. **Production topology in `render.yaml` (Parts 50, 53) — IMPLEMENTED.** A distinct
+   `vytal-api-production` web service + its own `vytal-db-production` Postgres (never the
+   staging DB) are defined alongside staging: `APP_ENV=production`, durable S3/R2 media,
+   SMTP email, demo off, `branch: production` with **manual** deploys, and a release command
+   that runs `alembic upgrade head && python -m scripts.seed_library` (system content only,
+   never the demo seed). Every value that encodes the (undecided) domain or a secret is
+   `sync:false` — set in the dashboard at cutover; the manifest invents no domain/TLD.
 6. **Terms/Privacy acceptance record (Part 76).** Registration does not yet capture a versioned
    acceptance timestamp; add once the legal documents are counsel-approved and versioned.
 
 ## What a production cutover looks like (once inputs are met)
 
-1. Provision production Postgres (TLS) and set secrets in the platform store.
-2. Configure a durable media provider + credentials.
-3. Set `APP_ENV=production`, HTTPS `CORS_ORIGINS`/`TRUSTED_HOSTS`, `VITE_APP_ENV=production`,
-   `VITE_API_URL` to the real API origin; `API_DOCS_ENABLED=false`; demo disabled.
-4. Run migrations (`alembic upgrade head`) then `python -m scripts.seed_library` (system content
-   only). Do **not** run the demo seed.
-5. Verify: no staging banner, security headers + HSTS present, `/health/ready` green, demo routes
-   absent, cross-account requests 404.
+The `vytal-api-production` service + `vytal-db-production` blueprint in `render.yaml` encodes
+most of this; the steps below are the human inputs and verification.
+
+1. Create the `production` branch and provision the production Postgres (its own instance, TLS).
+2. Configure the media bucket + S3/R2 credentials (`MEDIA_S3_BUCKET`/`_REGION`/`_ENDPOINT_URL`,
+   `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`).
+3. Configure the SMTP provider (`EMAIL_SMTP_HOST`/`_USERNAME`/`_PASSWORD`, real `EMAIL_FROM`).
+4. Set the domain-derived values from the real hostname: `CORS_ORIGINS`, `TRUSTED_HOSTS`,
+   `FRONTEND_BASE_URL` (backend) and `VITE_APP_ENV=production` + `VITE_API_URL` (frontend);
+   set a fresh `JWT_SECRET` and the coach registration code. `API_DOCS_ENABLED=false`; demo off.
+5. The release command runs migrations then `python -m scripts.seed_library` (system content
+   only) — **never** the demo seed (config refuses it in production).
+6. Reconsider the frontend `X-Robots-Tag: noindex, nofollow` in `frontend/vercel.json` — correct
+   for staging, but a public production site is usually indexable (a founder/marketing decision).
+7. Verify: no staging banner, security headers + HSTS present, `/health/ready` green, demo routes
+   absent, cross-account requests 404, and a password-reset request delivers a real email.
+
+**Scale note:** the in-process rate limiter is correct only at one replica. Do not scale the
+production service horizontally without first moving to a shared-store (or edge) limiter.
