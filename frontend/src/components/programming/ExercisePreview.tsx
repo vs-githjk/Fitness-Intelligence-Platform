@@ -1,5 +1,6 @@
 import { ExerciseVersion } from '../../types'
 import { MediaImage, MediaVideo } from '../AuthorizedMedia'
+import { BodyMap } from '../iron/BodyMap'
 import { Badge, Card } from '../ui'
 import { TrackingModeBadge } from './ProgrammingBadges'
 
@@ -76,7 +77,8 @@ export function ExercisePreview({ version }: { version: ExerciseVersion }) {
           )}
           {muscles.length > 0 && (
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted">Muscles</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted">Muscles trained</h3>
+              <BodyMap primary={version.primary_muscle_groups} secondary={version.secondary_muscle_groups} className="mt-2 h-36 w-full max-w-[16rem]" />
               <div className="mt-2 flex flex-wrap gap-2">{muscles.map(({ m, primary }) => <Badge key={m} tone={primary ? 'info' : 'neutral'}>{m}</Badge>)}</div>
             </div>
           )}

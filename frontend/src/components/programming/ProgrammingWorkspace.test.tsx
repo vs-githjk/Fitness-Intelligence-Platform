@@ -31,7 +31,16 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('Programming exercise workspace', () => {
   it('filters system and private exercises and exposes metadata filters', async () => {
-    mockFetch(() => ok(exercises))
+    // The free-text search now hits the deterministic backend engine; the mock honours
+    // the ?search= param so the query flows server-side (synonyms are covered by the
+    // backend suite). Facet dropdowns still narrow the returned set client-side.
+    mockFetch((url) => {
+      const term = new URL(url, 'http://test').searchParams.get('search')?.toLowerCase()
+      const list = term
+        ? exercises.filter(e => (e.published_version ?? e.draft_version)!.name.toLowerCase().includes(term))
+        : exercises
+      return ok(list)
+    })
     renderWorkspace(<ExerciseLibrary />, '/coach/programming/exercises')
     expect(await screen.findByText('Goblet squat')).toBeVisible()
     expect(screen.getByText('Front plank')).toBeVisible()
@@ -42,8 +51,8 @@ describe('Programming exercise workspace', () => {
     expect(screen.getByText('No exercises match')).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search exercises' }), { target: { value: 'goblet' } })
-    expect(screen.getByText('Goblet squat')).toBeVisible()
-    expect(screen.queryByText('Front plank')).not.toBeInTheDocument()
+    expect(await screen.findByText('Goblet squat')).toBeVisible()
+    await waitFor(() => expect(screen.queryByText('Front plank')).not.toBeInTheDocument())
   })
 
   it('creates a private exercise draft with exact enum values and displays server errors', async () => {
