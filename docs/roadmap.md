@@ -131,6 +131,18 @@ scoring, endpoint, schema, or business-logic changes.
   through a workout session the trainee owns — published-only, cross-account/unknown →
   404, demo may read; it completes ADR-0018's deferred trainee-scoped delivery walk. No
   schema/migration/scoring change. **C2.3 (Program identity) has not started.**
+- **C2.1 + C2.2 pre-merge gate — passed.** Full validation green: frontend
+  tsc / eslint (0 warnings) / vitest / build, backend ruff / pytest, and the
+  isolated-browser Playwright suite for the affected surfaces (four-tab IA,
+  app-wide theming + per-user preference persistence, execution happy path
+  with exercise-knowledge read + full-state rest timer, safety flow, demo
+  read-only). The set reference is truthfully labelled "Target" (the
+  prescription), never historical performance (no history capability exists);
+  a regression test pins this. Discovered debt: `frontend/package-lock.json`
+  is out of sync with `package.json` (a transitive missing), so a clean
+  `npm ci` — and therefore the Docker e2e frontend image build — fails; this
+  pre-dates the branch (`main` shares the same lock) and needs a separate
+  `npm install` lockfile refresh.
 - **Not in scope:** exercise substitution, program generation, marketplace, and
   social/streak/badge mechanics remain explicit anti-goals.
 
