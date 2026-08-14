@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.exercise_search import SearchableExercise, rank_exercises
 from app.models import (
     Exercise,
     ExerciseScope,
@@ -162,6 +163,31 @@ def exercise_out(exercise: Exercise, *, detail: bool = False) -> dict:
     return result
 
 
+def _representative_version(exercise: Exercise) -> ExerciseVersion | None:
+    """The version a coach would see for this exercise: latest published, else the draft."""
+    published = _published_versions(exercise)
+    if published:
+        return published[0]
+    return _draft_version(exercise)
+
+
+def _searchable(exercise: Exercise, version: ExerciseVersion) -> SearchableExercise:
+    return SearchableExercise(
+        key=str(exercise.id),
+        name=version.name,
+        description=version.description,
+        category=version.category,
+        movement_pattern=version.movement_pattern,
+        difficulty=version.difficulty.value if version.difficulty is not None else None,
+        tracking_mode=(
+            version.tracking_mode.value if version.tracking_mode is not None else None
+        ),
+        equipment=tuple(version.equipment or ()),
+        primary_muscles=tuple(version.primary_muscle_groups or ()),
+        secondary_muscles=tuple(version.secondary_muscle_groups or ()),
+    )
+
+
 def list_exercises(
     db: Session,
     coach: User,
@@ -170,14 +196,39 @@ def list_exercises(
     scope: ExerciseScope | None = None,
     tracking_mode=None,
     search: str | None = None,
+    muscle: str | None = None,
+    equipment: str | None = None,
+    movement_pattern: str | None = None,
+    difficulty: str | None = None,
 ) -> list[dict]:
+    # Visibility + cheap SQL filters stay in the repository; deterministic synonym-aware
+    # search/ranking runs in the pure engine over the representative version so a match on
+    # muscle/equipment/pattern is never pre-filtered out by a name-only query (Coach Ease).
     items = ExerciseRepository(db).list_visible(
         coach.id,
         include_archived=include_archived,
         scope=scope,
         tracking_mode=tracking_mode,
-        search=search,
     )
+    if any((search and search.strip(), muscle, equipment, movement_pattern, difficulty)):
+        by_key: dict[str, Exercise] = {}
+        searchables: list[SearchableExercise] = []
+        for exercise in items:
+            version = _representative_version(exercise)
+            if version is None:
+                continue
+            candidate = _searchable(exercise, version)
+            by_key[candidate.key] = exercise
+            searchables.append(candidate)
+        ranked = rank_exercises(
+            searchables,
+            query=search,
+            muscle=muscle,
+            equipment=equipment,
+            movement_pattern=movement_pattern,
+            difficulty=difficulty,
+        )
+        items = [by_key[candidate.key] for candidate in ranked]
     return [exercise_out(item) for item in items]
 
 

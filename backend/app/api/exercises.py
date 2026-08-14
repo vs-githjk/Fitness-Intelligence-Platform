@@ -47,9 +47,14 @@ def exercises(
     scope: ExerciseScope | None = Query(default=None),
     tracking_mode: ExerciseTrackingMode | None = Query(default=None),
     search: str | None = Query(default=None, min_length=1, max_length=100),
+    muscle: str | None = Query(default=None, max_length=60),
+    equipment: str | None = Query(default=None, max_length=60),
+    movement_pattern: str | None = Query(default=None, max_length=60),
+    difficulty: str | None = Query(default=None, max_length=30),
     coach: User = Depends(require_coach),
     db: Session = Depends(get_db),
 ) -> list[dict]:
+    # search + facets are synonym-aware and deterministic; results come back ranked.
     return list_exercises(
         db,
         coach,
@@ -57,6 +62,10 @@ def exercises(
         scope=scope,
         tracking_mode=tracking_mode,
         search=search,
+        muscle=muscle,
+        equipment=equipment,
+        movement_pattern=movement_pattern,
+        difficulty=difficulty,
     )
 
 

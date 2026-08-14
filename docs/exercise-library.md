@@ -83,8 +83,30 @@ All routes use `/api/v1/coach/exercises` and require the coach role.
 mutations require an editable draft the coach owns (system exercises return
 `system_exercise_read_only`; a published-only exercise returns `exercise_draft_missing`
 until a revision is opened). List requests may filter by scope or exact tracking mode,
-search names/slugs, and explicitly include archived owner-private history. Every
-mutation rejects demo identities in the backend.
+compose the faceted filters `muscle` / `equipment` / `movement_pattern` / `difficulty`,
+run a deterministic synonym-aware `search`, and explicitly include archived owner-private
+history. Every mutation rejects demo identities in the backend.
+
+### Deterministic exercise search
+
+`GET /api/v1/coach/exercises` ranks results through a pure, framework-free engine
+(`app/exercise_search.py`) so a coach can find an exercise by what it trains, not just by
+its exact name — a core Coach Ease requirement. It is entirely deterministic (no AI, no
+opaque scoring):
+
+- **Reviewed synonym layer.** Colloquial terms map to the canonical vocabulary the library
+  uses — `quad`/`quads`/`quadriceps`, `pecs`→chest, `delts`→shoulders, `db`→dumbbell,
+  `bw`/`bodyweight`→empty-equipment, `push`→horizontal/vertical push, and so on. Broad
+  terms (`back`, `legs`, `arms`, `posterior chain`) expand to every canonical string they
+  truthfully cover and stay broad — no speculative anatomy is invented, and an unknown term
+  falls back to a name substring match.
+- **Explicit ranking.** Exact name > name prefix > name tokens > primary muscle > secondary
+  muscle > movement pattern > equipment > category/difficulty > substring. A multi-word
+  query (`dumbbell quads`) is an intersection — every term must match somewhere — so results
+  are the appropriate subset. Ties break by name, then a stable key.
+- **Authorization is unchanged.** Ranking runs only over the repository's already
+  visibility-scoped set (system + own private), so search never leaks a coach-private
+  exercise across coaches; a cross-coach or unknown exercise is simply absent from results.
 
 ## Coach workspace
 
