@@ -35,8 +35,57 @@ from app.api import (
     workout_sessions,
     workout_templates,
 )
-from app.config import settings
+from app.config import AppEnvironment, settings
 from app.database import engine
+from app.rate_limit import RateLimiter
+from app.security_headers import security_headers
+
+_DEPLOYED = settings.app_env in {AppEnvironment.STAGING, AppEnvironment.PRODUCTION}
+
+# Abuse-sensitive POST endpoints get a per-client sliding-window limit. Keyed by
+# (method, exact path); everything else is unlimited. Generous enough that a real coach
+# or trainee never notices, tight enough to blunt credential/invite/registration-code
+# brute force and accidental import floods.
+_PREFIX = "/api/v1"
+_RATE_LIMITS: dict[tuple[str, str], RateLimiter] = {
+    ("POST", f"{_PREFIX}/auth/login"): RateLimiter(limit=10, window_seconds=60),
+    ("POST", f"{_PREFIX}/auth/register/coach"): RateLimiter(limit=5, window_seconds=300),
+    ("POST", f"{_PREFIX}/auth/register/trainee"): RateLimiter(limit=8, window_seconds=300),
+    ("POST", f"{_PREFIX}/auth/register"): RateLimiter(limit=8, window_seconds=300),
+    ("POST", f"{_PREFIX}/auth/demo-session"): RateLimiter(limit=10, window_seconds=60),
+    ("POST", f"{_PREFIX}/coach/workout-imports/preview"): RateLimiter(limit=20, window_seconds=60),
+}
+
+
+def _client_ip(request: Request) -> str:
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip() or "unknown"
+    return request.client.host if request.client else "unknown"
+
+
+def _rate_limit_response(request: Request, request_id: str) -> JSONResponse | None:
+    # Only throttle internet-facing deployments; local/test are trusted and would otherwise
+    # trip on their own high-volume auth flows.
+    if not _DEPLOYED:
+        return None
+    limiter = _RATE_LIMITS.get((request.method, request.url.path))
+    if limiter is None:
+        return None
+    allowed, retry_after = limiter.check(f"{request.url.path}|{_client_ip(request)}")
+    if allowed:
+        return None
+    return JSONResponse(
+        status_code=429,
+        content={
+            "error": {
+                "code": "rate_limited",
+                "message": "Too many attempts. Please wait a moment and try again.",
+                "request_id": request_id,
+            }
+        },
+        headers={"Retry-After": str(retry_after)},
+    )
 
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 logger = logging.getLogger("fitness_intelligence.requests")
@@ -79,8 +128,9 @@ async def request_observability(request: Request, call_next):
     request_id = _request_id(request)
     request.state.request_id = request_id
     started = time.perf_counter()
+    denied = _rate_limit_response(request, request_id)
     try:
-        response = await call_next(request)
+        response = denied if denied is not None else await call_next(request)
     except Exception as exc:
         duration_ms = round((time.perf_counter() - started) * 1000, 1)
         logger.error(
@@ -110,6 +160,10 @@ async def request_observability(request: Request, call_next):
             },
         )
     response.headers["X-Request-ID"] = request_id
+    for header, value in security_headers(
+        path=request.url.path, deployed=_DEPLOYED, docs_enabled=settings.api_docs_enabled
+    ).items():
+        response.headers.setdefault(header, value)
     route = request.scope.get("route")
     path = getattr(route, "path", request.url.path)
     _log_event(
