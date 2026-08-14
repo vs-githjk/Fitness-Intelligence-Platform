@@ -67,9 +67,9 @@ def test_library_content_is_valid() -> None:
 
 
 def test_library_content_counts_are_bounded() -> None:
-    assert 25 <= len(LIBRARY_EXERCISES) <= 40
-    assert 8 <= len(LIBRARY_TEMPLATES) <= 12
-    assert 4 <= len(LIBRARY_PROGRAMS) <= 6
+    assert 100 <= len(LIBRARY_EXERCISES) <= 160
+    assert 28 <= len(LIBRARY_TEMPLATES) <= 44
+    assert 8 <= len(LIBRARY_PROGRAMS) <= 14
 
 
 # --------------------------------------------------------------------------- seeding
