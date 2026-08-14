@@ -161,6 +161,26 @@ describe('Workout-template workspace', () => {
     expect(saved!.exercises[0].exercise_version_id).toBe('new-ex-v1')
   })
 
+  it('reorders exercises by drag and drop and persists the new order', async () => {
+    let saved: WorkoutTemplateDraftData | undefined
+    const form2 = { ...templateForm(), exercises: [templateForm().exercises[0], { exercise_version_id: 'v-duration', section: 'main' as const, display_order: 2, coach_notes: null, trainee_instructions: null, sets: [newPrescription('duration')] }] }
+    const detail = templateDetail(form2, true)
+    mockFetch((url, init) => {
+      if (url.includes('/coach/exercises')) return ok(exercises)
+      if (init?.method === 'PUT') { saved = JSON.parse(String(init.body)); return ok(detail) }
+      return ok(detail)
+    })
+    renderWorkspace(<TemplateBuilder />, '/coach/programming/templates/t-1', '/coach/programming/templates/:templateId')
+    await screen.findByLabelText('Name')
+    const handles = screen.getAllByTitle('Drag to reorder')
+    const first = handles[0].closest('article')!; const second = handles[1].closest('article')!
+    const dataTransfer = { effectAllowed: '', dropEffect: '', setData: () => undefined, getData: () => '' }
+    fireEvent.dragStart(second, { dataTransfer }); fireEvent.dragOver(first, { dataTransfer }); fireEvent.drop(first, { dataTransfer })
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }))
+    await waitFor(() => expect(saved).toBeDefined())
+    expect(saved!.exercises.map(e => e.exercise_version_id)).toEqual(['v-duration', 'v-load'])
+  })
+
   it('preserves local changes and offers safe reload on a draft revision conflict', async () => {
     const detail = templateDetail(templateForm(), true)
     mockFetch((url, init) => {
@@ -180,6 +200,15 @@ describe('Workout-template workspace', () => {
     render(<TemplateExerciseEditor value={{ ...exerciseData, sets: [newPrescription('repetitions_and_load'), { ...newPrescription('repetitions_and_load'), set_number: 2 }] }} exercise={goblet} disabled={false} canMoveUp canMoveDown onChange={onChange} onRemove={() => undefined} onMove={onMove} />)
     fireEvent.click(screen.getByRole('button', { name: 'Move Goblet squat up' })); expect(onMove).toHaveBeenCalledWith(-1)
     fireEvent.click(screen.getByRole('button', { name: 'Move set 2 up' })); expect(onChange).toHaveBeenCalled()
+  })
+
+  it('copies the previous set values when adding a set', () => {
+    const onChange = vi.fn(); const first = { ...newPrescription('repetitions_and_load'), repetitions_min: 8, repetitions_max: 12, rest_seconds: 75 }
+    render(<TemplateExerciseEditor value={{ ...templateForm().exercises[0], sets: [first] }} exercise={goblet} disabled={false} canMoveUp={false} canMoveDown={false} onChange={onChange} onRemove={() => undefined} onMove={() => undefined} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Add set' }))
+    const next = onChange.mock.calls[0][0] as WorkoutTemplateDraftData['exercises'][number]
+    expect(next.sets).toHaveLength(2)
+    expect(next.sets[1]).toMatchObject({ set_number: 2, repetitions_min: 8, repetitions_max: 12, rest_seconds: 75 })
   })
 
   it('renders trainee preview without coach-only notes', () => {
