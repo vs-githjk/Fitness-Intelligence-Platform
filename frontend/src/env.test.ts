@@ -16,6 +16,12 @@ describe('client environment contract', () => {
     )
   })
 
+  it('marks only staging as staging — production is never staging (env is the source of truth)', () => {
+    expect(createAppConfig({ VITE_APP_ENV: 'local' }).isStaging).toBe(false)
+    expect(createAppConfig({ VITE_APP_ENV: 'staging', VITE_API_URL: 'https://api-staging.example.com/api/v1' }).isStaging).toBe(true)
+    expect(createAppConfig({ VITE_APP_ENV: 'production', VITE_API_URL: 'https://api.example.com/api/v1' }).isStaging).toBe(false)
+  })
+
   it('requires a non-local HTTPS API for staging', () => {
     expect(() => createAppConfig({ VITE_APP_ENV: 'staging' })).toThrow(/VITE_API_URL is required/)
     expect(() =>
