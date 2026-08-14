@@ -10,6 +10,7 @@ import { MovementGlyph } from '../components/iron/MovementGlyph'
 import { Wordmark } from '../components/iron/Wordmark'
 import { appConfig } from '../env'
 import { Assessment, AuthResponse, Role } from '../types'
+import { LegalFooter } from './LegalPages'
 
 // The Iron Line index on the front-door cover — real starter-library movement patterns
 // (§11 family 1, data-true). Identity signature, not decoration (§21).
@@ -61,6 +62,7 @@ function AuthFrame({ title, subtitle, eyebrow, children }: { title: string; subt
             <h1 className="mt-2 font-display text-3xl uppercase leading-[0.98] tracking-tight text-mb-ink sm:text-4xl">{title}</h1>
             <p className="mt-3 text-mb-body text-mb-secondary">{subtitle}</p>
             <div className="mt-8">{children}</div>
+            <LegalFooter className="mt-10" />
           </div>
         </section>
       </main>
