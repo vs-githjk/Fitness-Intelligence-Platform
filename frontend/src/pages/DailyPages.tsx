@@ -157,7 +157,10 @@ export function TodayPage() {
 // non-training action → indigo filled CTA (never ember).
 function CheckInInvitation({ greeting }: { greeting?: string }) {
   return (
-    <section aria-labelledby="today-invitation" className="font-structure">
+    // The invitation is deliberately sparse (one question, one action). On tall/wide
+    // canvases, center it on the vertical so the space reads as composed editorial
+    // framing rather than top-anchored content floating in a void. Hierarchy unchanged.
+    <section aria-labelledby="today-invitation" className="flex min-h-[62vh] flex-col justify-center font-structure">
       {greeting && <Eyebrow className="text-mb-secondary">{greeting}</Eyebrow>}
       <h1 id="today-invitation" className="mt-3 text-balance font-display text-4xl uppercase leading-[0.95] tracking-tight text-mb-ink sm:text-5xl">
         Let’s plan your day.
