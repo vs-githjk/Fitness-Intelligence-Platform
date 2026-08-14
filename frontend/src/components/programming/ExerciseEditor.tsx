@@ -31,14 +31,16 @@ export function ExerciseEditor() {
   const query = useQuery({ queryKey: [...scope, 'programming-exercise', exerciseId], queryFn: () => api<ExerciseDetail>(`/coach/exercises/${exerciseId}`), enabled: !isNew })
   const [form, setForm] = useState<ExerciseDraftData>(empty); const [dirty, setDirty] = useState(false); const [saving, setSaving] = useState(false); const [saveState, setSaveState] = useState('Not saved')
   const [error, setError] = useState(''); const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({}); const [publishOpen, setPublishOpen] = useState(false); const [archiveOpen, setArchiveOpen] = useState(false)
-  const loaded = useRef('')
+  const loaded = useRef(''); const preserveSaveState = useRef(false)
   const detail = query.data; const editableVersion = detail?.draft_version; const visibleVersion = editableVersion ?? detail?.published_version
   const immutable = Boolean(detail && (!editableVersion || detail.scope === 'system' || detail.status === 'archived'))
 
   useEffect(() => {
     if (isNew || !visibleVersion || loaded.current === visibleVersion.id) return
     loaded.current = visibleVersion.id
-    setForm(copyDraft(visibleVersion)); setDirty(false); setSaveState(editableVersion ? 'Draft loaded' : 'Published version')
+    setForm(copyDraft(visibleVersion)); setDirty(false)
+    if (preserveSaveState.current) { preserveSaveState.current = false; return }
+    setSaveState(editableVersion ? 'Draft loaded' : 'Published version')
   }, [editableVersion, isNew, visibleVersion])
   useEffect(() => { const warn = (event: BeforeUnloadEvent) => { if (dirty) { event.preventDefault(); event.returnValue = '' } }; window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn) }, [dirty])
 
@@ -63,7 +65,7 @@ export function ExerciseEditor() {
   }
   async function action(path: string, success: string) {
     setSaving(true); setError('')
-    try { const next = await api<ExerciseDetail>(`/coach/exercises/${exerciseId}/${path}`, { method: 'POST' }); cache.setQueryData([...scope, 'programming-exercise', exerciseId], next); await cache.invalidateQueries({ queryKey: [...scope, 'programming-exercises'] }); loaded.current = ''; setDirty(false); setSaveState(success); setPublishOpen(false); setArchiveOpen(false) }
+    try { const next = await api<ExerciseDetail>(`/coach/exercises/${exerciseId}/${path}`, { method: 'POST' }); cache.setQueryData([...scope, 'programming-exercise', exerciseId], next); await cache.invalidateQueries({ queryKey: [...scope, 'programming-exercises'] }); loaded.current = ''; preserveSaveState.current = true; setDirty(false); setSaveState(success); setPublishOpen(false); setArchiveOpen(false) }
     catch (caught) { apiFailure(caught, 'The exercise action could not be completed.') }
     finally { setSaving(false) }
   }

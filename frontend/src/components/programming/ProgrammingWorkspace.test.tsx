@@ -196,6 +196,27 @@ describe('Workout-template workspace', () => {
     expect(screen.getByText(/were not overwritten/i)).toBeVisible()
   })
 
+  it('keeps the archive confirmation after the post-archive reload (no toast race)', async () => {
+    // Regression for §19: archiving forces a detail reload; that reload must not clobber
+    // the "Template archived" confirmation with the loader's default "Draft loaded".
+    const activeDetail = templateDetail(templateForm(), true)
+    const archivedDetail = { ...activeDetail, status: 'archived' as const, archived_at: '2026-08-14T00:00:00Z' }
+    let archived = false
+    mockFetch((url, init) => {
+      if (url.includes('/coach/exercises')) return ok(exercises)
+      if (url.includes('/archive') && init?.method === 'POST') { archived = true; return ok(archivedDetail) }
+      return ok(archived ? archivedDetail : activeDetail)
+    })
+    renderWorkspace(<TemplateBuilder />, '/coach/programming/templates/t-1', '/coach/programming/templates/:templateId')
+    await screen.findByLabelText('Name')
+    fireEvent.click(screen.getByRole('button', { name: 'Archive' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive template' }))
+    await screen.findByText('Template archived')
+    await waitFor(() => expect(screen.getByText('Archived')).toBeVisible())
+    expect(screen.getByText('Template archived')).toBeVisible()
+    expect(screen.queryByText('Draft loaded')).not.toBeInTheDocument()
+  })
+
   it('provides keyboard-accessible exercise and set ordering actions', () => {
     const onMove = vi.fn(); const onChange = vi.fn(); const exerciseData = templateForm().exercises[0]
     render(<TemplateExerciseEditor value={{ ...exerciseData, sets: [newPrescription('repetitions_and_load'), { ...newPrescription('repetitions_and_load'), set_number: 2 }] }} exercise={goblet} disabled={false} canMoveUp canMoveDown onChange={onChange} onRemove={() => undefined} onMove={onMove} />)
