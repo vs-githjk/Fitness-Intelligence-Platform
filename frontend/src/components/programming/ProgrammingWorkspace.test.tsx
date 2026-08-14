@@ -132,6 +132,35 @@ describe('Workout-template workspace', () => {
     expect(saved).toMatchObject({ name: 'Full body test', exercises: [{ exercise_version_id: 'v-load', section: 'main', display_order: 1, sets: [{ set_number: 1, repetitions_min: 8, repetitions_max: 10 }] }] })
   })
 
+  it('creates a custom exercise inline in the picker and adds it without leaving the builder', async () => {
+    let saved: WorkoutTemplateDraftData | undefined; let createBody: Record<string, unknown> | undefined; let published = false
+    const sled = version('new-ex-v1', 'Sled push', 'repetitions_and_load')
+    const draftVersion = { ...sled, id: 'new-ex-draft', status: 'draft' as const, content_hash: null, published_at: null }
+    const createResp = { id: 'new-ex', scope: 'coach_private' as const, owner_coach_id: 'coach-1', slug: 'sled-push', status: 'active' as const, created_at: '2026-08-14T00:00:00Z', archived_at: null, published_version: null, draft_version: draftVersion, versions: [] }
+    mockFetch((url, init) => {
+      if (url.includes('/coach/exercises/') && url.includes('/publish')) { published = true; return ok({ ...createResp, draft_version: null, published_version: sled }, 200) }
+      if (url.includes('/coach/exercises') && init?.method === 'POST') { createBody = JSON.parse(String(init.body)); return ok(createResp, 201) }
+      if (url.includes('/coach/exercises')) return ok(exercises)
+      if (url.includes('/coach/workout-templates') && init?.method === 'POST') { saved = JSON.parse(String(init.body)); return ok(templateDetail(saved!, true), 201) }
+      return ok({})
+    })
+    renderWorkspace(<TemplateBuilder />, '/coach/programming/templates/new', '/coach/programming/templates/:templateId')
+    fireEvent.change(await screen.findByLabelText('Name'), { target: { value: 'Custom day' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add exercise' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Add exercise to workout' })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'New exercise' }))
+    fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Sled push' } })
+    fireEvent.change(within(dialog).getByLabelText('Movement'), { target: { value: 'push' } })
+    fireEvent.change(within(dialog).getByLabelText('Primary muscle'), { target: { value: 'quadriceps' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Create & add' }))
+    await waitFor(() => expect(published).toBe(true))
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }))
+    await waitFor(() => expect(saved).toBeDefined())
+    expect(createBody).toMatchObject({ slug: 'sled-push', primary_muscle_groups: ['quadriceps'], movement_pattern: 'push' })
+    expect(saved!.exercises).toHaveLength(1)
+    expect(saved!.exercises[0].exercise_version_id).toBe('new-ex-v1')
+  })
+
   it('preserves local changes and offers safe reload on a draft revision conflict', async () => {
     const detail = templateDetail(templateForm(), true)
     mockFetch((url, init) => {
