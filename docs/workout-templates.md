@@ -79,3 +79,26 @@ execution snapshot; later template revisions do not alter its session or set log
 Program references never follow a template root's current version. Publishing a newer template
 therefore does not rewrite existing program history. Archived template roots remain readable
 through already-published programs but cannot be added to a new or replacement program draft.
+
+## Workout import (CSV)
+
+A coach can bring a workout they already have as a CSV instead of building it from
+scratch. `POST /api/v1/coach/workout-imports/preview` accepts `{content, template_name}`
+and returns a **review-before-save** preview — it creates nothing.
+
+- **Format.** A header row with at least an `exercise` column; optional `sets`, `reps`
+  (e.g. `8` or `8-10`), `load`, `load_unit`, `duration` (`45` or `1:30`), `distance`,
+  `distance_unit`, `rest_seconds`, `notes`. Header aliases are accepted (`name`→exercise,
+  `weight`→load, `time`→duration, …). Bounded to 200 rows / 512 KB with coach-friendly
+  errors (never parser stack traces).
+- **Matching** reuses the deterministic exercise search engine over the coach's visible
+  **published** library only (so it never matches another coach's private exercise). An
+  exact name match is `matched`; anything else is `needs_review` with ranked candidates for
+  the coach to choose; nothing close is `not_found`. No silent fuzzy matching.
+- **Prescription mapping.** Each row's numbers are mapped onto the set fields valid for the
+  matched exercise's tracking mode; the row's `sets` count is repeated.
+- **Creating the draft.** The coach resolves any `needs_review`/`not_found` rows in the UI
+  (Programming → Import), then the resolved rows are created through the normal
+  (demo-protected) workout-template create endpoint and opened in the builder. XLSX import
+  is a documented follow-up; CSV keeps the import dependency-free and avoids the workbook
+  macro/formula surface.
