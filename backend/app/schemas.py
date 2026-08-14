@@ -798,6 +798,13 @@ class WorkoutTemplateCreateRequest(WorkoutTemplateDraftData):
     pass
 
 
+class WorkoutImportRequest(BaseModel):
+    """Raw CSV text a coach wants to preview as a workout (read-only; creates nothing)."""
+
+    content: str = Field(min_length=1, max_length=600_000)
+    template_name: str | None = Field(default=None, max_length=200)
+
+
 class WorkoutTemplateDraftReplaceRequest(WorkoutTemplateDraftData):
     expected_draft_revision: int = Field(ge=1)
 
