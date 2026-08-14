@@ -256,9 +256,9 @@ class MediaLifecycleStatus(str, enum.Enum):
 class MediaStorageProviderKind(str, enum.Enum):
     """Storage backend that holds an asset's bytes.
 
-    ``local`` is the only runtime-selectable provider in this phase; ``s3`` is a
-    reserved forward-compatible value for an S3-compatible provider (S3/R2) that is
-    not yet implemented and is rejected by the provider factory until it exists.
+    ``local`` (development/CI/test) and ``s3`` (an S3-compatible object store — AWS
+    S3 or Cloudflare R2 — for durable production storage) are both implemented and
+    runtime-selectable via ``MEDIA_STORAGE_PROVIDER``.
     """
 
     LOCAL = "local"

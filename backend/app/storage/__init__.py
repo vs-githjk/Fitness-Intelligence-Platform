@@ -24,11 +24,18 @@ def build_storage_provider(config: Settings) -> StorageProvider:
     provider = config.media_storage_provider.strip().lower()
     if provider == "local":
         return LocalStorageProvider(config.media_local_root)
-    # S3/R2/Azure providers are reserved but not implemented in this phase. Failing
-    # here keeps configuration honest instead of silently dropping uploads.
+    if provider == "s3":
+        # Imported here so boto3 is only required when the s3 provider is selected.
+        from app.storage.s3 import S3StorageProvider
+
+        return S3StorageProvider(
+            bucket=config.media_s3_bucket,
+            region=config.media_s3_region,
+            endpoint_url=config.media_s3_endpoint_url,
+        )
     raise StorageError(
         f"MEDIA_STORAGE_PROVIDER '{config.media_storage_provider}' is not implemented; "
-        "only 'local' is supported in this release."
+        "supported providers are 'local' and 's3'."
     )
 
 

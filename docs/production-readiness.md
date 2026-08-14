@@ -40,10 +40,14 @@ Status as of this pass. Distinguishes **technically production-ready** (engineer
 
 These are external inputs; they are intentionally **not invented** in the repo.
 
-1. **Durable media provider (Part 60).** Production config rejects `MEDIA_STORAGE_PROVIDER=local`
-   (ephemeral filesystem). A production deploy needs an object-store provider (e.g. S3-compatible
-   / Cloudflare R2) implemented behind the existing media abstraction, plus credentials. Until
-   then, production media is a blocker. See [research/exercise-media-strategy.md](research/exercise-media-strategy.md).
+1. **Durable media provider (Part 60) — IMPLEMENTED; credentials are the launch input.** An
+   S3-compatible provider (AWS S3 / Cloudflare R2) is implemented behind the storage abstraction
+   (`app/storage/s3.py`), selected by `MEDIA_STORAGE_PROVIDER=s3`, delivering media through the
+   same authorized streaming endpoint (private objects, no public/pre-signed URLs). boto3 is an
+   optional extra (`pip install .[s3]`); production config requires `MEDIA_S3_BUCKET`. Remaining
+   launch input: **a bucket + S3/R2 credentials** (via boto3's env chain — `AWS_ACCESS_KEY_ID` /
+   `AWS_SECRET_ACCESS_KEY`, and `MEDIA_S3_ENDPOINT_URL` for R2). See
+   [research/exercise-media-strategy.md](research/exercise-media-strategy.md).
 2. **Canonical domain + DNS (Part 56).** Founder brand reference is `joinvytal`; the full hostname
    is not verified in the repo and must not be guessed. Set production `CORS_ORIGINS` /
    `TRUSTED_HOSTS` / `VITE_API_URL` from the real domain at cutover.

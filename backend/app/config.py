@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     coach_registration_code: str | None = None
     media_storage_provider: str = "local"
     media_local_root: str = "./media"
+    # S3-compatible provider (AWS S3 / Cloudflare R2). Credentials come from boto3's standard
+    # environment chain, never from here. Endpoint URL is set for R2 (and left empty for AWS).
+    media_s3_bucket: str | None = None
+    media_s3_region: str | None = None
+    media_s3_endpoint_url: str | None = None
     media_max_bytes: int = Field(default=5 * 1024 * 1024, ge=1024, le=52_428_800)
     # Demonstration videos are larger than images but still modest — no streaming or
     # transcoding is performed, so this bounds a single short clip stored as-is.
@@ -156,6 +161,11 @@ class Settings(BaseSettings):
             errors.append(
                 "MEDIA_STORAGE_PROVIDER must be a durable provider in production"
             )
+        if (
+            self.media_storage_provider.strip().lower() == "s3"
+            and not self.media_s3_bucket
+        ):
+            errors.append("MEDIA_S3_BUCKET is required when MEDIA_STORAGE_PROVIDER=s3")
         if self.demo_invite_code == LOCAL_INVITE_CODE:
             errors.append("DEMO_INVITE_CODE must not use the public local value")
         sslmode = self.database_sslmode or self._url_sslmode(self.database_url)

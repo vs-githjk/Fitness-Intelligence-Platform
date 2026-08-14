@@ -31,9 +31,18 @@ def deployed_settings(**overrides: object) -> Settings:
         "seed_demo_data": False,
         "demo_invite_code": "deployment-specific-invite",
         "media_storage_provider": "s3",
+        "media_s3_bucket": "vytal-prod-media",
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)
+
+
+def test_production_s3_requires_a_bucket() -> None:
+    with pytest.raises(ValidationError):
+        deployed_settings(media_s3_bucket=None)
+    # local media is still rejected in production
+    with pytest.raises(ValidationError):
+        deployed_settings(media_storage_provider="local", media_s3_bucket=None)
 
 
 def test_release_version_is_centralized() -> None:
