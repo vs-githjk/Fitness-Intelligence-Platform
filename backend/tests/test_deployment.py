@@ -32,6 +32,10 @@ def deployed_settings(**overrides: object) -> Settings:
         "demo_invite_code": "deployment-specific-invite",
         "media_storage_provider": "s3",
         "media_s3_bucket": "vytal-prod-media",
+        "email_provider": "smtp",
+        "email_smtp_host": "smtp.mailer.example.com",
+        "email_from": "Vytal <no-reply@joinvytal.example>",
+        "frontend_base_url": "https://app.fitness.example.com",
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)
@@ -43,6 +47,23 @@ def test_production_s3_requires_a_bucket() -> None:
     # local media is still rejected in production
     with pytest.raises(ValidationError):
         deployed_settings(media_storage_provider="local", media_s3_bucket=None)
+
+
+def test_production_requires_real_email_delivery() -> None:
+    # Console preview is not a durable delivery provider in a deployed environment.
+    with pytest.raises(ValidationError):
+        deployed_settings(email_provider="console")
+    # SMTP without a host is incomplete.
+    with pytest.raises(ValidationError):
+        deployed_settings(email_smtp_host=None)
+    # A localhost sender is not a real address.
+    with pytest.raises(ValidationError):
+        deployed_settings(email_from="Vytal <no-reply@localhost>")
+
+
+def test_production_requires_https_frontend_base_url() -> None:
+    with pytest.raises(ValidationError):
+        deployed_settings(frontend_base_url="http://app.fitness.example.com")
 
 
 def test_release_version_is_centralized() -> None:

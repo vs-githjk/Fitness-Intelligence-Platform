@@ -486,6 +486,30 @@ class CoachInvite(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class PasswordResetToken(Base):
+    """A single-use, expiring self-service password reset token.
+
+    Only the SHA-256 hash of the opaque token is stored — the raw token exists only in
+    the email link, so a database read never yields a usable token. `used_at` makes it
+    single-use; `expires_at` bounds its lifetime.
+    """
+
+    __tablename__ = "password_reset_tokens"
+    __table_args__ = (
+        UniqueConstraint("token_hash", name="uq_password_reset_tokens_token_hash"),
+        Index("ix_password_reset_tokens_user_id", "user_id"),
+        Index("ix_password_reset_tokens_expires_at", "expires_at"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE")
+    )
+    token_hash: Mapped[str] = mapped_column(String(64))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class Exercise(Base):
     __tablename__ = "exercises"
     __table_args__ = (

@@ -72,6 +72,21 @@ class Settings(BaseSettings):
     media_max_video_bytes: int = Field(
         default=25 * 1024 * 1024, ge=1024, le=209_715_200
     )
+    # Transactional email (invitations + self-service password reset). The provider is
+    # selected by environment: `console` writes a local preview in development; `smtp`
+    # delivers in a deployed environment. SMTP credentials come from the environment,
+    # never from the repository, and a deployed environment must not use `console`.
+    email_provider: str = "console"
+    email_from: str = "Vytal <no-reply@localhost>"
+    email_smtp_host: str | None = None
+    email_smtp_port: int = Field(default=587, ge=1, le=65535)
+    email_smtp_username: str | None = None
+    email_smtp_password: str | None = None
+    email_smtp_use_tls: bool = True
+    # Public base URL of the web app, used to build links in transactional email (e.g. the
+    # password-reset link). Must be an HTTPS origin in a deployed environment.
+    frontend_base_url: str = "http://localhost:5175"
+    password_reset_token_minutes: int = Field(default=60, ge=5, le=1440)
     log_level: str = "INFO"
     port: int = Field(default=8000, ge=1, le=65535)
     # Enable only when the app sits behind exactly one trusted reverse proxy that sets
@@ -168,6 +183,18 @@ class Settings(BaseSettings):
             errors.append("MEDIA_S3_BUCKET is required when MEDIA_STORAGE_PROVIDER=s3")
         if self.demo_invite_code == LOCAL_INVITE_CODE:
             errors.append("DEMO_INVITE_CODE must not use the public local value")
+        email_provider = self.email_provider.strip().lower()
+        if email_provider not in {"console", "smtp"}:
+            errors.append("EMAIL_PROVIDER must be 'console' or 'smtp'")
+        elif email_provider == "console":
+            # Console is a local preview channel, not a durable delivery provider.
+            errors.append("EMAIL_PROVIDER must be a real delivery provider (smtp)")
+        elif not self.email_smtp_host:
+            errors.append("EMAIL_SMTP_HOST is required when EMAIL_PROVIDER=smtp")
+        if "localhost" in self.email_from.lower():
+            errors.append("EMAIL_FROM must be a real sender address")
+        if not self.frontend_base_url.startswith("https://"):
+            errors.append("FRONTEND_BASE_URL must be an HTTPS origin")
         sslmode = self.database_sslmode or self._url_sslmode(self.database_url)
         if sslmode not in {"require", "verify-ca", "verify-full"}:
             errors.append("DATABASE_SSLMODE must require TLS")

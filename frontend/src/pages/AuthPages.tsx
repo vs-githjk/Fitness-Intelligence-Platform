@@ -1,6 +1,6 @@
 import { Dumbbell, Eye, EyeOff, Sparkles, Users } from 'lucide-react'
 import { FormEvent, ReactNode, useEffect, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAuth } from '../auth'
 import { Button, ChoiceCard, Field, StatusNotice, TextInput } from '../components/ui'
@@ -98,7 +98,7 @@ export function LoginPage() {
       setError(caught instanceof ApiError ? caught.message : 'We could not sign you in. Your email remains on this page; please try again.')
     } finally { setBusy(false) }
   }
-  return <AuthFrame eyebrow="Secure access" title="Welcome back" subtitle="Sign in to continue to your role-specific workspace.">{sessionMessage && <StatusNotice tone="attention" title="Session ended" className="mb-5">{sessionMessage}</StatusNotice>}<form onSubmit={submit} className="space-y-5" noValidate><Field label="Email address">{({ id, describedBy, invalid }) => <TextInput id={id} name="email" type="email" inputMode="email" required autoComplete="email" placeholder="you@example.com" aria-describedby={describedBy} aria-invalid={invalid} />}</Field><PasswordField name="password" label="Password" autoComplete="current-password" /><p className="text-sm text-secondary">Forgot your password? Contact your coach or administrator to reset it.</p>{error && <StatusNotice tone="risk" title="Sign-in unsuccessful">{error}</StatusNotice>}<Button type="submit" loading={busy} className="w-full">Sign in</Button><Link to="/demo" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary bg-primary/5 px-4 text-sm font-semibold text-primary hover:bg-primary/10"><Sparkles aria-hidden="true" className="size-4" />Explore Demo</Link><p className="text-center text-sm text-secondary">Need an account? <Link className="rounded font-semibold text-primary hover:text-primary-hover" to="/register">Create one</Link></p>{appConfig.isLocal ? <div className="rounded-mb-inset border border-mb-hairline bg-mb-inset p-4 text-xs leading-5 text-mb-muted"><p className="font-semibold text-mb-secondary">Local test accounts</p><p className="mt-1">Synthetic credentials may be available only in explicitly seeded local development.</p></div> : appConfig.isStaging ? <div className="rounded-mb-inset border border-mb-hairline bg-mb-inset p-4 text-xs leading-5 text-mb-muted"><p className="font-semibold text-mb-secondary">Staging access</p><p className="mt-1">Use synthetic test information only. Do not enter personal or medical data.</p></div> : null}</form></AuthFrame>
+  return <AuthFrame eyebrow="Secure access" title="Welcome back" subtitle="Sign in to continue to your role-specific workspace.">{sessionMessage && <StatusNotice tone="attention" title="Session ended" className="mb-5">{sessionMessage}</StatusNotice>}<form onSubmit={submit} className="space-y-5" noValidate><Field label="Email address">{({ id, describedBy, invalid }) => <TextInput id={id} name="email" type="email" inputMode="email" required autoComplete="email" placeholder="you@example.com" aria-describedby={describedBy} aria-invalid={invalid} />}</Field><PasswordField name="password" label="Password" autoComplete="current-password" /><p className="text-sm text-secondary">Forgot your password? <Link className="rounded font-semibold text-primary hover:text-primary-hover" to="/forgot-password">Reset it</Link>.</p>{error && <StatusNotice tone="risk" title="Sign-in unsuccessful">{error}</StatusNotice>}<Button type="submit" loading={busy} className="w-full">Sign in</Button><Link to="/demo" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary bg-primary/5 px-4 text-sm font-semibold text-primary hover:bg-primary/10"><Sparkles aria-hidden="true" className="size-4" />Explore Demo</Link><p className="text-center text-sm text-secondary">Need an account? <Link className="rounded font-semibold text-primary hover:text-primary-hover" to="/register">Create one</Link></p>{appConfig.isLocal ? <div className="rounded-mb-inset border border-mb-hairline bg-mb-inset p-4 text-xs leading-5 text-mb-muted"><p className="font-semibold text-mb-secondary">Local test accounts</p><p className="mt-1">Synthetic credentials may be available only in explicitly seeded local development.</p></div> : appConfig.isStaging ? <div className="rounded-mb-inset border border-mb-hairline bg-mb-inset p-4 text-xs leading-5 text-mb-muted"><p className="font-semibold text-mb-secondary">Staging access</p><p className="mt-1">Use synthetic test information only. Do not enter personal or medical data.</p></div> : null}</form></AuthFrame>
 }
 
 export function DemoPage() {
@@ -142,4 +142,52 @@ export function RegisterPage() {
     } finally { setBusy(false) }
   }
   return <AuthFrame eyebrow="Create account" title="Create your account" subtitle="Choose the workspace that matches how you will use the platform."><form onSubmit={submit} className="grid gap-5 sm:grid-cols-2" noValidate><fieldset className="sm:col-span-2"><legend className="text-sm font-semibold">What type of account are you creating?</legend><div className="mt-2 grid gap-3 sm:grid-cols-2"><ChoiceCard selected={role === 'coach'} title="Coach" description="Manage assigned trainees and create private invitations." onClick={() => { setRole('coach'); setError('') }} /><ChoiceCard selected={role === 'trainee'} title="Trainee" description="Join a coach using a private, single-use invitation." onClick={() => { setRole('trainee'); setError('') }} /></div></fieldset>{role && <><Field label="First name" error={fieldErrors.first_name}>{({ id, describedBy, invalid }) => <TextInput id={id} name="first_name" required autoComplete="given-name" aria-describedby={describedBy} aria-invalid={invalid} />}</Field><Field label="Last name" error={fieldErrors.last_name}>{({ id, describedBy, invalid }) => <TextInput id={id} name="last_name" required autoComplete="family-name" aria-describedby={describedBy} aria-invalid={invalid} />}</Field><div className="sm:col-span-2"><Field label="Email address" error={fieldErrors.email}>{({ id, describedBy, invalid }) => <TextInput id={id} name="email" type="email" inputMode="email" required autoComplete="email" aria-describedby={describedBy} aria-invalid={invalid} />}</Field></div><div className="sm:col-span-2"><PasswordField name="password" label="Create a password" autoComplete="new-password" error={fieldErrors.password} /></div>{role === 'coach' ? <div className="sm:col-span-2"><Field label="Coach registration code" help="Coach access is invitation-only. Enter the private code supplied by the platform owner." error={fieldErrors.registration_code}>{({ id, describedBy, invalid }) => <TextInput id={id} name="registration_code" required autoComplete="off" type="password" placeholder="Enter private registration code" aria-describedby={describedBy} aria-invalid={invalid} />}</Field></div> : <div className="sm:col-span-2"><Field label="Coach invitation code" help="Use the single-use code or registration link supplied by your coach." error={fieldErrors.invite_code}>{({ id, describedBy, invalid }) => <TextInput id={id} name="invite_code" required autoComplete="off" defaultValue={inviteCode} placeholder="Enter invitation code" aria-describedby={describedBy} aria-invalid={invalid} />}</Field></div>}</>}{error && <div className="sm:col-span-2"><StatusNotice tone="risk" title="Account not created">{error}</StatusNotice></div>}<Button type="submit" loading={busy} disabled={!role} className="sm:col-span-2">Create {role ?? ''} account</Button><p className="text-center text-sm text-secondary sm:col-span-2">Already registered? <Link className="rounded font-semibold text-primary hover:text-primary-hover" to="/login">Sign in</Link></p></form></AuthFrame>
+}
+
+// Self-service password reset — request step. The response is deliberately identical
+// whether or not the email is registered (the backend never reveals account existence),
+// so this screen always shows the same confirmation on success.
+export function ForgotPasswordPage() {
+  const [sent, setSent] = useState(false); const [error, setError] = useState(''); const [busy, setBusy] = useState(false)
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setBusy(true); setError('')
+    const form = new FormData(event.currentTarget)
+    try {
+      await api('/auth/password-reset/request', { method: 'POST', body: JSON.stringify({ email: form.get('email') }) })
+      setSent(true)
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'We could not process that request. Please try again.')
+    } finally { setBusy(false) }
+  }
+  return <AuthFrame eyebrow="Account access" title="Reset your password" subtitle="Enter your email and we will send a secure link to choose a new password.">
+    {sent
+      ? <StatusNotice tone="positive" title="Check your email">If an account exists for that address, a password reset link is on its way. The link expires within the hour.<div className="mt-3"><Link to="/login" className="rounded font-semibold text-primary hover:text-primary-hover">Back to sign in</Link></div></StatusNotice>
+      : <form onSubmit={submit} className="space-y-5" noValidate><Field label="Email address">{({ id, describedBy, invalid }) => <TextInput id={id} name="email" type="email" inputMode="email" required autoComplete="email" placeholder="you@example.com" aria-describedby={describedBy} aria-invalid={invalid} />}</Field>{error && <StatusNotice tone="risk" title="Request unsuccessful">{error}</StatusNotice>}<Button type="submit" loading={busy} className="w-full">Send reset link</Button><p className="text-center text-sm text-secondary">Remembered it? <Link className="rounded font-semibold text-primary hover:text-primary-hover" to="/login">Sign in</Link></p></form>}
+  </AuthFrame>
+}
+
+// Self-service password reset — confirm step. Reads the single-use token from the link.
+export function ResetPasswordPage() {
+  const [params] = useSearchParams(); const token = params.get('token') ?? ''
+  const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const [done, setDone] = useState(false)
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setError('')
+    const form = new FormData(event.currentTarget)
+    const password = String(form.get('password') ?? ''); const confirm = String(form.get('confirm') ?? '')
+    if (password !== confirm) { setError('The two passwords do not match.'); return }
+    setBusy(true)
+    try {
+      await api('/auth/password-reset/confirm', { method: 'POST', body: JSON.stringify({ token, new_password: password }) })
+      setDone(true)
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'We could not reset your password. Request a new link and try again.')
+    } finally { setBusy(false) }
+  }
+  return <AuthFrame eyebrow="Account access" title="Choose a new password" subtitle="Set a new password for your Vytal account.">
+    {!token
+      ? <StatusNotice tone="attention" title="This link is incomplete">Open the most recent reset link from your email, or request a new one.<div className="mt-3"><Link to="/forgot-password" className="rounded font-semibold text-primary hover:text-primary-hover">Request a new link</Link></div></StatusNotice>
+      : done
+        ? <StatusNotice tone="positive" title="Password updated">You can now sign in with your new password.<div className="mt-3"><Link to="/login" className="rounded font-semibold text-primary hover:text-primary-hover">Go to sign in</Link></div></StatusNotice>
+        : <form onSubmit={submit} className="space-y-5" noValidate><PasswordField name="password" label="New password" autoComplete="new-password" /><PasswordField name="confirm" label="Confirm new password" autoComplete="new-password" />{error && <StatusNotice tone="risk" title="Reset unsuccessful">{error}</StatusNotice>}<Button type="submit" loading={busy} className="w-full">Update password</Button><p className="text-center text-sm text-secondary"><Link className="rounded font-semibold text-primary hover:text-primary-hover" to="/login">Back to sign in</Link></p></form>}
+  </AuthFrame>
 }

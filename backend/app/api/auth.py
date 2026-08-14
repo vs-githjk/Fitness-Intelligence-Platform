@@ -1,33 +1,42 @@
 import hmac
-from datetime import UTC, datetime
+import logging
+from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
-from app.invitations import hash_invite_token, invite_status
+from app.email import get_email_provider
+from app.invitations import aware_utc, hash_invite_token, invite_status
 from app.models import (
     CoachInvite,
     CoachProfile,
     CoachTraineeAssignment,
+    PasswordResetToken,
     Role,
     TraineeProfile,
     User,
     UserPreferences,
     UserProfile,
 )
+from app.password_reset import build_reset_email, generate_reset_token, hash_reset_token
 from app.schemas import (
     CoachRegisterRequest,
     DemoSessionRequest,
+    GenericMessageResponse,
     LoginRequest,
+    PasswordResetConfirm,
+    PasswordResetRequest,
     RegisterRequest,
     TokenResponse,
     TraineeRegisterRequest,
     UserOut,
 )
 from app.security import create_access_token, get_current_user, hash_password, verify_password
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -190,6 +199,109 @@ def demo_session(body: DemoSessionRequest, db: Session = Depends(get_db)) -> dic
             user, expires_minutes=settings.demo_session_minutes
         ),
         "user": user,
+    }
+
+
+def _deliver_reset_email(to: str, first_name: str, token: str, expires_minutes: int) -> None:
+    # Runs after the response is sent. A delivery failure must never surface to the caller
+    # (that would leak account existence) and must never log the token or the reset URL.
+    try:
+        get_email_provider().send(
+            build_reset_email(
+                to=to, first_name=first_name, token=token, expires_minutes=expires_minutes
+            )
+        )
+    except Exception:
+        logger.warning("Password reset email delivery failed", exc_info=False)
+
+
+@router.post(
+    "/password-reset/request", response_model=GenericMessageResponse, status_code=202
+)
+def request_password_reset(
+    body: PasswordResetRequest,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> dict:
+    # The response is identical whether or not an account exists, so this endpoint never
+    # reveals which emails are registered (no account enumeration).
+    generic = {
+        "status": "accepted",
+        "message": "If an account exists for that email, a reset link has been sent.",
+    }
+    email = body.email.strip().lower()
+    user = db.scalar(select(User).where(User.email == email))
+    if user is None or user.status != "active" or user.is_demo or user.is_system:
+        return generic
+    now = datetime.now(UTC)
+    # One live token at a time: consume any outstanding tokens for this user.
+    db.execute(
+        update(PasswordResetToken)
+        .where(
+            PasswordResetToken.user_id == user.id,
+            PasswordResetToken.used_at.is_(None),
+        )
+        .values(used_at=now)
+    )
+    token = generate_reset_token()
+    db.add(
+        PasswordResetToken(
+            user_id=user.id,
+            token_hash=hash_reset_token(token),
+            expires_at=now + timedelta(minutes=settings.password_reset_token_minutes),
+        )
+    )
+    db.commit()
+    background.add_task(
+        _deliver_reset_email,
+        user.email,
+        user.first_name,
+        token,
+        settings.password_reset_token_minutes,
+    )
+    return generic
+
+
+@router.post("/password-reset/confirm", response_model=GenericMessageResponse)
+def confirm_password_reset(
+    body: PasswordResetConfirm, db: Session = Depends(get_db)
+) -> dict:
+    now = datetime.now(UTC)
+    invalid = HTTPException(
+        status_code=400,
+        detail={
+            "code": "invalid_reset_token",
+            "message": "This reset link is invalid or has expired. Request a new one.",
+        },
+    )
+    token_row = db.scalar(
+        select(PasswordResetToken)
+        .where(PasswordResetToken.token_hash == hash_reset_token(body.token))
+        .with_for_update()
+    )
+    if (
+        token_row is None
+        or token_row.used_at is not None
+        or aware_utc(token_row.expires_at) <= now
+    ):
+        raise invalid
+    user = db.get(User, token_row.user_id)
+    if user is None or user.status != "active" or user.is_demo:
+        raise invalid
+    user.password_hash = hash_password(body.new_password)
+    # Single-use: consume this token and revoke any other outstanding tokens.
+    db.execute(
+        update(PasswordResetToken)
+        .where(
+            PasswordResetToken.user_id == user.id,
+            PasswordResetToken.used_at.is_(None),
+        )
+        .values(used_at=now)
+    )
+    db.commit()
+    return {
+        "status": "reset",
+        "message": "Your password has been updated. You can now sign in.",
     }
 
 

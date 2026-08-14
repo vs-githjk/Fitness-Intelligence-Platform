@@ -81,6 +81,20 @@ class PasswordChangeRequest(BaseModel):
     new_password: str = Field(min_length=10, max_length=128)
 
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str = Field(min_length=16, max_length=512)
+    new_password: str = Field(min_length=10, max_length=128)
+
+
+class GenericMessageResponse(BaseModel):
+    status: str
+    message: str
+
+
 class DemoSessionRequest(BaseModel):
     role: Role
 

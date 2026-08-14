@@ -4,7 +4,7 @@ import { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthProvider } from '../auth'
-import { DemoPage, LoginPage, RegisterPage } from './AuthPages'
+import { DemoPage, ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from './AuthPages'
 
 function renderPage(page: ReactNode) {
   return render(withQueryClient(<MemoryRouter><AuthProvider>{page}</AuthProvider></MemoryRouter>))
@@ -64,7 +64,8 @@ describe('role-aware registration', () => {
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.queryByText('What type of account are you creating?')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Explore Demo' })).toHaveAttribute('href', '/demo')
-    expect(screen.getByText(/Contact your coach or administrator to reset it\./)).toBeInTheDocument()
+    // Self-service reset is now available from the login page.
+    expect(screen.getByRole('link', { name: 'Reset it' })).toHaveAttribute('href', '/forgot-password')
   })
 
   it('routes a coach using the backend-owned role', async () => {
@@ -92,6 +93,33 @@ describe('role-aware registration', () => {
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'TraineePass123!' } })
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     expect(await screen.findByText('Start onboarding')).toBeInTheDocument()
+  })
+})
+
+describe('self-service password reset', () => {
+  it('confirms generically after a request (no account enumeration)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'accepted', message: 'ok' }), { status: 202, headers: { 'Content-Type': 'application/json' } })))
+    renderPage(<ForgotPasswordPage />)
+    fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'someone@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }))
+    expect(await screen.findByText(/If an account exists for that address/i)).toBeInTheDocument()
+  })
+
+  it('shows an incomplete-link notice when no token is present', () => {
+    render(withQueryClient(<MemoryRouter initialEntries={['/reset-password']}><AuthProvider><Routes><Route path="/reset-password" element={<ResetPasswordPage />} /></Routes></AuthProvider></MemoryRouter>))
+    expect(screen.getByText('This link is incomplete')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Request a new link' })).toHaveAttribute('href', '/forgot-password')
+  })
+
+  it('rejects mismatched passwords before calling the API', () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    render(withQueryClient(<MemoryRouter initialEntries={['/reset-password?token=abc123def456ghi789']}><AuthProvider><Routes><Route path="/reset-password" element={<ResetPasswordPage />} /></Routes></AuthProvider></MemoryRouter>))
+    fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'BrandNewPass1' } })
+    fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'Different123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Update password' }))
+    expect(screen.getByText('The two passwords do not match.')).toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })
 

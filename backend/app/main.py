@@ -53,6 +53,8 @@ _RATE_LIMITS: dict[tuple[str, str], RateLimiter] = {
     ("POST", f"{_PREFIX}/auth/register/trainee"): RateLimiter(limit=8, window_seconds=300),
     ("POST", f"{_PREFIX}/auth/register"): RateLimiter(limit=8, window_seconds=300),
     ("POST", f"{_PREFIX}/auth/demo-session"): RateLimiter(limit=10, window_seconds=60),
+    ("POST", f"{_PREFIX}/auth/password-reset/request"): RateLimiter(limit=5, window_seconds=300),
+    ("POST", f"{_PREFIX}/auth/password-reset/confirm"): RateLimiter(limit=10, window_seconds=300),
     ("POST", f"{_PREFIX}/coach/workout-imports/preview"): RateLimiter(limit=20, window_seconds=60),
 }
 
