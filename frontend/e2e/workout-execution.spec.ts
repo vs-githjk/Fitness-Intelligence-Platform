@@ -64,12 +64,23 @@ test('trainee starts, logs, resumes, completes, and ends another workout incompl
   expect(scheduled).toBeTruthy()
   await page.goto(`/trainee/workouts/${scheduled!.id}`)
   await page.getByRole('button', { name: 'Start workout' }).click()
-  await expect(page.getByText(/Exercise 1 of \d+/)).toBeVisible()
-  const progress = await page.getByText(/Exercise 1 of \d+/).textContent()
-  const exerciseCount = Number(progress?.match(/of (\d+)/)?.[1])
+  await expect(page.getByText(/Exercise 1 \/ \d+/)).toBeVisible()
+  const progress = await page.getByText(/Exercise 1 \/ \d+/).textContent()
+  const exerciseCount = Number(progress?.match(/\/ (\d+)/)?.[1])
   expect(exerciseCount).toBeGreaterThan(1)
 
+  // Exercise-knowledge read (C2.2, §30): the movement/knowledge panel renders from the
+  // approved trainee read route for the authorized, published exercise version.
+  await expect(page.getByText('Movement', { exact: true }).first()).toBeVisible()
+
   await saveFirstVisibleSet(page)
+  // Rest timer is a full interaction state when the logged set prescribes rest (§15/§3A).
+  const restTimer = page.getByRole('timer', { name: 'Rest timer' })
+  if (await restTimer.count()) {
+    await expect(restTimer).toBeVisible()
+    await page.getByRole('button', { name: /Skip rest|Start next set/ }).click()
+    await expect(restTimer).toHaveCount(0)
+  }
   const beforeAdded = await page.getByRole('button', { name: 'Skip set' }).count()
   await page.getByRole('button', { name: 'Add set' }).click()
   await expect(page.getByRole('button', { name: 'Skip set' })).toHaveCount(beforeAdded + 1)
@@ -83,13 +94,13 @@ test('trainee starts, logs, resumes, completes, and ends another workout incompl
   expect(repeated.ok()).toBeTruthy()
   expect((await repeated.json()).id).toBe(active?.workout_session_id)
   await page.reload()
-  await expect(page.getByText(/Session revision/)).toBeVisible()
+  await expect(page.getByText(/rev \d+/).first()).toBeVisible()
   await expectNoOverflow(page)
 
   await page.getByRole('button', { name: 'Skip exercise' }).click()
   for (let index = 2; index <= exerciseCount; index += 1) {
     await page.getByRole('button', { name: 'Next' }).click()
-    await expect(page.getByText(`Exercise ${index} of ${exerciseCount}`)).toBeVisible()
+    await expect(page.getByText(`Exercise ${index} / ${exerciseCount}`)).toBeVisible()
     if (index === 2) await saveFirstVisibleSet(page)
     await page.getByRole('button', { name: 'Skip exercise' }).click()
   }

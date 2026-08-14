@@ -207,6 +207,19 @@ it('shows readiness as unavailable without blocking workout start', async () => 
   expect(screen.getByRole('button', { name: 'Start workout' })).toBeEnabled()
 })
 
+it('labels the set reference as the prescription target, never as historical performance', async () => {
+  // Truthfulness / Determinism law: the ghosted reference is the planned prescription
+  // (the only field available in the session payload). It must be labeled truthfully as
+  // a target and must never imply previous/last-time/historical performance that the
+  // payload does not contain.
+  const current = activeSession()
+  mockFetch(url => url.endsWith('/trainee/program') ? ok(workspace('in_progress', current.id)) : ok(current))
+  renderPage()
+  await screen.findAllByLabelText('Actual repetitions')
+  expect(screen.getAllByText(/Target ·/i).length).toBeGreaterThan(0)
+  expect(document.body.textContent).not.toMatch(/previous performance|last[ -]time|prior set|previous set|last set logged/i)
+})
+
 function renderPage() { const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }); return render(<QueryClientProvider client={client}><MemoryRouter initialEntries={['/trainee/workouts/workout-1']}><AuthProvider><Routes><Route path="/trainee/workouts/:scheduledWorkoutId" element={<WorkoutExecutionPage />} /></Routes></AuthProvider></MemoryRouter></QueryClientProvider>) }
 function setSession(demo: boolean) { const storage = new MemoryStorage(); storage.setItem('access_token', 'test-token'); storage.setItem('user', JSON.stringify({ id: 'trainee-1', email: 'trainee@example.com', first_name: demo ? 'Demo' : 'Test', last_name: 'Trainee', role: 'trainee', is_demo: demo })); vi.stubGlobal('localStorage', storage) }
 function mockFetch(handler: (url: string, init?: RequestInit) => Response) { vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => Promise.resolve(handler(String(input), init)))) }
