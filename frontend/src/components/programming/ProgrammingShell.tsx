@@ -1,4 +1,4 @@
-import { CalendarRange, Dumbbell, LayoutTemplate, Library } from 'lucide-react'
+import { CalendarRange, Dumbbell, FileUp, LayoutTemplate, Library } from 'lucide-react'
 import { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AppShell } from '../AppShell'
@@ -8,6 +8,7 @@ const tabs = [
   { to: '/coach/programming/exercises', label: 'Exercises', icon: Dumbbell },
   { to: '/coach/programming/templates', label: 'Workout Templates', icon: LayoutTemplate },
   { to: '/coach/programming/programs', label: 'Programs', icon: CalendarRange },
+  { to: '/coach/programming/import', label: 'Import', icon: FileUp },
   { to: '/coach/programming/library', label: 'Starter Library', icon: Library },
 ]
 

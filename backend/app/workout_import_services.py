@@ -70,6 +70,15 @@ def preview_workout_import(
             "matched": matched,
             "candidates": candidates,
             "prescription": prescription,
+            # Raw parsed numbers so the UI can map a prescription onto whichever
+            # candidate the coach picks for a needs-review row.
+            "raw": {
+                "reps_min": row.reps_min, "reps_max": row.reps_max,
+                "load": row.load, "load_unit": row.load_unit,
+                "duration_seconds": row.duration_seconds,
+                "distance": row.distance, "distance_unit": row.distance_unit,
+                "rest_seconds": row.rest_seconds, "notes": row.notes,
+            },
             "error": None,
         })
 
