@@ -145,6 +145,30 @@ scoring, endpoint, schema, or business-logic changes.
   `npm install` lockfile refresh.
 - **Not in scope:** exercise substitution, program generation, marketplace, and
   social/streak/badge mechanics remain explicit anti-goals.
+- **C2.1 + C2.2 merged to main + lockfile repaired — done (2026-08-14).** The pre-merge
+  gate's discovered lockfile debt was repaired via a clean-room `npm install` in
+  `node:22-alpine` (adds `@emnapi/runtime`; `npm ci` now passes on linux/musl and macOS,
+  and the frontend Docker image builds `--no-cache`), committed separately, then the branch
+  fast-forwarded into `main`.
+
+### Vytal transformation — Coach Programming Studio — APPROVED / IN PROGRESS
+
+- **Status:** in progress on `feat/vytal-coach-programming-core`. Founder reprioritization
+  ([ADR-0020](decisions/README.md)): the product is renamed **Vytal**, and **coach
+  programming is now a flagship surface** alongside trainee execution. **Coach Ease** is a
+  new permanent product law ([product-principles.md](product-principles.md)).
+- **Scope pulled forward** (per ADR-0020, ahead of the frozen C2.3–C2.6 ordering, which is
+  superseded in ordering only): brand rename to Vytal; deterministic, forgiving exercise
+  search (synonyms + explicit ranking, no AI); a substantially larger curated starter
+  library, workout-template, and program set; coach-side exercise discovery with
+  body-region visualization (reusing the §20 map, pulled forward from §19/§29 `[FUTURE]`);
+  inline custom-exercise creation; a tactile workout builder; structured CSV/XLSX import
+  with review-before-save; and generated program/workout identity.
+- **Unchanged and binding:** Today truth/verdict laws, workout-execution truth and safety
+  laws, scoring/readiness determinism, immutable published versions and historical
+  execution, one active primary program, server-side authorization (404 on cross-account),
+  demo read-only, the non-medical boundary, and the no-AI / no-marketplace /
+  no-trainee-self-programming anti-goals.
 
 ## Milestone 2C — deployment and synthetic beta readiness
 

@@ -817,8 +817,11 @@ continues to apply):
 | 2026-08-12 | C2.0–C2.6 sequence frozen as the Cycle-2 shape; **Cycle 2 start not yet authorized**. | DECISION PENDING |
 | 2026-08-06 | Trainee Today content spec frozen (`design/trainee-today.md`) — presentation amended by §14 only. | FROZEN (prior) |
 | 2026-08-12 | ADR-0019 rest-day integrity; score law; frozen verdict map. ADR-0019 theming decision superseded in part (§8, §34). | LAW (prior) |
+| 2026-08-14 | Product renamed to **Vytal** (was FitIntel 360); the brand carried across product and docs, raster logo retired for the typographic wordmark. The north star, registers, palette, type roles, and all per-surface laws are unchanged. | FROZEN |
+| 2026-08-14 | Founder reprioritization (ADR-0020): **coach programming is now a flagship surface** and coach-side exercise discovery / body-map (§19, §29 `[FUTURE]`) is pulled forward. The C2.3–C2.6 *ordering* is superseded for this pass; every per-surface `[FROZEN]`/`[LAW]` truth referenced here remains binding. **Coach Ease** added as a permanent product law. | FROZEN (order) · LAW (Coach Ease) |
 
 ---
 
 *Design authority only. This document introduces no code and no repository behavior
-change. No Experience Cycle 2 implementation begins until explicitly authorized.*
+change. Experience Cycle 2 and the Vytal programming pass proceed under explicit
+founder authorization (ADR-0020).*

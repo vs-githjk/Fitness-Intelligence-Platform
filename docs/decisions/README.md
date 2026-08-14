@@ -464,3 +464,52 @@ its authoritative documentation.
   Cycle-2 destination (C2.1). See
   [../design/visual-identity-v2-iron-editorial.md](../design/visual-identity-v2-iron-editorial.md)
   §8 and §34. The **rest-day integrity and copy rulings** in this ADR remain binding.
+
+## ADR-0020 — Coach Programming as a flagship surface; Coach Ease; Cycle-2 reprioritization
+
+- **Status:** accepted
+- **Date:** 2026-08-14
+- **Context:** The two experiences that most define Vytal are **coach programming** and
+  **trainee workout execution**. C2.1/C2.2 materially improved execution. Programming,
+  however, is still shaped like database administration: weak exercise search (slug/name
+  substring only, no muscle/equipment/movement matching, no synonyms or ranking), a
+  demo-sized starter library, and version/publish vocabulary leaking into the UI. The
+  Iron Editorial freeze scheduled coach-side authoring discovery and the body-map only as
+  `[FUTURE]` (§19, §29) and restyled — not restructured — coach surfaces this cycle (§6,
+  §23). The founder has reprioritized: coach programming is now a primary product
+  priority, and selected exercise-reference / body-map / media work is pulled forward
+  where it materially improves coach exercise discovery and workout construction.
+- **Decision:**
+  - **Coach Ease is a permanent product law.** Vytal absorbs software complexity so the
+    coach can focus on coaching; a coach must be able to program an athlete without
+    understanding versions, revisions, schemas, publishing internals, or status enums. The
+    interface hides the mechanism, never the consequence. Recorded in
+    [../product-principles.md](../product-principles.md) (Experience principles → Coach
+    ease) and binding on every programming surface.
+  - **Programming becomes a flagship surface** — the "Vytal Programming Studio": find
+    exercises → build workout → organize program → assign to athlete. Deterministic,
+    forgiving exercise search (synonyms + explicit ranking, no AI), a substantially larger
+    curated starter library, an inline custom-exercise flow, a tactile workout builder,
+    structured CSV/XLSX **import with review-before-save**, generated program/workout
+    identity, and coach-side body-region visualization (reusing the §20 map).
+  - **Cycle-2 sequence reprioritized (not the truths).** The old C2.3 → C2.4 → C2.5
+    ordering no longer blocks this founder-approved programming pass, and §19/§29's
+    "authoring-side discovery is `[FUTURE]`" is pulled forward for coach discovery. The
+    following remain **frozen and binding**: Today truth/verdict laws; workout-execution
+    truth and safety laws; scoring/readiness determinism (no new engine rides in);
+    immutable published versions and historical execution (ADR-0002, ADR-0003); one active
+    primary program (ADR-0004); server-side authorization with 404 on cross-account
+    (system-vs-coach-private visibility); demo read-only (ADR-0011); and the non-medical
+    boundary. No AI, no autonomous programming, no marketplace, no trainee self-programming
+    (visual-identity §35).
+- **Consequences:** the Cycle-2 phase table (visual-identity §32) is superseded in
+  ordering only by this founder reprioritization; the frozen per-surface laws it points to
+  are unchanged. New search/import mutations follow the standard invariants
+  (`ensure_not_demo` + demo inventory, identity-scoped authorization, deterministic and
+  documented). Programming visual work implements against the Iron Editorial authority.
+  See [../roadmap.md](../roadmap.md) and
+  [../design/visual-identity-v2-iron-editorial.md](../design/visual-identity-v2-iron-editorial.md).
+- **Alternatives considered:** keeping programming as a restyle-only Cycle-2 surface —
+  rejected because weak search and a demo-sized library are the biggest barriers to a
+  coach adopting Vytal; introducing AI-assisted programming/search — rejected (Coach First
+  / no-AI laws; deterministic search is both sufficient and honest).

@@ -87,6 +87,31 @@ presentation; it does not relax any boundary principle below.
 - **Restraint is a feature.** Whitespace is a primary layout tool; not every element
   needs its own container. Simple is the default; complexity must be justified.
 
+### Coach ease
+
+**Vytal absorbs software complexity so the coach can focus on coaching.** A great coach
+should be able to plan excellent training without being good at software. Vytal's job is
+to make exercises easy to find, programming fast, structure easy to understand, and the
+resulting workout beautiful to execute — and to handle the metadata, versioning, saving,
+publishing, organization, reuse, assignment, and import validation underneath.
+
+- **Design for the coach who is not technical.** Some excellent coaches are not
+  technologically sophisticated. That is not an edge case; the product is designed for
+  them. A coach must never need to understand version ids, immutable revisions, object
+  relationships, database or schema terminology, API concepts, publishing internals,
+  tracking-mode implementation names, internal status enums, or system-vs-private storage
+  rules in order to program an athlete. Those concepts may exist underneath; the interface
+  translates them into obvious human workflows.
+- **Hide the mechanism, never the consequence.** Coach Ease removes clerical friction and
+  implementation vocabulary — it never hides a real consequence. Where editing published
+  content, superseding an assignment, or replacing a version genuinely affects a trainee,
+  the interface says so in plain language (this is the experiential companion of
+  [immutable versioning](#data-and-history) and Coach First — Vytal hides complexity, not
+  truth).
+- **The usability test.** For every coach task, ask: *could a great coach who is mediocre
+  with software complete this without training?* If not, the interface is wrong — iterate
+  before shipping.
+
 ## Coaching model
 
 - **Coach-assisted, not autonomous.** The product surfaces structured, explainable
