@@ -22,7 +22,7 @@ export function LegalFooter({ className = '' }: { className?: string }) {
   )
 }
 
-function LegalLayout({ title, updated, children }: { title: string; updated?: string; children: ReactNode }) {
+function LegalLayout({ title, updated, children }: { title: string; updated?: boolean; children: ReactNode }) {
   return (
     <div className="min-h-screen bg-mb-page font-structure text-mb-ink">
       <header className="border-b border-mb-ink/10">
