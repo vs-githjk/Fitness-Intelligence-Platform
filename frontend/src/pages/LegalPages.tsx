@@ -80,8 +80,8 @@ export function PrivacyPage() {
       <P>We use infrastructure providers (hosting, database, media) that process data only to provide those services to us under contract. We may disclose information where required by law. We do not sell your data or share it for cross-context behavioral advertising.</P>
       <H2>Retention &amp; your rights</H2>
       <P>We keep your data while your account is active and as needed to provide the service; published training content is retained as immutable history. You can request access, export, correction, deletion, or (trainees) withdrawal of consent by emailing {privacyEmail()}. We honor verified requests free within 45 days.</P>
-      <H2>Children</H2>
-      <P>{COMPANY.product} requires users to be at least {COMPANY.minAge} and is not directed to children under 13.</P>
+      <H2>Age</H2>
+      <P>{COMPANY.product} requires users to be at least {COMPANY.minAge} years old. It is not directed to anyone under that age, and we do not knowingly collect their information; if you believe someone under that age has used {COMPANY.product}, contact {privacyEmail()} and we will remove the account.</P>
       <H2>Contact</H2>
       <P>{privacyEmail()} · {entity()}, {orPending(COMPANY.address, 'address')}.</P>
     </LegalLayout>

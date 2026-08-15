@@ -126,7 +126,9 @@ class CoachInviteCreatedOut(CoachInviteOut):
 
 
 class ProfileUpdate(BaseModel):
-    age: int | None = Field(default=None, ge=16, le=100)
+    # Adults-only beta: under India's DPDP Act a "child" is under 18 and needs verifiable
+    # parental consent, which Vytal has no machinery for. Floor is 18 until that exists.
+    age: int | None = Field(default=None, ge=18, le=100)
     height_cm: float | None = Field(default=None, ge=100, le=250)
     weight_kg: float | None = Field(default=None, ge=30, le=350)
     selected_goal: Goal | None = None
@@ -301,7 +303,9 @@ class PublicProfileOut(BaseModel):
 
 
 class AssessmentData(BaseModel):
-    age: int | None = Field(default=None, ge=16, le=100)
+    # Adults-only beta: under India's DPDP Act a "child" is under 18 and needs verifiable
+    # parental consent, which Vytal has no machinery for. Floor is 18 until that exists.
+    age: int | None = Field(default=None, ge=18, le=100)
     height_cm: float | None = Field(default=None, ge=100, le=250)
     weight_kg: float | None = Field(default=None, ge=30, le=350)
     selected_goal: Goal | None = None
